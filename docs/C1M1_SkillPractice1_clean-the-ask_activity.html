@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Separate the ask from the problem</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 28px;
+  }
+
+  .ask-block {
+    margin: 0 0 26px;
+  }
+
+  .ask-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--accent-deep);
+    margin: 0 0 8px;
+  }
+
+  .ask-text {
+    margin: 0;
+    padding: 16px 18px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .span-btn {
+    display: inline-block;
+    font: inherit;
+    font-family: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    border-bottom: 2px dotted var(--line);
+    padding: 1px 2px;
+    margin: 0 2px 4px 0;
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.5;
+  }
+
+  .span-btn:hover {
+    border-bottom-color: var(--accent);
+  }
+
+  .span-btn[aria-pressed="true"] {
+    background: var(--highlight-bg);
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .span-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 8px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 28px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback-block {
+    padding: 16px 18px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+
+  .feedback-block:last-child {
+    margin-bottom: 0;
+  }
+
+  .fb-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--steel);
+    margin: 0 0 6px;
+  }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok { color: var(--ok); }
+  .fb-near { color: var(--accent-deep); }
+  .fb-warn { color: var(--warn); }
+
+  .feedback-block.fb-block-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback-block.fb-block-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback-block.fb-block-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .ask-text { padding: 14px 14px; }
+    .feedback-block { padding: 14px 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Separate the ask from the problem</h1>
+
+  <p class="lead-line">One job decides what's actually needed. Another job decides how to build it. A stated ask often blurs the two before anyone has pulled them apart.</p>
+
+  <p class="instruction">In each passage below, click every phrase that already names a tool, a system, or a build step &mdash; a solution &mdash; rather than stating what's actually needed. Leave the rest alone.</p>
+
+  <div class="ask-block">
+    <span class="ask-label">A request, as it might arrive:</span>
+    <p class="ask-text" id="ask-text-0"></p>
+  </div>
+
+  <div class="ask-block">
+    <span class="ask-label">What comes back a week later:</span>
+    <p class="ask-text" id="ask-text-1"></p>
+  </div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <div class="feedback-block" id="fb-block-0">
+      <span class="fb-tag">First passage</span>
+      <p class="fb-status" id="fb-status-0"></p>
+      <p class="fb-detail" id="fb-detail-0"></p>
+    </div>
+    <div class="feedback-block" id="fb-block-1">
+      <span class="fb-tag">Second passage</span>
+      <p class="fb-status" id="fb-status-1"></p>
+      <p class="fb-detail" id="fb-detail-1"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var ASKS = [
+    {
+      spans: [
+        { text: "Group leadership already has a date for the second plant to go live,", solution: false,
+          why: "This states a decision already made about timing. No tool or system is named in it, so it can't be the solution side." },
+        { text: "with the same forecasting assistant the first plant is running.", solution: true,
+          why: "This names the specific tool and calls for repeating it. Whatever the real need is, this sentence has already replaced it with a build." },
+        { text: "The planning team needs numbers it can act on for scheduling,", solution: false,
+          why: "This is the actual need sitting underneath the ask \u2014 trustworthy output for a real decision \u2014 with no technology named." },
+        { text: "the same way it gets them today from the nightly data extract.", solution: true,
+          why: "This names the specific technical mechanism behind today's numbers. Naming the mechanism isn't the same as stating the need." },
+        { text: "Let's build the same pipeline out to the second plant,", solution: true,
+          why: "This is a direct build instruction. Whatever problem started this, the sentence has already skipped past it." },
+        { text: "so that site isn't left waiting.", solution: false,
+          why: "This states urgency and a consequence of waiting, not a build step or a named system." }
+      ]
+    },
+    {
+      spans: [
+        { text: "The planning team keeps running its own numbers instead of the assistant's,", solution: false,
+          why: "This is an observation about what's actually happening \u2014 a symptom, not a fix." },
+        { text: "so let's push a firmware update to the model and retrain it on more recent data.", solution: true,
+          why: "This names two specific technical fixes \u2014 a firmware update and retraining \u2014 before anyone has agreed what's actually wrong." },
+        { text: "What we actually need is for the planning team to trust a single set of numbers enough to act on it.", solution: false,
+          why: "This is the real need, and it has no technology attached to it." },
+        { text: "Let's also spin up a dashboard so everyone can see the assistant's output in real time.", solution: true,
+          why: "A dashboard is a specific build. It's a proposed answer, not the problem it would answer." },
+        { text: "Until that happens, we're stuck running two versions of the truth.", solution: false,
+          why: "This names a consequence of the situation, not a solution to it." },
+        { text: "I'd like this solved with better tooling by next quarter.", solution: true,
+          why: "\u201cBetter tooling\u201d already names the category of fix before the problem underneath has been separated out." }
+      ]
+    }
+  ];
+
+  var CRITERION_TEXT = "A phrase belongs on the solution side only when it names a specific tool, system, model, data source, or build action. It belongs on the other side when it states a need, an observation, or a consequence, with nothing built or bought yet.";
+  var FIRST_MOVE_TEXT = "Try this on each phrase: strike out every named tool, system, model, or data source. If a real, unresolved need is still standing afterward, that phrase was already about the problem. If nothing is left standing, it was solution language from the start.";
+  var CORRECT_TEXT = "Right. Everything you marked names a specific tool, system, or build action. Everything you left alone states a need, an observation, or a consequence, with nothing built yet. That split is the whole test.";
+
+  function renderAsk(askIndex) {
+    var container = document.getElementById('ask-text-' + askIndex);
+    ASKS[askIndex].spans.forEach(function (span, idx) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'span-btn';
+      btn.setAttribute('aria-pressed', 'false');
+      btn.setAttribute('data-ask', String(askIndex));
+      btn.setAttribute('data-idx', String(idx));
+      btn.textContent = span.text;
+      btn.addEventListener('click', function () {
+        var pressed = btn.getAttribute('aria-pressed') === 'true';
+        btn.setAttribute('aria-pressed', pressed ? 'false' : 'true');
+      });
+      container.appendChild(btn);
+      container.appendChild(document.createTextNode(' '));
+    });
+  }
+
+  renderAsk(0);
+  renderAsk(1);
+
+  function checkAsk(askIndex) {
+    var spans = ASKS[askIndex].spans;
+    var buttons = document.querySelectorAll('.span-btn[data-ask="' + askIndex + '"]');
+    var selected = {};
+    buttons.forEach(function (b) {
+      var idx = parseInt(b.getAttribute('data-idx'), 10);
+      selected[idx] = b.getAttribute('aria-pressed') === 'true';
+    });
+    var diffIndices = [];
+    spans.forEach(function (s, idx) {
+      var isSelected = !!selected[idx];
+      if (s.solution !== isSelected) { diffIndices.push(idx); }
+    });
+    return { totalDiff: diffIndices.length, diffIndices: diffIndices, spans: spans };
+  }
+
+  function renderFeedback(askIndex, result) {
+    var block = document.getElementById('fb-block-' + askIndex);
+    var statusEl = document.getElementById('fb-status-' + askIndex);
+    var detailEl = document.getElementById('fb-detail-' + askIndex);
+    block.classList.remove('fb-block-ok', 'fb-block-near', 'fb-block-warn');
+    statusEl.className = 'fb-status';
+
+    if (result.totalDiff === 0) {
+      statusEl.textContent = 'Correct.';
+      statusEl.classList.add('fb-ok');
+      block.classList.add('fb-block-ok');
+      detailEl.textContent = CORRECT_TEXT;
+    } else if (result.totalDiff === 1) {
+      statusEl.textContent = 'Close.';
+      statusEl.classList.add('fb-near');
+      block.classList.add('fb-block-near');
+      var span = result.spans[result.diffIndices[0]];
+      detailEl.textContent = 'Look again at: \u201C' + span.text + '\u201D ' + span.why;
+    } else {
+      statusEl.textContent = 'Not yet.';
+      statusEl.classList.add('fb-warn');
+      block.classList.add('fb-block-warn');
+      detailEl.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+  }
+
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+
+  checkBtn.addEventListener('click', function () {
+    renderFeedback(0, checkAsk(0));
+    renderFeedback(1, checkAsk(1));
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>
