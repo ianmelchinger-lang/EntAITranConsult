@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequence the foundations</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 24px;
+  }
+
+  .order-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .order-badge {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .order-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-serif);
+    font-size: 0.98rem;
+    color: var(--ink);
+  }
+
+  .order-controls {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 4px;
+  }
+
+  .move-btn {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .move-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .move-btn:not(:disabled):hover {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+  }
+
+  .move-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 8px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 20px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .round-two {
+    margin-top: 40px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+
+  .round-two[hidden] {
+    display: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Sequence the foundations</h1>
+
+  <p class="lead-line">Trustworthy data, a rule for what the output may decide, and an organization ready to own that decision are each necessary and none is sufficient on its own. Which of these closes first, and what has to wait, is not incidental.</p>
+
+  <p class="instruction">Below are four things this initiative still needs. Use the arrows to put them in an order that never asks one to happen before what it depends on. More than one order can be defensible &mdash; the check looks for actual dependency violations, not a single fixed sequence.</p>
+
+  <div id="order-list-1"></div>
+
+  <button type="button" class="check-btn" id="check-btn-1">Check my order</button>
+
+  <div class="feedback" id="feedback-1" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status-1"></p>
+    <p class="fb-detail" id="fb-detail-1"></p>
+  </div>
+
+  <div class="round-two" id="round-two" hidden>
+    <p class="lead-line">Now move one assumption: suppose the data steward had already closed the reconciliation months before this ask ever came in.</p>
+    <p class="instruction">Put the remaining three in a defensible order.</p>
+    <div id="order-list-2"></div>
+    <button type="button" class="check-btn" id="check-btn-2">Check my order</button>
+    <div class="feedback" id="feedback-2" tabindex="-1" hidden>
+      <p class="fb-status" id="fb-status-2"></p>
+      <p class="fb-detail" id="fb-detail-2"></p>
+    </div>
+  </div>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+
+<script>
+(function () {
+  var ITEMS = {
+    A: { text: "Reconcile the part-numbering change into the data the assistant reads." },
+    B: { text: "Write the rule for what the assistant's numbers may be used to decide, and who can override them." },
+    C: { text: "Decide whether the tool has earned a second site." },
+    D: { text: "Build the tool's connection at the second plant." }
+  };
+
+  var CRITERION_TEXT = "A decision can't safely close before the foundation it depends on is in place. The scaling decision depends on both reconciled data and a rule of use \u2014 it can't respectably come before either one. And nothing gets built until the scaling decision itself has been made. Within those limits, more than one order is fine.";
+  var FIRST_MOVE_TEXT = "Take any two items and ask: if the earlier one happened first, would it be decided or built against a target nobody had actually set yet? If yes, they're in the wrong order relative to each other. If either order would work, leave that pair alone \u2014 it isn't the constraint doing the work.";
+
+  var srStatus = document.getElementById('sr-status');
+
+  function createOrderingWidget(opts) {
+    var order = opts.order.slice();
+    var pendingFocus = null;
+
+    function render() {
+      opts.containerEl.innerHTML = '';
+      order.forEach(function (id, idx) {
+        var row = document.createElement('div');
+        row.className = 'order-row';
+
+        var badge = document.createElement('span');
+        badge.className = 'order-badge';
+        badge.setAttribute('aria-hidden', 'true');
+        badge.textContent = String(idx + 1);
+
+        var text = document.createElement('span');
+        text.className = 'order-text';
+        text.textContent = opts.itemsMap[id].text;
+
+        var controls = document.createElement('div');
+        controls.className = 'order-controls';
+
+        var upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = 'move-btn';
+        upBtn.textContent = '\u2191';
+        upBtn.setAttribute('aria-label', 'Move "' + opts.itemsMap[id].text + '" earlier');
+        upBtn.disabled = (idx === 0);
+        upBtn.addEventListener('click', function () { move(idx, -1, id); });
+
+        var downBtn = document.createElement('button');
+        downBtn.type = 'button';
+        downBtn.className = 'move-btn';
+        downBtn.textContent = '\u2193';
+        downBtn.setAttribute('aria-label', 'Move "' + opts.itemsMap[id].text + '" later');
+        downBtn.disabled = (idx === order.length - 1);
+        downBtn.addEventListener('click', function () { move(idx, 1, id); });
+
+        controls.appendChild(upBtn);
+        controls.appendChild(downBtn);
+        row.appendChild(badge);
+        row.appendChild(text);
+        row.appendChild(controls);
+        opts.containerEl.appendChild(row);
+      });
+
+      if (pendingFocus) {
+        var newIdx = order.indexOf(pendingFocus.id);
+        var rows = opts.containerEl.children;
+        var row2 = rows[newIdx];
+        if (row2) {
+          var btns = row2.querySelectorAll('.move-btn');
+          var preferred = pendingFocus.dir === -1 ? btns[0] : btns[1];
+          if (preferred && !preferred.disabled) { preferred.focus(); }
+          else if (btns[0] && !btns[0].disabled) { btns[0].focus(); }
+          else if (btns[1] && !btns[1].disabled) { btns[1].focus(); }
+        }
+        pendingFocus = null;
+      }
+    }
+
+    function move(idx, delta, id) {
+      var newIdx = idx + delta;
+      if (newIdx < 0 || newIdx >= order.length) { return; }
+      var tmp = order[idx];
+      order[idx] = order[newIdx];
+      order[newIdx] = tmp;
+      srStatus.textContent = opts.itemsMap[id].text + ' moved to position ' + (newIdx + 1) + ' of ' + order.length + '.';
+      opts.feedbackEl.hidden = true;
+      pendingFocus = { id: id, dir: delta };
+      render();
+    }
+
+    opts.checkBtnEl.addEventListener('click', function () {
+      var pos = {};
+      order.forEach(function (id, idx) { pos[id] = idx; });
+      var violations = [];
+      opts.constraints.forEach(function (c) { if (!c.ok(pos)) { violations.push(c); } });
+
+      opts.feedbackEl.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+      if (violations.length === 0) {
+        opts.feedbackEl.classList.add('fb-ok');
+        opts.statusEl.textContent = 'Correct.';
+        opts.detailEl.textContent = opts.correctText;
+        if (opts.onCorrect) { opts.onCorrect(); }
+      } else if (violations.length === 1) {
+        opts.feedbackEl.classList.add('fb-near');
+        opts.statusEl.textContent = 'Close.';
+        opts.detailEl.textContent = violations[0].why;
+      } else {
+        opts.feedbackEl.classList.add('fb-warn');
+        opts.statusEl.textContent = 'Not yet.';
+        opts.detailEl.textContent = opts.criterionText + ' ' + opts.firstMoveText;
+      }
+      opts.feedbackEl.hidden = false;
+      opts.feedbackEl.focus();
+    });
+
+    render();
+  }
+
+  var roundTwo = document.getElementById('round-two');
+
+  var widget1 = createOrderingWidget({
+    itemsMap: ITEMS,
+    order: ['C', 'D', 'A', 'B'],
+    containerEl: document.getElementById('order-list-1'),
+    checkBtnEl: document.getElementById('check-btn-1'),
+    feedbackEl: document.getElementById('feedback-1'),
+    statusEl: document.getElementById('fb-status-1'),
+    detailEl: document.getElementById('fb-detail-1'),
+    constraints: [
+      { ok: function (pos) { return pos.A < pos.C; },
+        why: "Reconciling the data has to close before the scaling decision, or that decision gets made on a number nobody has verified yet \u2014 the data foundation, not yet governed." },
+      { ok: function (pos) { return pos.B < pos.C; },
+        why: "The rule of use has to exist before the scaling decision, or there's no record of what the number was allowed to decide once someone asks \u2014 the rule-of-use foundation, not yet in place." },
+      { ok: function (pos) { return pos.C < pos.D; },
+        why: "Building the second site's connection before anyone has actually decided to scale means construction starts against a target nobody has chosen yet." }
+    ],
+    correctText: "Right. Reconciling the data and writing the rule of use can happen in either order \u2014 neither depends on the other. But both have to close before the scaling decision, and nothing gets built until that decision is made. An order is defensible as long as nothing happens against a target nobody has set yet.",
+    criterionText: CRITERION_TEXT,
+    firstMoveText: FIRST_MOVE_TEXT,
+    onCorrect: function () {
+      roundTwo.hidden = false;
+    }
+  });
+
+  var widget2 = createOrderingWidget({
+    itemsMap: ITEMS,
+    order: ['D', 'C', 'B'],
+    containerEl: document.getElementById('order-list-2'),
+    checkBtnEl: document.getElementById('check-btn-2'),
+    feedbackEl: document.getElementById('feedback-2'),
+    statusEl: document.getElementById('fb-status-2'),
+    detailEl: document.getElementById('fb-detail-2'),
+    constraints: [
+      { ok: function (pos) { return pos.B < pos.C; },
+        why: "The rule of use still has to exist before the scaling decision, or there's no record of what the number was allowed to decide." },
+      { ok: function (pos) { return pos.C < pos.D; },
+        why: "Building the second site's connection still can't come before the scaling decision itself." }
+    ],
+    correctText: "Right \u2014 and notice there's now only one order that works. Removing reconciliation from the list didn't just remove a step. It removed the one place where more than one order was ever defensible; the rule of use and the scaling decision were never free to trade places, and neither were the scaling decision and the build.",
+    criterionText: CRITERION_TEXT,
+    firstMoveText: FIRST_MOVE_TEXT
+  });
+})();
+</script>
+</body>
+</html>
