@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redeploy or revalidate?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .scenario { border-left: 3px solid var(--accent); padding-left: 20px; margin: 0 0 28px; }
+  .scenario p { margin: 0; }
+  fieldset { border: none; margin: 0 0 22px; padding: 0; }
+  fieldset:last-of-type { margin-bottom: 0; }
+  legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .option { display: block; position: relative; margin-bottom: 10px; cursor: pointer; }
+  .option-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .option-box { display: block; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 12px 16px; background: var(--white); font-family: var(--font-sans); font-size: 0.95rem; }
+  .option-input:checked + .option-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); }
+  .option-input:focus-visible + .option-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 8px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .note { font-family: var(--font-sans); font-size: 0.9rem; color: var(--warn); margin: 10px 0 0; }
+  .note[hidden] { display: none; }
+  .feedback { margin-top: 24px; }
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback-block { padding: 14px 16px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; margin-bottom: 12px; }
+  .feedback-block:last-child { margin-bottom: 0; }
+  .fb-tag { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.78rem; color: var(--steel); margin: 0 0 6px; }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; margin: 0 0 6px; }
+  .fb-ok { color: var(--ok); }
+  .fb-warn { color: var(--warn); }
+  .feedback-block.fb-block-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback-block.fb-block-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+  @media (max-width: 480px) { .container { padding: 32px 16px 48px; } .option-box { padding: 10px 12px; } .feedback-block { padding: 12px 12px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Redeploy or revalidate?</h1>
+
+  <p class="lead-line">A tool that learned patterns from one kind of example carries its correctness only as far as those examples reach &mdash; not one step further.</p>
+
+  <div class="scenario">
+    <p>A quality documentation assistant has been drafting supplier-nonconformance write-ups at three plants for ninety days. Every draft is reviewed before filing, and the review has caught the cases where it hedges. A director now wants to point the same assistant at warranty-claims drafting instead &mdash; a different system, with four regions' worth of claims data that don't share the nonconformance data's format.</p>
+  </div>
+
+  <fieldset id="move-fieldset">
+    <legend>What's the right move?</legend>
+    <label class="option">
+      <input class="option-input" type="radio" name="move" value="redeploy">
+      <span class="option-box">Redeploy it as is &mdash; it's already proven to work.</span>
+    </label>
+    <label class="option">
+      <input class="option-input" type="radio" name="move" value="revalidate">
+      <span class="option-box">Revalidate it in the new domain before trusting its output.</span>
+    </label>
+  </fieldset>
+
+  <fieldset id="question-fieldset">
+    <legend>Which question actually tests whether it's ready?</legend>
+    <label class="option">
+      <input class="option-input" type="radio" name="question" value="confidence1">
+      <span class="option-box">Are you confident it'll work on warranty claims too?</span>
+    </label>
+    <label class="option">
+      <input class="option-input" type="radio" name="question" value="confidence2">
+      <span class="option-box">It performed well on nonconformance write-ups, so it should be fine here too, right?</span>
+    </label>
+    <label class="option">
+      <input class="option-input" type="radio" name="question" value="evidence">
+      <span class="option-box">How was it checked on warranty-claims data, how often is it wrong, and where is it weakest?</span>
+    </label>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn">Check my answers</button>
+  <p class="note" id="incomplete-note" hidden>Answer both questions before checking.</p>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden></div>
+
+</div>
+
+<script>
+(function () {
+  var MOVE = {
+    correct: 'revalidate',
+    correctWhy: "Ninety days of validated performance on nonconformance write-ups says nothing about warranty-claims drafting. The system, the data, and the format are all different \u2014 this is an untested claim wearing the same tool's name, not an extension of something already proven.",
+    wrongWhy: "Proven in one domain doesn't travel with the tool automatically. A rule-following system would carry its correctness anywhere; a system that learned patterns from nonconformance write-ups has only been tested against nonconformance write-ups. Warranty-claims drafting, on different data, in a different system, is an untested claim, not a redeployment of a tested one."
+  };
+  var QUESTION = {
+    correct: 'evidence',
+    correctWhy: "This is the only question that asks for evidence in the new domain specifically \u2014 how it was checked, its error rate, and where it's weakest. That's the only answer a capability map can actually record.",
+    wrongWhy: "The other two ask for a feeling of confidence, or borrow the old domain's track record as if it applied here. Neither produces evidence about the new domain. The only question that actually tests the claim asks how it was checked in the domain being proposed, how often it's wrong, and where it's weakest."
+  };
+
+  function getRadioValue(name) {
+    var radios = document.getElementsByName(name);
+    for (var i = 0; i < radios.length; i++) { if (radios[i].checked) { return radios[i].value; } }
+    return null;
+  }
+
+  document.querySelectorAll('input[type="radio"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      document.getElementById('feedback').hidden = true;
+      document.getElementById('incomplete-note').hidden = true;
+    });
+  });
+
+  document.getElementById('check-btn').addEventListener('click', function () {
+    var move = getRadioValue('move');
+    var question = getRadioValue('question');
+    if (!move || !question) {
+      document.getElementById('incomplete-note').hidden = false;
+      document.getElementById('feedback').hidden = true;
+      return;
+    }
+    document.getElementById('incomplete-note').hidden = true;
+
+    var feedback = document.getElementById('feedback');
+    feedback.innerHTML = '';
+
+    var results = [
+      { tag: 'The right move', ok: move === MOVE.correct, detail: move === MOVE.correct ? MOVE.correctWhy : MOVE.wrongWhy },
+      { tag: 'The test that actually works', ok: question === QUESTION.correct, detail: question === QUESTION.correct ? QUESTION.correctWhy : QUESTION.wrongWhy }
+    ];
+
+    results.forEach(function (r) {
+      var block = document.createElement('div');
+      block.className = 'feedback-block fb-block-' + (r.ok ? 'ok' : 'warn');
+      var tag = document.createElement('span');
+      tag.className = 'fb-tag';
+      tag.textContent = r.tag;
+      block.appendChild(tag);
+      var status = document.createElement('p');
+      status.className = 'fb-status fb-' + (r.ok ? 'ok' : 'warn');
+      status.textContent = r.ok ? 'Correct.' : 'Not yet.';
+      block.appendChild(status);
+      var detail = document.createElement('p');
+      detail.className = 'fb-detail';
+      detail.textContent = r.detail;
+      block.appendChild(detail);
+      feedback.appendChild(block);
+    });
+
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spot the tool-first posture</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+
+  .passage-block { margin: 0 0 26px; }
+  .passage-label { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.85rem; color: var(--accent-deep); margin: 0 0 8px; }
+  .passage-text { margin: 0; padding: 16px 18px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+
+  .span-btn { display: inline; font: inherit; font-family: inherit; color: inherit; background: none; border: none; border-bottom: 2px dotted var(--line); padding: 1px 2px; margin: 0 2px 4px 0; cursor: pointer; text-align: left; line-height: 1.5; }
+  .span-btn:hover { border-bottom-color: var(--accent); }
+  .span-btn[aria-pressed="true"] { background: var(--highlight-bg); border-bottom: 2px solid var(--accent); }
+  .span-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .check-btn { display: block; margin: 8px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback { margin-top: 28px; }
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback-block { padding: 16px 18px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok { color: var(--ok); }
+  .fb-near { color: var(--accent-deep); }
+  .fb-warn { color: var(--warn); }
+  .feedback-block.fb-block-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback-block.fb-block-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback-block.fb-block-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+  @media (max-width: 480px) { .container { padding: 32px 16px 48px; } .passage-text { padding: 14px 14px; } .feedback-block { padding: 14px 14px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Spot the tool-first posture</h1>
+
+  <p class="lead-line">A client rarely announces that they've already chosen the tool. They just talk as if the choice were already made.</p>
+
+  <p class="instruction">Below is how a meeting actually opened. Click every sentence that treats a platform, a rollout, or a vendor decision as already settled, before anyone has characterized the problem it's meant to solve. Leave the sentences that name a real, unresolved question alone.</p>
+
+  <div class="passage-block">
+    <span class="passage-label">How the meeting opened:</span>
+    <p class="passage-text" id="passage-text"></p>
+  </div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <div class="feedback-block" id="fb-block">
+      <p class="fb-status" id="fb-status"></p>
+      <p class="fb-detail" id="fb-detail"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var SPANS = [
+    { text: "Group leadership wants to standardize on one assistant platform across every function before the next budget cycle.", solution: true,
+      why: "This names a specific commitment \u2014 standardize on one platform \u2014 before anyone has said what problem the platform would solve. That's tool-first, stated as already decided." },
+    { text: "Three functions have already reported that their AI tools produce answers nobody has learned to trust yet.", solution: false,
+      why: "This names a real, open problem: people don't trust what their tools already produce. No platform is named here, and nothing has been decided \u2014 this is an observation, not a plan." },
+    { text: "Standardizing now would let every function build on the same foundation instead of running separate pilots.", solution: true,
+      why: "The reason given is about convenience \u2014 one foundation instead of separate pilots \u2014 not about a need anyone has characterized. Justifying a platform by its own convenience is still tool-first." },
+    { text: "Nobody has actually mapped which functions have a validated need for a shared platform and which are just experimenting.", solution: false,
+      why: "This names the actual gap: nobody has mapped who needs this and who's just experimenting. That's the problem the meeting should be solving before any platform gets named, not a solution." },
+    { text: "The vendor has offered a steep discount if the enterprise commits by the end of the quarter.", solution: true,
+      why: "A vendor's discount deadline is a reason to decide fast, not a reason the decision is right. Letting a commercial timeline drive the choice is tool-first, just from a different direction." },
+    { text: "The team that owns intake still can't say how many tools are already running without being sanctioned.", solution: false,
+      why: "This is a second real, open problem: the organization can't see how many tools are already running unsanctioned. Naming a visibility gap isn't naming a solution." }
+  ];
+
+  var CRITERION_TEXT = "A sentence belongs on the tool-first side only when it treats a platform, a rollout, or a vendor decision as already settled, before anyone has characterized the problem it's meant to solve. It belongs on the other side when it names an unresolved need, a gap, or a question nobody has answered yet, with no platform assumed.";
+  var FIRST_MOVE_TEXT = "Try this on each sentence: read it and ask whether a product, a platform, or a rollout is already being treated as decided. If a decision is already standing there, unexamined, mark it. If the sentence is naming something nobody has settled yet, leave it.";
+  var CORRECT_TEXT = "Right. Everything you marked treats a platform decision as already settled before the problem behind it has been characterized. Everything you left alone names a real, open question nobody has answered yet.";
+
+  var passageEl = document.getElementById('passage-text');
+
+  SPANS.forEach(function (span, idx) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'span-btn';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.setAttribute('data-idx', String(idx));
+    btn.textContent = span.text;
+    btn.addEventListener('click', function () {
+      var pressed = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', pressed ? 'false' : 'true');
+      document.getElementById('feedback').hidden = true;
+    });
+    passageEl.appendChild(btn);
+    passageEl.appendChild(document.createTextNode(' '));
+  });
+
+  document.getElementById('check-btn').addEventListener('click', function () {
+    var buttons = document.querySelectorAll('.span-btn');
+    var selected = {};
+    buttons.forEach(function (b) {
+      var idx = parseInt(b.getAttribute('data-idx'), 10);
+      selected[idx] = b.getAttribute('aria-pressed') === 'true';
+    });
+    var diffIndices = [];
+    SPANS.forEach(function (s, idx) {
+      var isSelected = !!selected[idx];
+      if (s.solution !== isSelected) { diffIndices.push(idx); }
+    });
+
+    var block = document.getElementById('fb-block');
+    var statusEl = document.getElementById('fb-status');
+    var detailEl = document.getElementById('fb-detail');
+    block.classList.remove('fb-block-ok', 'fb-block-near', 'fb-block-warn');
+    statusEl.className = 'fb-status';
+
+    if (diffIndices.length === 0) {
+      statusEl.textContent = 'Correct.';
+      statusEl.classList.add('fb-ok');
+      block.classList.add('fb-block-ok');
+      detailEl.textContent = CORRECT_TEXT;
+    } else if (diffIndices.length === 1) {
+      statusEl.textContent = 'Close.';
+      statusEl.classList.add('fb-near');
+      block.classList.add('fb-block-near');
+      var s = SPANS[diffIndices[0]];
+      detailEl.textContent = 'Look again at: \u201C' + s.text + '\u201D ' + s.why;
+    } else {
+      statusEl.textContent = 'Not yet.';
+      statusEl.classList.add('fb-warn');
+      block.classList.add('fb-block-warn');
+      detailEl.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    document.getElementById('feedback').hidden = false;
+    document.getElementById('feedback').focus();
+  });
+})();
+</script>
+</body>
+</html>

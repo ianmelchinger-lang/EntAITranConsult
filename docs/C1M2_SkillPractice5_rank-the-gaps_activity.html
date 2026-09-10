@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rank the gaps</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 10px; }
+  .instruction p:last-child { margin-bottom: 0; }
+
+  .gap-card { position: relative; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 18px 20px; margin-bottom: 16px; }
+  .gap-card.is-leader { border-color: var(--accent); }
+  .gap-name { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; color: var(--ink); margin: 0 0 8px; padding-right: 90px; }
+  .gap-desc { margin: 0 0 12px; font-size: 0.98rem; }
+  .badge { position: absolute; top: 16px; right: 16px; font-family: var(--font-sans); font-weight: 600; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; background: var(--paper); color: var(--ink-soft); border: 1px solid var(--line); }
+  .badge.badge-first { background: var(--ok-bg); color: var(--ok); border-color: var(--ok); }
+
+  .stat-row { display: flex; flex-wrap: wrap; gap: 14px; font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .stat { background: var(--paper); border-radius: 4px; padding: 6px 10px; }
+  .stat strong { color: var(--ink); }
+
+  .maintenance { font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); border-left: 3px solid var(--line); padding-left: 10px; margin: 0; }
+  .maintenance strong { color: var(--ink); display: block; font-size: 0.78rem; margin-bottom: 2px; }
+
+  .reveal-btn, .check-btn { display: block; margin: 8px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .reveal-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .reveal-btn:not(:disabled):hover, .check-btn:hover { background: var(--accent-deep); }
+  .reveal-btn:focus-visible, .check-btn:focus-visible, .commit-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .flip-note { margin-top: 18px; padding: 16px 18px; background: var(--highlight-bg); border-left: 4px solid var(--accent); border-radius: 4px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); line-height: 1.55; }
+  .flip-note[hidden] { display: none; }
+
+  .commit-section { margin-top: 32px; }
+  .commit-section h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.15rem; margin: 0 0 10px; }
+  .commit-prompt { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .commit-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .commit-btn { font-family: var(--font-sans); font-size: 0.9rem; padding: 10px 16px; background: var(--white); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; text-align: left; }
+  .commit-btn[aria-pressed="true"] { background: var(--highlight-bg); border-color: var(--accent); }
+  .commit-reveal { padding: 16px 18px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); line-height: 1.55; }
+  .commit-reveal[hidden] { display: none; }
+  .commit-reveal:focus { outline: none; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .gap-card { padding: 14px 14px; }
+    .gap-name { padding-right: 78px; }
+    .badge { position: static; display: inline-block; margin-bottom: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Rank the gaps</h1>
+
+  <p class="lead-line">Value against effort tells you which gap looks better on paper. It doesn't tell you which one is actually most urgent.</p>
+
+  <div class="instruction">
+    <p>Ranking usually stops at value against effort, and that single measure misses real cases. A gap that lays foundation other capabilities will reuse can outrank one that stands alone. A gap carrying live exposure right now can outrank one that's higher-value but poses no immediate risk. Below are two gaps, each scored on a ten-point scale.</p>
+    <p>See how they rank on value against effort alone. Then bring in current exposure as a third input and watch what happens to the order.</p>
+  </div>
+
+  <div id="gaps-list"></div>
+
+  <button type="button" class="reveal-btn" id="expose-btn">Bring in current exposure as an input</button>
+  <div class="flip-note" id="flip-note" tabindex="-1" hidden></div>
+
+  <div class="commit-section">
+    <h2>What does closing each one commit you to?</h2>
+    <p class="commit-prompt">Both descriptions above already name a maintenance commitment. Which would be harder for the organization to sustain?</p>
+    <div class="commit-btns" id="commit-btns"></div>
+    <div class="commit-reveal" id="commit-reveal" tabindex="-1" hidden></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var GAPS = [
+    {
+      id: 'A',
+      name: "Close the enterprise demand-forecasting gap",
+      desc: "Wanted for two years, never built. Other planned capabilities would reuse the same consolidated data pipeline this would require, so building it lays groundwork more than one initiative could stand on.",
+      value: 8,
+      effort: 5,
+      exposure: 2,
+      maintenance: "Keeping the consolidated data platform current for as long as the model depends on it \u2014 an ongoing data-quality obligation, not a one-time build."
+    },
+    {
+      id: 'B',
+      name: "Extend review capacity for the seven-site scheduling automation",
+      desc: "Now running at seven sites instead of the two it was built and reviewed for. The same review that once caught about seven in ten likely errors now catches roughly one in four, and a wrong-equipment work order has already passed it once.",
+      value: 5,
+      effort: 4,
+      exposure: 9,
+      maintenance: "Review capacity that scales with the number of sites covered \u2014 either permanent added headcount or a redesigned control, not a one-time fix."
+    }
+  ];
+
+  var examined = false;
+  var gapsList = document.getElementById('gaps-list');
+  var exposeBtn = document.getElementById('expose-btn');
+  var flipNote = document.getElementById('flip-note');
+
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  function compositeBase(g) { return g.value - g.effort; }
+  function compositeFull(g) { return g.value - g.effort + g.exposure; }
+
+  function render() {
+    gapsList.innerHTML = '';
+    var scores = GAPS.map(function (g) { return examined ? compositeFull(g) : compositeBase(g); });
+    var leaderIdx = scores[0] >= scores[1] ? 0 : 1;
+
+    GAPS.forEach(function (g, idx) {
+      var card = document.createElement('div');
+      card.className = 'gap-card' + (idx === leaderIdx ? ' is-leader' : '');
+
+      var badge = document.createElement('span');
+      badge.className = 'badge' + (idx === leaderIdx ? ' badge-first' : '');
+      badge.textContent = idx === leaderIdx ? 'Ranked first' : 'Ranked second';
+      card.appendChild(badge);
+
+      var name = document.createElement('p');
+      name.className = 'gap-name';
+      name.textContent = g.name;
+      card.appendChild(name);
+
+      var desc = document.createElement('p');
+      desc.className = 'gap-desc';
+      desc.textContent = g.desc;
+      card.appendChild(desc);
+
+      var statRow = document.createElement('div');
+      statRow.className = 'stat-row';
+      statRow.appendChild(makeStat('Value', fmt(g.value)));
+      statRow.appendChild(makeStat('Effort', fmt(g.effort)));
+      statRow.appendChild(makeStat('Value \u2212 effort', fmt(compositeBase(g))));
+      if (examined) {
+        statRow.appendChild(makeStat('Current exposure', fmt(g.exposure)));
+        statRow.appendChild(makeStat('With exposure added', fmt(compositeFull(g))));
+      }
+      card.appendChild(statRow);
+
+      var maint = document.createElement('p');
+      maint.className = 'maintenance';
+      var maintLabel = document.createElement('strong');
+      maintLabel.textContent = 'Commits you to maintain:';
+      maint.appendChild(maintLabel);
+      maint.appendChild(document.createTextNode(g.maintenance));
+      card.appendChild(maint);
+
+      gapsList.appendChild(card);
+    });
+  }
+
+  function makeStat(label, value) {
+    var s = document.createElement('span');
+    s.className = 'stat';
+    var strong = document.createElement('strong');
+    strong.textContent = value;
+    s.appendChild(document.createTextNode(label + ': '));
+    s.appendChild(strong);
+    return s;
+  }
+
+  render();
+
+  exposeBtn.addEventListener('click', function () {
+    var baseScores = GAPS.map(compositeBase);
+    var fullScores = GAPS.map(compositeFull);
+    var baseLeaderIdx = baseScores[0] >= baseScores[1] ? 0 : 1;
+    var fullLeaderIdx = fullScores[0] >= fullScores[1] ? 0 : 1;
+    var flipped = baseLeaderIdx !== fullLeaderIdx;
+
+    examined = true;
+    render();
+    exposeBtn.disabled = true;
+
+    var text = 'On value against effort alone, \u201C' + GAPS[baseLeaderIdx].name + '\u201D ranked first (' +
+      fmt(baseScores[baseLeaderIdx]) + ' to ' + fmt(baseScores[1 - baseLeaderIdx]) + '). ';
+    text += 'With current exposure added, \u201C' + GAPS[fullLeaderIdx].name + '\u201D ranks first instead (' +
+      fmt(fullScores[fullLeaderIdx]) + ' to ' + fmt(fullScores[1 - fullLeaderIdx]) + '). ';
+    text += flipped
+      ? 'The order changed because exposure was never part of the first calculation \u2014 remove it and you were never really ranking on more than one input.'
+      : 'The order held even once exposure was added, which is itself worth checking: if an input never changes the order, confirm it was actually weighed rather than just listed.';
+
+    flipNote.textContent = text;
+    flipNote.hidden = false;
+    flipNote.focus();
+  });
+
+  var COMMIT_OPTIONS = [
+    { id: 'A', label: 'Keeping the data platform current' },
+    { id: 'B', label: 'Scaling review capacity with every new site' }
+  ];
+  var CLOSING = "There's no single right answer here \u2014 both are real, ongoing commitments, not one-time costs. The point isn't which one is harder. It's that a ranking which skips this question is incomplete, whichever gap comes first.";
+
+  var commitBtnsEl = document.getElementById('commit-btns');
+  var commitRevealEl = document.getElementById('commit-reveal');
+  var commitButtons = [];
+
+  COMMIT_OPTIONS.forEach(function (opt) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'commit-btn';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.textContent = opt.label;
+    btn.addEventListener('click', function () {
+      commitButtons.forEach(function (b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+      commitRevealEl.textContent = CLOSING;
+      commitRevealEl.hidden = false;
+      commitRevealEl.focus();
+    });
+    commitButtons.push(btn);
+    commitBtnsEl.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

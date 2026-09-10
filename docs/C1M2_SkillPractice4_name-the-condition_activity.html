@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name the condition</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 10px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item-card { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 18px 20px; margin-bottom: 18px; }
+  .item-num { font-family: var(--font-sans); font-weight: 600; font-size: 0.8rem; color: var(--accent-deep); margin: 0 0 8px; }
+  .item-desc { margin: 0 0 14px; font-size: 1rem; }
+  fieldset { border: none; margin: 0 0 14px; padding: 0; }
+  fieldset:last-child { margin-bottom: 0; }
+  legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.85rem; color: var(--ink-soft); padding: 0; margin: 0 0 8px; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { display: inline-block; cursor: pointer; }
+  .pill-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .pill-box { display: block; font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink); border: 1px solid var(--line); border-radius: 20px; padding: 7px 14px; background: var(--paper); }
+  .pill-input:checked + .pill-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--accent-deep); font-weight: 600; }
+  .pill-input:focus-visible + .pill-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 8px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .note { font-family: var(--font-sans); font-size: 0.9rem; color: var(--warn); margin: 10px 0 0; }
+  .note[hidden] { display: none; }
+  .feedback { margin-top: 24px; }
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback-block { padding: 14px 16px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; margin-bottom: 12px; }
+  .feedback-block:last-child { margin-bottom: 0; }
+  .fb-tag { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.78rem; color: var(--steel); margin: 0 0 6px; }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; margin: 0 0 6px; }
+  .fb-ok { color: var(--ok); }
+  .fb-near { color: var(--accent-deep); }
+  .fb-warn { color: var(--warn); }
+  .feedback-block.fb-block-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback-block.fb-block-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback-block.fb-block-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+  @media (max-width: 480px) { .container { padding: 32px 16px 48px; } .item-card { padding: 14px 14px; } .feedback-block { padding: 12px 12px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Name the condition</h1>
+
+  <p class="lead-line">The same word, &ldquo;gap,&rdquo; hides three different problems, and only one of them gets fixed by buying something.</p>
+
+  <div class="instruction">
+    <p>A shortfall is always in one of three conditions, and they don't overlap. It can be absent &mdash; it doesn't exist yet. It can exist and underperform &mdash; it runs, but falls short. Or it can exist and perform well while sitting outside any oversight check. Each condition takes a different fix: build or buy for an absence, improve the model, the data, or the process for underperformance, add a reviewer or an approval path for a missing check.</p>
+    <p>For each shortfall below, name its condition, then choose the remedy that actually follows from it.</p>
+  </div>
+
+  <div id="items-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my answers</button>
+  <p class="note" id="incomplete-note" hidden>Answer both parts of every shortfall before checking &mdash; its condition, and the remedy that follows from it.</p>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden></div>
+
+</div>
+
+<script>
+(function () {
+  var COND_LABELS = { absent: "Absent", under: "Underperforming", oversight: "Outside oversight" };
+  var COND_ORDER = ["absent", "under", "oversight"];
+  var REMEDY_LABELS = { build: "Build or buy something new", improve: "Improve the model, the data, or the process", oversee: "Add a reviewer, an approval path, or a logging requirement" };
+  var REMEDY_ORDER = ["build", "improve", "oversee"];
+
+  var ITEMS = [
+    {
+      desc: "A supply-planning team's briefing assistant has run daily for eleven months. It absorbed a headcount vacancy for two full quarters without the team's output slipping. It has never gone through intake, and nobody outside the team reviews it.",
+      correctCond: "oversight",
+      correctRemedy: "oversee",
+      condWrongWhy: "This capability exists and it's clearly performing \u2014 it covered a headcount vacancy for two full quarters without the team's output slipping. What's missing isn't the capability or its performance. It's that nobody outside the team has ever reviewed it, a structurally different problem from either of the other two.",
+      remedyMismatchWhy: "The condition is right \u2014 a well-performing capability sitting outside any check. But the fix has to match that: nothing here needs building, since the capability already exists, and nothing needs improving, since the performance is already adequate. It needs a reviewer, an approval path, or a logging requirement \u2014 oversight, specifically.",
+      correctWhy: "Right on both counts. The capability exists and performs well \u2014 covering a vacancy for two quarters is real evidence \u2014 but it sits outside any check, which is the oversight condition, and exactly why the fix is a reviewer or an approval path, not a purchase or a performance fix."
+    },
+    {
+      desc: "A function has wanted an enterprise-wide demand-forecasting model for two years. Nobody has built it, bought it, or piloted any version of it.",
+      correctCond: "absent",
+      correctRemedy: "build",
+      condWrongWhy: "Nothing exists here to underperform or to sit outside a check \u2014 two years of wanting something is not the same as having a version of it running somewhere. This is the plainest of the three conditions: the capability simply isn't there yet.",
+      remedyMismatchWhy: "The condition is right \u2014 nothing has been built or bought. But if nothing exists, there's nothing to improve and nothing to add oversight to. The only fix that matches an absent capability is building or buying one.",
+      correctWhy: "Right. Two years of wanting something with nothing built, bought, or piloted is an absence, plainly, and the only remedy that fits an absence is building or buying the capability in the first place."
+    },
+    {
+      desc: "A warranty-claims assistant was extended from one region to four. Six weeks later it was rolled back to the region where it started, after the other regions' different data conventions caught up with it.",
+      correctCond: "under",
+      correctRemedy: "improve",
+      condWrongWhy: "This capability clearly exists \u2014 it ran across four regions before the rollback \u2014 so it isn't absent. And the rollback happened precisely because someone was watching closely enough to catch the problem in six weeks, so a missing oversight check isn't the story either. What failed was the capability itself, once it left the data it was built on.",
+      remedyMismatchWhy: "The condition is right \u2014 the capability exists and it fell short once the regions' different conventions caught up with it. But nothing here calls for buying something new, and nothing calls for adding a reviewer \u2014 the rollback shows review is already happening. What has to improve is the model, the data, or the process behind it.",
+      correctWhy: "Right. This capability ran, and failed, once the underlying data stopped matching what it was built on \u2014 that's underperformance, not an absence or an oversight gap, and the fix that follows is improving the model, the data, or the process, not buying or adding review."
+    }
+  ];
+
+  var itemsList = document.getElementById('items-list');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var incompleteNote = document.getElementById('incomplete-note');
+
+  function renderItem(item, idx) {
+    var card = document.createElement('div');
+    card.className = 'item-card';
+    var num = document.createElement('p');
+    num.className = 'item-num';
+    num.textContent = 'Shortfall ' + (idx + 1);
+    card.appendChild(num);
+    var desc = document.createElement('p');
+    desc.className = 'item-desc';
+    desc.textContent = item.desc;
+    card.appendChild(desc);
+
+    var condFs = document.createElement('fieldset');
+    var condLegend = document.createElement('legend');
+    condLegend.textContent = 'What condition is this?';
+    condFs.appendChild(condLegend);
+    var condRow = document.createElement('div');
+    condRow.className = 'pill-row';
+    COND_ORDER.forEach(function (val) { condRow.appendChild(makePill('cond-' + idx, val, COND_LABELS[val])); });
+    condFs.appendChild(condRow);
+    card.appendChild(condFs);
+
+    var remFs = document.createElement('fieldset');
+    var remLegend = document.createElement('legend');
+    remLegend.textContent = 'Which remedy follows?';
+    remFs.appendChild(remLegend);
+    var remRow = document.createElement('div');
+    remRow.className = 'pill-row';
+    REMEDY_ORDER.forEach(function (val) { remRow.appendChild(makePill('rem-' + idx, val, REMEDY_LABELS[val])); });
+    remFs.appendChild(remRow);
+    card.appendChild(remFs);
+
+    return card;
+  }
+
+  function makePill(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'pill';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.name = name;
+    input.value = value;
+    input.className = 'pill-input';
+    input.addEventListener('change', function () { feedback.hidden = true; incompleteNote.hidden = true; });
+    var box = document.createElement('span');
+    box.className = 'pill-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    return wrap;
+  }
+
+  function getRadioValue(name) {
+    var radios = document.getElementsByName(name);
+    for (var i = 0; i < radios.length; i++) { if (radios[i].checked) { return radios[i].value; } }
+    return null;
+  }
+
+  ITEMS.forEach(function (item, idx) { itemsList.appendChild(renderItem(item, idx)); });
+
+  checkBtn.addEventListener('click', function () {
+    var results = [];
+    var allAnswered = true;
+    ITEMS.forEach(function (item, idx) {
+      var cond = getRadioValue('cond-' + idx);
+      var rem = getRadioValue('rem-' + idx);
+      if (!cond || !rem) { allAnswered = false; results.push(null); return; }
+      var status, detail;
+      if (cond !== item.correctCond) {
+        status = 'warn';
+        detail = item.condWrongWhy;
+      } else if (rem !== item.correctRemedy) {
+        status = 'near';
+        detail = 'You named the condition right and paired it with ' + REMEDY_LABELS[rem] + '. ' + item.remedyMismatchWhy;
+      } else {
+        status = 'ok';
+        detail = item.correctWhy;
+      }
+      results.push({ status: status, detail: detail });
+    });
+    if (!allAnswered) { incompleteNote.hidden = false; feedback.hidden = true; return; }
+    incompleteNote.hidden = true;
+    feedback.innerHTML = '';
+    results.forEach(function (r, idx) {
+      var block = document.createElement('div');
+      block.className = 'feedback-block fb-block-' + r.status;
+      var tag = document.createElement('span');
+      tag.className = 'fb-tag';
+      tag.textContent = 'Shortfall ' + (idx + 1);
+      block.appendChild(tag);
+      var status = document.createElement('p');
+      status.className = 'fb-status fb-' + r.status;
+      status.textContent = r.status === 'ok' ? 'Correct.' : (r.status === 'near' ? 'Close.' : 'Not yet.');
+      block.appendChild(status);
+      var detail = document.createElement('p');
+      detail.className = 'fb-detail';
+      detail.textContent = r.detail;
+      block.appendChild(detail);
+      feedback.appendChild(block);
+    });
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>

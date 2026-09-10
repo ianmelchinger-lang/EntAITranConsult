@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the stratum</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 10px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item-card { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 18px 20px; margin-bottom: 18px; }
+  .item-num { font-family: var(--font-sans); font-weight: 600; font-size: 0.8rem; color: var(--accent-deep); margin: 0 0 8px; }
+  .item-desc { margin: 0 0 14px; font-size: 1rem; }
+  fieldset { border: none; margin: 0; padding: 0; }
+  legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.85rem; color: var(--ink-soft); padding: 0; margin: 0 0 8px; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { display: inline-block; cursor: pointer; }
+  .pill-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .pill-box { display: block; font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink); border: 1px solid var(--line); border-radius: 20px; padding: 7px 14px; background: var(--paper); }
+  .pill-input:checked + .pill-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--accent-deep); font-weight: 600; }
+  .pill-input:focus-visible + .pill-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 8px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .note { font-family: var(--font-sans); font-size: 0.9rem; color: var(--warn); margin: 10px 0 0; }
+  .note[hidden] { display: none; }
+  .feedback { margin-top: 24px; }
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback-block { padding: 14px 16px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; margin-bottom: 12px; }
+  .feedback-block:last-child { margin-bottom: 0; }
+  .fb-tag { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.78rem; color: var(--steel); margin: 0 0 6px; }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; margin: 0 0 6px; }
+  .fb-ok { color: var(--ok); }
+  .fb-near { color: var(--accent-deep); }
+  .fb-warn { color: var(--warn); }
+  .feedback-block.fb-block-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback-block.fb-block-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback-block.fb-block-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+  @media (max-width: 480px) { .container { padding: 32px 16px 48px; } .item-card { padding: 14px 14px; } .feedback-block { padding: 12px 12px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Find the stratum</h1>
+
+  <p class="lead-line">Two tools can share a license count and still be doing completely different amounts of work.</p>
+
+  <div class="instruction">
+    <p>Placement in a zone says what a system is. It doesn't say how much of the actual work it's taken over, and a map needs both readings. At the first stratum, a person brings the problem and the tool works as a turn-taking thought partner. At the second, a validated problem is handed to a configured workflow that runs it end to end. At the third, the workflow itself is designed around AI, with systems passing work to each other directly.</p>
+    <p>For each system below, choose the stratum its actual use describes &mdash; not the stratum its scale or its license count might suggest.</p>
+  </div>
+
+  <div id="items-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my answers</button>
+  <p class="note" id="incomplete-note" hidden>Choose a stratum for every system before checking.</p>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden></div>
+
+</div>
+
+<script>
+(function () {
+  var STRATA_LABELS = { s1: "Turn-taking thought partner", s2: "Validated workflow, running end to end", s3: "Workflow designed around AI" };
+  var STRATA_ORDER = ["s1", "s2", "s3"];
+
+  var ITEMS = [
+    {
+      desc: "A supply-planning team's briefing assistant drafts a daily summary from the overnight data. Four people read it each morning and decide what to act on themselves.",
+      correct: "s1",
+      near: "s2",
+      correctWhy: "A person reads what the tool produces and decides what to do with it every single day \u2014 nothing here runs without someone reviewing the output before anything happens. That's the turn-taking thought-partner stratum.",
+      nearWhy: "This does hand real work to the tool \u2014 drafting the summary \u2014 so a second-stratum guess isn't unreasonable. But nobody has handed the tool a validated problem to run end to end; four people still read the output and decide what to act on themselves, every day. That keeps this at the first stratum.",
+      wrongWhy: "Four people read this tool's output and decide what to act on themselves, every day. Nothing here runs end to end without a person in the loop, which rules out the more automated strata. This is the first stratum: a thought partner, not a workflow."
+    },
+    {
+      desc: "A maintenance-scheduling tool assigns work orders across two plants on its own. A reviewer checks a sample of its schedules before each shift starts.",
+      correct: "s2",
+      near: "s3",
+      correctWhy: "This runs the actual scheduling on its own across two plants \u2014 already past the back-and-forth of a thought partner. But a reviewer still checks a sample before each shift, which is exactly the validated, end-to-end configured workflow the second stratum describes: trusted to run, but still checked.",
+      nearWhy: "It's reasonable to read \u201Cruns on its own across two plants\u201D as the most automated stratum. But a reviewer still checks a sample of its schedules before each shift \u2014 real oversight, on a real cadence. The third stratum has moved past that kind of built-in review; the second stratum is where a validated workflow still gets one.",
+      wrongWhy: "This tool assigns real schedules across two plants without a person negotiating each one \u2014 well past a thought partner exchanging drafts back and forth. But a reviewer still checks a sample before each shift, which means it hasn't reached the third stratum's designed-around-AI independence either. Second stratum: a validated, configured workflow, still checked."
+    },
+    {
+      desc: "When a customer's order hits an exception, a workflow classifies the issue, drafts and sends the response, and updates the account record. No person approves any of the individual steps.",
+      correct: "s3",
+      near: "s2",
+      correctWhy: "Nobody approves any step here, and the tasks are chained together without a person in between \u2014 classify, draft, send, update, all connected. That's the third stratum: a workflow designed around AI, not just handed to it.",
+      nearWhy: "This does run end to end without a person checking each case, which makes the second stratum a fair guess. But the second stratum still describes a workflow handed to the tool after the fact; here the steps themselves are chained together with no review point anywhere in the sequence. That connective design is what pushes it to the third stratum.",
+      wrongWhy: "This chains four steps together \u2014 classify, draft, send, update \u2014 with nobody approving any of them. That level of unreviewed, connected automation is exactly the third stratum, not the more contained strata beneath it."
+    },
+    {
+      desc: "An enterprise-wide assistant layer has thirty-four hundred licensed seats across every corporate function. Most people who have access use it the way they'd use a search box: ask a question, read the answer, decide what to do next themselves.",
+      correct: "s1",
+      near: "s2",
+      correctWhy: "Thirty-four hundred seats describes who's allowed to open it, not what most of them do with it. The description here \u2014 ask a question, read the answer, decide next steps yourself \u2014 is a thought partner used at scale, still the first stratum no matter how large the license count gets.",
+      nearWhy: "It's a reasonable guess that a tool this widely licensed has been handed real workflows to run. But the description says most users treat it like a search box \u2014 ask, read, decide themselves \u2014 with nothing validated and handed off to run end to end. Scale alone doesn't move a tool to the second stratum.",
+      wrongWhy: "Thirty-four hundred seats is a license count, and a license tells you who's allowed to open a tool, not what they're actually doing with it. The description here is a person asking a question and deciding what to do with the answer \u2014 the plainest version of the first stratum, regardless of how many people have access."
+    }
+  ];
+
+  var itemsList = document.getElementById('items-list');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var incompleteNote = document.getElementById('incomplete-note');
+
+  function renderItem(item, idx) {
+    var card = document.createElement('div');
+    card.className = 'item-card';
+    var num = document.createElement('p');
+    num.className = 'item-num';
+    num.textContent = 'System ' + (idx + 1);
+    card.appendChild(num);
+    var desc = document.createElement('p');
+    desc.className = 'item-desc';
+    desc.textContent = item.desc;
+    card.appendChild(desc);
+    var fieldset = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.textContent = 'Which stratum?';
+    fieldset.appendChild(legend);
+    var row = document.createElement('div');
+    row.className = 'pill-row';
+    STRATA_ORDER.forEach(function (val) {
+      row.appendChild(makePill('stratum-' + idx, val, STRATA_LABELS[val]));
+    });
+    fieldset.appendChild(row);
+    card.appendChild(fieldset);
+    return card;
+  }
+
+  function makePill(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'pill';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.name = name;
+    input.value = value;
+    input.className = 'pill-input';
+    input.addEventListener('change', function () { feedback.hidden = true; incompleteNote.hidden = true; });
+    var box = document.createElement('span');
+    box.className = 'pill-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    return wrap;
+  }
+
+  function getRadioValue(name) {
+    var radios = document.getElementsByName(name);
+    for (var i = 0; i < radios.length; i++) { if (radios[i].checked) { return radios[i].value; } }
+    return null;
+  }
+
+  ITEMS.forEach(function (item, idx) { itemsList.appendChild(renderItem(item, idx)); });
+
+  checkBtn.addEventListener('click', function () {
+    var results = [];
+    var allAnswered = true;
+    ITEMS.forEach(function (item, idx) {
+      var chosen = getRadioValue('stratum-' + idx);
+      if (!chosen) { allAnswered = false; results.push(null); return; }
+      var status, detail;
+      if (chosen === item.correct) { status = 'ok'; detail = item.correctWhy; }
+      else if (item.near && chosen === item.near) { status = 'near'; detail = 'You marked this ' + STRATA_LABELS[chosen] + '. ' + item.nearWhy; }
+      else { status = 'warn'; detail = item.wrongWhy; }
+      results.push({ status: status, detail: detail });
+    });
+    if (!allAnswered) { incompleteNote.hidden = false; feedback.hidden = true; return; }
+    incompleteNote.hidden = true;
+    feedback.innerHTML = '';
+    results.forEach(function (r, idx) {
+      var block = document.createElement('div');
+      block.className = 'feedback-block fb-block-' + r.status;
+      var tag = document.createElement('span');
+      tag.className = 'fb-tag';
+      tag.textContent = 'System ' + (idx + 1);
+      block.appendChild(tag);
+      var status = document.createElement('p');
+      status.className = 'fb-status fb-' + r.status;
+      status.textContent = r.status === 'ok' ? 'Correct.' : (r.status === 'near' ? 'Close.' : 'Not yet.');
+      block.appendChild(status);
+      var detail = document.createElement('p');
+      detail.className = 'fb-detail';
+      detail.textContent = r.detail;
+      block.appendChild(detail);
+      feedback.appendChild(block);
+    });
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>

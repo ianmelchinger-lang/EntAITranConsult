@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pass the gate, find the zone</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 28px;
+  }
+
+  .instruction p {
+    margin: 0 0 10px;
+  }
+
+  .instruction p:last-child {
+    margin-bottom: 0;
+  }
+
+  .item-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+  }
+
+  .item-num {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--accent-deep);
+    margin: 0 0 8px;
+  }
+
+  .item-desc {
+    margin: 0 0 14px;
+    font-size: 1rem;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    padding: 0;
+    margin: 0 0 8px;
+  }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pill {
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .pill-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .pill-box {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 7px 14px;
+    background: var(--paper);
+  }
+
+  .pill-input:checked + .pill-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+
+  .pill-input:focus-visible + .pill-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 8px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .note {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--warn);
+    margin: 10px 0 0;
+  }
+
+  .note[hidden] {
+    display: none;
+  }
+
+  .feedback {
+    margin-top: 24px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback-block {
+    padding: 14px 16px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+
+  .feedback-block:last-child {
+    margin-bottom: 0;
+  }
+
+  .fb-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: var(--steel);
+    margin: 0 0 6px;
+  }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.98rem;
+    margin: 0 0 6px;
+  }
+
+  .fb-ok { color: var(--ok); }
+  .fb-near { color: var(--accent-deep); }
+  .fb-warn { color: var(--warn); }
+
+  .feedback-block.fb-block-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback-block.fb-block-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback-block.fb-block-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item-card { padding: 14px 14px; }
+    .feedback-block { padding: 12px 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Pass the gate, find the zone</h1>
+
+  <p class="lead-line">One question decides whether something belongs on the map at all. A second decides where.</p>
+
+  <div class="instruction">
+    <p>Before anything counts as AI capability, it has to pass one test: does it act on patterns learned from data, or does it execute a rule someone wrote by hand? A fixed rule, however it's marketed, doesn't pass.</p>
+    <p>Whatever does pass lands in one of four nested zones. Machine learning sits at the center. Deep learning is a more specialized form of it, built for messier inputs like images. Generative capability is built on deep learning and produces new content &mdash; a document, a response &mdash; rather than only classifying what it's shown. Agentic capability sits alongside it, distinguished not by more intelligence but by more authority: how much it can do without a person approving each step.</p>
+    <p>For each system below, decide whether it passes the gate, and if it does, which zone fits best.</p>
+  </div>
+
+  <div id="items-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my answers</button>
+  <p class="note" id="incomplete-note" hidden>Choose one answer for every system before checking.</p>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden></div>
+
+</div>
+
+<script>
+(function () {
+  var ZONE_LABELS = {
+    none: "Not AI (rule-following)",
+    ml: "Machine learning",
+    dl: "Deep learning",
+    gen: "Generative",
+    agentic: "Agentic"
+  };
+  var ZONE_ORDER = ["none", "ml", "dl", "gen", "agentic"];
+
+  var ITEMS = [
+    {
+      desc: "A plant's demand-forecasting assistant studies past order patterns and produces next month's forecast. Planners feed it updated numbers each week, and its predictions shift as the pattern in the data shifts.",
+      correct: "ml",
+      near: "dl",
+      correctWhy: "This is a pattern-learning system with no sign of the added machinery deep learning needs \u2014 no images, no audio, no open-ended text generation involved. Plain machine learning, applied to structured numbers, is exactly the class this belongs to.",
+      nearWhy: "It does learn from data, so the gate is passed correctly. But nothing here calls for deep learning specifically \u2014 no images, no unstructured text, none of the layered pattern-finding deep learning adds on top of ordinary machine learning. This is the plainer, more central zone.",
+      wrongWhy: "This system studies past patterns in data and updates its predictions as those patterns shift \u2014 that's the learned-pattern side of the gate, not the rule-following side, and it isn't producing new content or taking any action on its own. It belongs in the ring closest to the center: machine learning."
+    },
+    {
+      desc: "A purchase-order routing tool decides who reviews each order using a fixed table: a new vendor goes to compliance, anything over a stated dollar threshold goes to a director, everything else goes to the requesting manager. The table hasn't changed in three years.",
+      correct: "none",
+      near: null,
+      correctWhy: "Every outcome here traces back to a fixed table someone wrote, not a pattern the system found in data. Nothing has been learned and nothing adapts \u2014 this fails the gate, and counting it as AI capability would be exactly the expensive mislabeling the gate exists to catch.",
+      wrongWhy: "Look at what actually decides the outcome: a table someone wrote three years ago and hasn't touched since. That's a rule a person wrote, executed the same way every time \u2014 the opposite of a system finding patterns in examples. This doesn't pass the gate at all, regardless of which zone felt closest."
+    },
+    {
+      desc: "A camera at the inspection station captures each unit as it passes, and the assistant flags likely defects for a second look. It was trained on thousands of labeled images of past parts, both good and flawed.",
+      correct: "dl",
+      near: "ml",
+      correctWhy: "Recognizing a defect in an image means finding patterns across thousands of pixels arranged thousands of ways \u2014 exactly the layered pattern-finding deep learning adds on top of ordinary machine learning, and exactly why image-based work like this lives in that zone.",
+      nearWhy: "The gate call is right \u2014 this learns from labeled examples rather than following a written rule. But recognizing a defect in an image takes more than plain machine learning offers: it needs the layered pattern-finding built into deep learning to make sense of an image at all. That puts it one ring further in than plain machine learning.",
+      wrongWhy: "This system was trained on thousands of labeled images and now recognizes defects it was never explicitly told to look for \u2014 that's learned pattern-finding, not a written rule, and image-based work like this is exactly what deep learning was built for."
+    },
+    {
+      desc: "The scheduling module is marketed as an &ldquo;AI-powered optimization engine.&rdquo; The support documentation describes what it actually does: it assigns each maintenance work order to whichever technician has been idle longest, in the order the orders arrive.",
+      correct: "none",
+      near: null,
+      correctWhy: "Strip away the marketing and what's left is a fixed rule \u2014 longest-idle technician, orders in arrival sequence \u2014 applied the same way every time. Nothing here was learned from data. The vendor's label doesn't change what the documentation says it does.",
+      wrongWhy: "The label calls this &ldquo;AI-powered,&rdquo; but the documentation describes a fixed assignment rule: longest-idle technician, orders in arrival order. That's a rule a person wrote, not a pattern the system learned. The vendor's language isn't evidence; the described behavior is, and the gate question has to be asked of the behavior, not the marketing."
+    },
+    {
+      desc: "A quality documentation assistant drafts each nonconformance write-up from the inspector's notes. A person reviews every draft, edits where needed, and is the one who files it.",
+      correct: "gen",
+      near: "agentic",
+      correctWhy: "This produces new text \u2014 a written document that didn't exist before \u2014 rather than only sorting or classifying something. That puts it in the generative ring. And a person reviews and files every draft before it goes anywhere, which is exactly the limited authority that keeps a generative tool from being an agentic one.",
+      nearWhy: "This is a deep-learning system that produces new content, so it does sit in the generative-and-agentic part of the map. But it only drafts \u2014 a person reviews every write-up and is the one who files it. Nothing happens here without a person between the draft and the outcome, which is exactly what keeps this generative rather than agentic.",
+      wrongWhy: "This produces a new written document from notes \u2014 not a classification, not a routed rule, but genuinely new content \u2014 and a person reviews and files every draft before it goes anywhere. New content plus a person still in the loop is what generative capability with limited authority looks like."
+    },
+    {
+      desc: "When a customer's order hits an exception, the workflow classifies the issue, drafts the customer response, sends it, and updates the account record \u2014 all without a person approving any of the individual steps.",
+      correct: "agentic",
+      near: "gen",
+      correctWhy: "This doesn't just draft something for a person to send \u2014 it classifies, writes, sends, and updates the record on its own, with nobody approving any step along the way. That's exactly the authority line the map has to mark: this system acts, it doesn't just produce.",
+      nearWhy: "It does generate its own content \u2014 the response it writes \u2014 so the generative call isn't unreasonable. But this system doesn't stop at drafting. It sends the response and updates the record itself, with nobody approving any step. That added authority to act, not just to produce, is what makes this agentic rather than generative.",
+      wrongWhy: "This system classifies the issue, writes the response, sends it, and updates the record, all without a person approving any step \u2014 that's a system acting on its own across multiple steps, which is exactly the added authority that marks the agentic ring."
+    }
+  ];
+
+  var itemsList = document.getElementById('items-list');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var incompleteNote = document.getElementById('incomplete-note');
+
+  function renderItem(item, idx) {
+    var card = document.createElement('div');
+    card.className = 'item-card';
+
+    var num = document.createElement('p');
+    num.className = 'item-num';
+    num.textContent = 'System ' + (idx + 1);
+    card.appendChild(num);
+
+    var desc = document.createElement('p');
+    desc.className = 'item-desc';
+    desc.innerHTML = item.desc;
+    card.appendChild(desc);
+
+    var fieldset = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.textContent = 'Gate and zone';
+    fieldset.appendChild(legend);
+
+    var row = document.createElement('div');
+    row.className = 'pill-row';
+    ZONE_ORDER.forEach(function (val) {
+      row.appendChild(makePill('zone-' + idx, val, ZONE_LABELS[val]));
+    });
+    fieldset.appendChild(row);
+    card.appendChild(fieldset);
+
+    return card;
+  }
+
+  function makePill(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'pill';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.name = name;
+    input.value = value;
+    input.className = 'pill-input';
+    input.addEventListener('change', function () {
+      feedback.hidden = true;
+      incompleteNote.hidden = true;
+    });
+    var box = document.createElement('span');
+    box.className = 'pill-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    return wrap;
+  }
+
+  function getRadioValue(name) {
+    var radios = document.getElementsByName(name);
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { return radios[i].value; }
+    }
+    return null;
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    itemsList.appendChild(renderItem(item, idx));
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var results = [];
+    var allAnswered = true;
+
+    ITEMS.forEach(function (item, idx) {
+      var chosen = getRadioValue('zone-' + idx);
+      if (!chosen) {
+        allAnswered = false;
+        results.push(null);
+        return;
+      }
+
+      var status, detail;
+      if (chosen === item.correct) {
+        status = 'ok';
+        detail = item.correctWhy;
+      } else if (item.near && chosen === item.near) {
+        status = 'near';
+        detail = 'You marked this ' + ZONE_LABELS[chosen] + '. ' + item.nearWhy;
+      } else {
+        status = 'warn';
+        detail = item.wrongWhy;
+      }
+      results.push({ status: status, detail: detail });
+    });
+
+    if (!allAnswered) {
+      incompleteNote.hidden = false;
+      feedback.hidden = true;
+      return;
+    }
+
+    incompleteNote.hidden = true;
+    feedback.innerHTML = '';
+    results.forEach(function (r, idx) {
+      var block = document.createElement('div');
+      block.className = 'feedback-block fb-block-' + r.status;
+
+      var tag = document.createElement('span');
+      tag.className = 'fb-tag';
+      tag.textContent = 'System ' + (idx + 1);
+      block.appendChild(tag);
+
+      var status = document.createElement('p');
+      status.className = 'fb-status fb-' + r.status;
+      status.textContent = r.status === 'ok' ? 'Correct.' : (r.status === 'near' ? 'Close.' : 'Not yet.');
+      block.appendChild(status);
+
+      var detail = document.createElement('p');
+      detail.className = 'fb-detail';
+      detail.textContent = r.detail;
+      block.appendChild(detail);
+
+      feedback.appendChild(block);
+    });
+
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>
