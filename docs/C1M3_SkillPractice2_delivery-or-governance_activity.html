@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delivery or governance?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 28px;
+  }
+
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 14px;
+  }
+
+  .item-text {
+    display: block;
+    width: 100%;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 14px;
+  }
+
+  .item-choices {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .choice {
+    display: block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 14px;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .round-two {
+    margin-top: 40px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+
+  .round-two[hidden] {
+    display: none;
+  }
+
+  .round-two-reveal {
+    margin-top: 20px;
+    padding: 18px 20px;
+    background: var(--highlight-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .round-two-reveal[hidden] {
+    display: none;
+  }
+
+  .round-two-reveal:focus {
+    outline: none;
+  }
+
+  .round-two-reveal p {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+    .round-two-reveal { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Delivery or governance?</h1>
+
+  <p class="lead-line">Delivery artifacts answer what should be built and why. Governance artifacts answer who's accountable for it and how it's watched. Polishing one never produces the other &mdash; a sharper photograph never turns into a receipt.</p>
+
+  <p class="instruction">Each item below is a document this engagement could produce. Sort each one into the question it actually answers: what should be built, or who's accountable for it.</p>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+  <div class="round-two" id="round-two" hidden>
+    <p class="lead-line">Now move one assumption: the same roadmap is rewritten to name an owner and a review cadence for every initiative on it.</p>
+    <p class="instruction">Sort it again.</p>
+    <div class="item">
+      <span class="item-text" id="round-two-text">The roadmap, now naming who owns each initiative and how often it will be reviewed.</span>
+      <div class="item-choices" id="round-two-choices"></div>
+    </div>
+    <button type="button" class="check-btn" id="round-two-btn" disabled>See what happens</button>
+    <div class="round-two-reveal" id="round-two-reveal" tabindex="-1" hidden>
+      <p id="round-two-reveal-text"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var ITEMS = [
+    { text: "A business case for extending the maintenance-scheduling automation to five more plants.", bucket: "delivery",
+      why: "This answers what should be built and why it's worth the spend. It's a delivery question, even though the automation is already running elsewhere." },
+    { text: "A system inventory entry naming the customer-exception workflow, its owner, and the oversight mechanism applied to it.", bucket: "governance",
+      why: "This names who's accountable for a system and how it's watched \u2014 an ownership and oversight record, not a case for building anything." },
+    { text: "A trial report on the visual quality-inspection pilot at one plant, describing what the pilot quarter showed.", bucket: "delivery",
+      why: "A trial report tells the engagement what was learned and what it supports building next. It's delivery, even where the news is that no case is made yet." },
+    { text: "An assignment naming who owns the warranty-claims assistant across all four regions, and who is notified if its behavior drifts.", bucket: "governance",
+      why: "This is exactly what governance is required to answer: who owns the system, and who is watching it. It says nothing about what to build." },
+    { text: "A roadmap sequencing the next set of initiatives across three time horizons.", bucket: "delivery",
+      why: "A roadmap sequences build decisions across time. It still answers what should happen and when, which is delivery, however far out it stretches." },
+    { text: "An operating log of the enterprise assistant layer's usage, retained for audit.", bucket: "governance",
+      why: "An operating log records what happened after something was built, for someone who wasn't in the room. That's the governance record's job, independent of any advisor's method." }
+  ];
+
+  var CORRECT_TEXT = "Right. Everything on the delivery side answers what should be built and why. Everything on the governance side answers who's accountable and how it's being watched. Those are two different questions, not two depths of the same one.";
+  var CRITERION_TEXT = "A document belongs on the delivery side when it argues for or describes a build \u2014 what should happen, and why it's worth doing. It belongs on the governance side when it answers who owns a system and how it's overseen, a question an organization owes independent of any engagement's method.";
+  var FIRST_MOVE_TEXT = "Ask of each document: if it disappeared, would the build case go missing, or would the answer to who's accountable and how it's watched go missing? Whichever question it would leave unanswered names its column.";
+
+  var itemsContainer = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var roundTwo = document.getElementById('round-two');
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    return wrap;
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fieldset = document.createElement('fieldset');
+    fieldset.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fieldset.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    var d = makeChoice('item' + idx, 'delivery', 'Delivery');
+    var g = makeChoice('item' + idx, 'governance', 'Governance');
+    d.querySelector('input').addEventListener('change', updateCheckState);
+    g.querySelector('input').addEventListener('change', updateCheckState);
+    choices.appendChild(d);
+    choices.appendChild(g);
+    fieldset.appendChild(choices);
+    itemsContainer.appendChild(fieldset);
+  });
+
+  function allAnswered() {
+    for (var i = 0; i < ITEMS.length; i++) {
+      if (!document.querySelector('input[name="item' + i + '"]:checked')) { return false; }
+    }
+    return true;
+  }
+
+  function updateCheckState() {
+    checkBtn.disabled = !allAnswered();
+  }
+  updateCheckState();
+
+  function evaluate() {
+    var diffIndices = [];
+    ITEMS.forEach(function (item, idx) {
+      var checked = document.querySelector('input[name="item' + idx + '"]:checked');
+      var val = checked ? checked.value : null;
+      if (val !== item.bucket) { diffIndices.push(idx); }
+    });
+    return diffIndices;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diffIndices = evaluate();
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (diffIndices.length === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_TEXT;
+      roundTwo.hidden = false;
+    } else if (diffIndices.length === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      var item = ITEMS[diffIndices[0]];
+      fbDetail.textContent = 'Look again at: \u201C' + item.text + '\u201D ' + item.why;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+  });
+
+  // Round two \u2014 ungraded. The classification doesn't move; the point is seeing why.
+  var rtChoices = document.getElementById('round-two-choices');
+  var rtBtn = document.getElementById('round-two-btn');
+  var rtReveal = document.getElementById('round-two-reveal');
+  var rtRevealText = document.getElementById('round-two-reveal-text');
+
+  var rtDelivery = makeChoice('round-two-item', 'delivery', 'Delivery');
+  var rtGovernance = makeChoice('round-two-item', 'governance', 'Governance');
+  function updateRoundTwoState() { rtBtn.disabled = !document.querySelector('input[name="round-two-item"]:checked'); }
+  rtDelivery.querySelector('input').addEventListener('change', updateRoundTwoState);
+  rtGovernance.querySelector('input').addEventListener('change', updateRoundTwoState);
+  rtChoices.appendChild(rtDelivery);
+  rtChoices.appendChild(rtGovernance);
+
+  rtBtn.addEventListener('click', function () {
+    rtRevealText.textContent = "Whichever side you picked, the honest answer hasn't moved: this is still delivery. Naming an owner and a review cadence inside the roadmap doesn't convert it into the accountability record an auditor would ask for \u2014 it's still a document arguing for what should be built, now with more detail attached. Governance is a separate question the organization owes on its own terms, not a depth setting on a delivery document.";
+    rtReveal.hidden = false;
+    rtReveal.focus();
+  });
+})();
+</script>
+</body>
+</html>
