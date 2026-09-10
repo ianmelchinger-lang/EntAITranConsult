@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Match the instrument</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 28px;
+  }
+
+  .instruction p {
+    margin: 0 0 10px;
+  }
+
+  .instruction p:last-child {
+    margin-bottom: 0;
+  }
+
+  .item-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+  }
+
+  .item-num {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--accent-deep);
+    margin: 0 0 8px;
+  }
+
+  .item-q {
+    margin: 0 0 10px;
+    font-size: 1rem;
+  }
+
+  .item-used {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 0 0 16px;
+  }
+
+  .item-used strong {
+    color: var(--ink);
+  }
+
+  fieldset {
+    border: none;
+    margin: 0 0 14px;
+    padding: 0;
+  }
+
+  fieldset:last-child {
+    margin-bottom: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    padding: 0;
+    margin: 0 0 8px;
+  }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pill {
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .pill-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .pill-box {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 7px 14px;
+    background: var(--paper);
+  }
+
+  .pill-input:checked + .pill-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+
+  .pill-input:focus-visible + .pill-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .fix-fieldset[hidden] {
+    display: none;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 8px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .note {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--warn);
+    margin: 10px 0 0;
+  }
+
+  .note[hidden] {
+    display: none;
+  }
+
+  .feedback {
+    margin-top: 24px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback-block {
+    padding: 14px 16px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+
+  .feedback-block:last-child {
+    margin-bottom: 0;
+  }
+
+  .fb-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: var(--steel);
+    margin: 0 0 6px;
+  }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.98rem;
+    margin: 0 0 6px;
+  }
+
+  .fb-ok { color: var(--ok); }
+  .fb-near { color: var(--accent-deep); }
+  .fb-warn { color: var(--warn); }
+
+  .feedback-block.fb-block-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback-block.fb-block-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback-block.fb-block-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item-card { padding: 14px 14px; }
+    .feedback-block { padding: 12px 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Match the instrument</h1>
+
+  <p class="lead-line">Three instruments get called &ldquo;the AI inventory&rdquo; inside the same week, and they don't answer the same question.</p>
+
+  <div class="instruction">
+    <p>A capability inventory tracks what one specific capability lets the organization do, and how well it does it. A maturity assessment folds many signals into one score for how ready the organization is, as a whole, to run AI at all. A regulatory register lists only the systems that trigger an external duty, a risk classification, or a reporting requirement &mdash; nothing else.</p>
+    <p>Below, five questions are already paired with an instrument someone reached for. Mark whether the pairing fits. Where it doesn't, say which of the three would actually answer it.</p>
+  </div>
+
+  <div id="items-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my answers</button>
+  <p class="note" id="incomplete-note" hidden>Answer both parts of every question before checking &mdash; match or mismatch, and where you marked mismatch, which instrument fits.</p>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden></div>
+
+</div>
+
+<script>
+(function () {
+  var FIX_LABELS = {
+    inventory: "Capability inventory",
+    maturity: "Maturity assessment",
+    register: "Regulatory register"
+  };
+
+  var ITEMS = [
+    {
+      question: "Which function is furthest behind on usable AI capability, and why?",
+      used: "A maturity-assessment score sitting in the middle of a five-point scale.",
+      correctCall: "mismatch",
+      correctFix: "inventory",
+      wrongCallWhy: "This question names a specific function and asks why it's behind \u2014 a value question about one part of the organization, not a readiness question about the whole. A single aggregate score can't say which function is short, because it never scored any function on its own.",
+      nearWhy: "The question is asking what one function can and can't do, which is exactly a capability inventory's object \u2014 not the whole organization's readiness, and not any system's risk status.",
+      correctWhy: "The question asks about one function's capability, not the whole organization's readiness. Only a capability inventory, built one entry at a time, can say which function is actually short."
+    },
+    {
+      question: "Does the HR shortlisting tool fall under the AI Act's employment-context rules?",
+      used: "The regulatory register.",
+      correctCall: "match",
+      wrongCallWhy: "This one does fit. The question asks whether a specific system triggers an external legal duty \u2014 exactly the object a regulatory register exists to track, regardless of how valuable or well-used the tool is.",
+      correctWhy: "A question about which external rule a system triggers is a risk question, and the regulatory register is built to answer exactly that, independent of the tool's value or performance."
+    },
+    {
+      question: "Are we, overall, more prepared to expand AI safely than we were a year ago?",
+      used: "The capability inventory's eleven entries, read together.",
+      correctCall: "mismatch",
+      correctFix: "maturity",
+      wrongCallWhy: "This is the reverse of the usual mistake, and it's just as costly. Reading separate entries together doesn't produce an organization-wide verdict, because the inventory was never built to fold into one score.",
+      nearWhy: "\u201COverall\u201d and \u201Ca year ago\u201d are both asking for one aggregate answer about the whole organization, which is exactly what a maturity assessment is built to fold into one score.",
+      correctWhy: "\u201COverall\u201d and \u201Ca year ago\u201d are both asking for one aggregate answer about the whole organization. That's a maturity assessment's object, not a list of separate entries."
+    },
+    {
+      question: "What does the supply-planning briefing assistant actually let the team do, and how well does it do it?",
+      used: "A capability-inventory entry.",
+      correctCall: "match",
+      wrongCallWhy: "This one does fit. \u201CWhat does it let us do, and how well\u201d is the capability inventory's exact question, asked about exactly one capability. It doesn't matter that the tool was never sanctioned \u2014 the inventory's job is to catalogue what's actually in use, not only what went through procurement.",
+      correctWhy: "One capability, asked what it delivers and how well it delivers it \u2014 that's the capability inventory's whole object."
+    },
+    {
+      question: "Which document should the compliance owner sign as the audit-ready AI-system register?",
+      used: "The capability-value map, since it already lists every system in one place.",
+      correctCall: "mismatch",
+      correctFix: "register",
+      wrongCallWhy: "Listing every system isn't the same as tracking risk. A capability that's genuinely valuable but triggers no external duty doesn't belong on a register kept for audit defense, and signing the value map as that register merges two documents that need to stay apart.",
+      nearWhy: "This is asking which document is scoped to external duty and reporting \u2014 exactly what a regulatory register is for, not an aggregate readiness score.",
+      correctWhy: "The value map and the register measure different objects \u2014 value and risk. Merging them means the document built for legal defense starts absorbing entries it was never built to survive an audit with."
+    }
+  ];
+
+  var itemsList = document.getElementById('items-list');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var incompleteNote = document.getElementById('incomplete-note');
+
+  function renderItem(item, idx) {
+    var card = document.createElement('div');
+    card.className = 'item-card';
+
+    var num = document.createElement('p');
+    num.className = 'item-num';
+    num.textContent = 'Question ' + (idx + 1);
+    card.appendChild(num);
+
+    var q = document.createElement('p');
+    q.className = 'item-q';
+    q.textContent = item.question;
+    card.appendChild(q);
+
+    var used = document.createElement('p');
+    used.className = 'item-used';
+    var usedLabel = document.createElement('strong');
+    usedLabel.textContent = 'Instrument used: ';
+    used.appendChild(usedLabel);
+    used.appendChild(document.createTextNode(item.used));
+    card.appendChild(used);
+
+    var callFieldset = document.createElement('fieldset');
+    var callLegend = document.createElement('legend');
+    callLegend.textContent = 'Does the instrument fit the question?';
+    callFieldset.appendChild(callLegend);
+
+    var callRow = document.createElement('div');
+    callRow.className = 'pill-row';
+    ['match', 'mismatch'].forEach(function (val) {
+      callRow.appendChild(makePill('call-' + idx, val, val === 'match' ? 'Match' : 'Mismatch', function () {
+        onCallChange(idx);
+      }));
+    });
+    callFieldset.appendChild(callRow);
+    card.appendChild(callFieldset);
+
+    var fixFieldset = document.createElement('fieldset');
+    fixFieldset.className = 'fix-fieldset';
+    fixFieldset.id = 'fix-fieldset-' + idx;
+    fixFieldset.hidden = true;
+    var fixLegend = document.createElement('legend');
+    fixLegend.textContent = 'Which instrument would actually answer this?';
+    fixFieldset.appendChild(fixLegend);
+
+    var fixRow = document.createElement('div');
+    fixRow.className = 'pill-row';
+    ['inventory', 'maturity', 'register'].forEach(function (val) {
+      fixRow.appendChild(makePill('fix-' + idx, val, FIX_LABELS[val], null));
+    });
+    fixFieldset.appendChild(fixRow);
+    card.appendChild(fixFieldset);
+
+    return card;
+  }
+
+  function makePill(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'pill';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.name = name;
+    input.value = value;
+    input.className = 'pill-input';
+    if (onChange) { input.addEventListener('change', onChange); }
+    var box = document.createElement('span');
+    box.className = 'pill-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    return wrap;
+  }
+
+  function onCallChange(idx) {
+    var fixFieldset = document.getElementById('fix-fieldset-' + idx);
+    var chosen = getRadioValue('call-' + idx);
+    fixFieldset.hidden = (chosen !== 'mismatch');
+    if (fixFieldset.hidden) {
+      var radios = document.getElementsByName('fix-' + idx);
+      for (var i = 0; i < radios.length; i++) { radios[i].checked = false; }
+    }
+    feedback.hidden = true;
+    incompleteNote.hidden = true;
+  }
+
+  function getRadioValue(name) {
+    var radios = document.getElementsByName(name);
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { return radios[i].value; }
+    }
+    return null;
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    itemsList.appendChild(renderItem(item, idx));
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var results = [];
+    var allAnswered = true;
+
+    ITEMS.forEach(function (item, idx) {
+      var call = getRadioValue('call-' + idx);
+      var fix = item.correctCall === 'mismatch' && call === 'mismatch' ? getRadioValue('fix-' + idx) : null;
+
+      if (!call || (item.correctCall === 'mismatch' && call === 'mismatch' && !fix)) {
+        allAnswered = false;
+        results.push(null);
+        return;
+      }
+
+      var status, detail;
+      if (call !== item.correctCall) {
+        status = 'warn';
+        detail = item.wrongCallWhy;
+      } else if (item.correctCall === 'match') {
+        status = 'ok';
+        detail = item.correctWhy;
+      } else if (fix === item.correctFix) {
+        status = 'ok';
+        detail = item.correctWhy;
+      } else {
+        status = 'near';
+        detail = 'You marked mismatch, correctly, and pointed to ' + FIX_LABELS[fix] + '. ' + item.nearWhy;
+      }
+      results.push({ status: status, detail: detail });
+    });
+
+    if (!allAnswered) {
+      incompleteNote.hidden = false;
+      feedback.hidden = true;
+      return;
+    }
+
+    incompleteNote.hidden = true;
+    feedback.innerHTML = '';
+    results.forEach(function (r, idx) {
+      var block = document.createElement('div');
+      block.className = 'feedback-block fb-block-' + r.status;
+
+      var tag = document.createElement('span');
+      tag.className = 'fb-tag';
+      tag.textContent = 'Question ' + (idx + 1);
+      block.appendChild(tag);
+
+      var status = document.createElement('p');
+      status.className = 'fb-status fb-' + r.status;
+      status.textContent = r.status === 'ok' ? 'Correct.' : (r.status === 'near' ? 'Close.' : 'Not yet.');
+      block.appendChild(status);
+
+      var detail = document.createElement('p');
+      detail.className = 'fb-detail';
+      detail.textContent = r.detail;
+      block.appendChild(detail);
+
+      feedback.appendChild(block);
+    });
+
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>
