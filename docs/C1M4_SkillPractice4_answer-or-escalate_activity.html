@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yours to answer, or theirs to decide?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 28px;
+  }
+
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 14px;
+  }
+
+  .item-text {
+    display: block;
+    width: 100%;
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 12px;
+  }
+
+  .item-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .choice {
+    display: block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .choice-box {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px 14px;
+    line-height: 1.45;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Yours to answer, or theirs to decide?</h1>
+
+  <p class="lead-line">The line isn't set by how confident you feel. It's set by evidence, scope, and authority &mdash; framing and structure are the advisor's to answer, and a technical, legal, or contractual determination goes to whoever actually holds that authority.</p>
+
+  <p class="instruction">Each question below came up mid-engagement at a multinational manufacturer. For each, pick the response that gets the boundary right &mdash; including, where the right move is to route it elsewhere, actually performing that move rather than dodging or overstepping.</p>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var ITEMS = [
+    {
+      text: "\u201CWhat decision is the maintenance-scheduling pilot actually meant to support once it scales past two plants?\u201D",
+      options: [
+        { value: "a", label: "Name the decision directly \u2014 whether the schedule a reviewer signs off on is defensible at the volume being proposed." },
+        { value: "b", label: "Send it to the maintenance planner. Only the person running the schedule can say what this is for." },
+        { value: "c", label: "Say it's still being worked out and circle back once the vendor's roadmap is clearer." }
+      ],
+      key: "a",
+      why: "This is a framing question \u2014 what the pilot is for \u2014 and naming the decision it serves is squarely the advisor's job. Routing it away treats a question anyone can reason through as if it needed authority it doesn't."
+    },
+    {
+      text: "\u201CShould the review threshold on the scheduling automation be set at three minutes per order, or something tighter?\u201D",
+      options: [
+        { value: "a", label: "Recommend three minutes \u2014 that's what similar reviews elsewhere seem to catch enough at." },
+        { value: "b", label: "Name whoever owns the review design, say the threshold trades catch rate against reviewer capacity in a way only they can weigh, and commit to bringing them the volume numbers this week." },
+        { value: "c", label: "Say you're not sure and leave it with them to figure out." }
+      ],
+      key: "b",
+      why: "This sets an operating parameter that trades catch rate against reviewer time \u2014 a technical configuration call, not a framing one. \u2018Not sure\u2019 isn't the boundary being performed either; naming who owns it, why, and the next step is."
+    },
+    {
+      text: "\u201CWhat would have to be true about the inspection data before a pilot could responsibly move from one plant to five?\u201D",
+      options: [
+        { value: "a", label: "Answer it directly \u2014 naming the evidence a pilot would need before scaling is structural reasoning, not a specialist call." },
+        { value: "b", label: "Route it to the quality engineer, since only someone on the line would know what the data needs to show." },
+        { value: "c", label: "Say that's really a question for whoever built the original pilot." }
+      ],
+      key: "a",
+      why: "What evidence a decision needs is a judgment about evidence standards \u2014 the advisor's own reasoning to do. The quality engineer supplies facts about what the current data shows; naming what a defensible pilot requires is a different job."
+    },
+    {
+      text: "\u201CDoes inspecting product from the EU-facing plants under this configuration trigger a specific AI Act obligation?\u201D",
+      options: [
+        { value: "a", label: "Say probably not, since the system is only advisory and doesn't make the final call." },
+        { value: "b", label: "Name the compliance lead as the one who has to make this call, explain that a regulated interpretation sits outside advisory authority, and commit to bringing them the configuration details this week." },
+        { value: "c", label: "Say it's not clear and leave it open." }
+      ],
+      key: "b",
+      why: "This is a regulated interpretation, and confidence isn't the test that licenses answering it \u2014 authority is. Leaving it open with nothing committed isn't the boundary either; naming who decides and what happens next is the actual move."
+    },
+    {
+      text: "\u201CWhat exactly does the supplier's reference-deployment agreement commit them to if the configuration changes?\u201D",
+      options: [
+        { value: "a", label: "Say the agreement probably still holds, since the core capability hasn't changed." },
+        { value: "b", label: "Name whoever owns the vendor relationship as the one who has to read the actual contract terms, explain that the exact commitment is a legal reading rather than a technical one, and commit to raising it with them before anything changes." },
+        { value: "c", label: "Say you're not sure how vendor contracts work and move on." }
+      ],
+      key: "b",
+      why: "The exact terms of a vendor commitment are a contract question, and \u2018probably\u2019 is an opinion standing in for a reading nobody has done. Moving on isn't holding the boundary \u2014 naming the specialist and the next step is."
+    },
+    {
+      text: "\u201CHow does a demonstration differ from something ready to run against live production data?\u201D",
+      options: [
+        { value: "a", label: "Answer it directly \u2014 this is exactly the kind of explanatory question the advisor exists to answer, no specialist required." },
+        { value: "b", label: "Route it to whoever built the demonstration, since they'd know the technical difference best." },
+        { value: "c", label: "Say it depends on the vendor and wait for them to weigh in." }
+      ],
+      key: "a",
+      why: "This is a conceptual distinction any advisor should explain without deferring. It isn't vendor-specific information, so routing it away dodges ordinary framing work that belongs squarely inside the advisory boundary."
+    }
+  ];
+
+  var CORRECT_TEXT = "Right across the board. Three of these were the advisor's to answer, because they turn on what something means or what evidence it needs \u2014 questions anyone can reason through from what's already known. The other three needed a specific kind of authority the advisor doesn't hold, and the right move each time was the same: name who decides, say why, and commit to a next step \u2014 never a silent handoff, never \u2018I don't know.\u2019";
+  var CRITERION_TEXT = "The line isn't drawn by confidence. A question belongs to the advisor when it's about framing, explanation, or structure. It gets routed away when it turns on a technical configuration trade-off, a legal or regulatory reading, or the exact terms of a vendor commitment \u2014 and even then, routing it means naming who owns it and why, not stepping back.";
+  var FIRST_MOVE_TEXT = "Ask of each question: could a competent advisor reason this through from what's already known, or does answering it require authority \u2014 technical, legal, or contractual \u2014 that sits with someone else? If the first, answer it. If the second, name that person, say why, and commit to what happens next.";
+
+  var itemsContainer = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', updateCheckState);
+    return wrap;
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fieldset = document.createElement('fieldset');
+    fieldset.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fieldset.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    item.options.forEach(function (opt) {
+      choices.appendChild(makeChoice('item' + idx, opt.value, opt.label));
+    });
+    fieldset.appendChild(choices);
+    itemsContainer.appendChild(fieldset);
+  });
+
+  function allAnswered() {
+    for (var i = 0; i < ITEMS.length; i++) {
+      if (!document.querySelector('input[name="item' + i + '"]:checked')) { return false; }
+    }
+    return true;
+  }
+
+  function updateCheckState() {
+    checkBtn.disabled = !allAnswered();
+  }
+
+  function evaluate() {
+    var diffIndices = [];
+    ITEMS.forEach(function (item, idx) {
+      var checked = document.querySelector('input[name="item' + idx + '"]:checked');
+      var val = checked ? checked.value : null;
+      if (val !== item.key) { diffIndices.push(idx); }
+    });
+    return diffIndices;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diffIndices = evaluate();
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (diffIndices.length === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_TEXT;
+    } else if (diffIndices.length === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      var item = ITEMS[diffIndices[0]];
+      fbDetail.textContent = 'Look again at: ' + item.text + ' ' + item.why;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>
