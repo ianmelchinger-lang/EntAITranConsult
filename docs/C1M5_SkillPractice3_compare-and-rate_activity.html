@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compare and rate</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  h2 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ink);
+    margin: 40px 0 6px;
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 22px;
+  }
+
+  .row {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 14px;
+  }
+
+  .row-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--accent-deep);
+    margin: 0 0 10px;
+  }
+
+  .sub {
+    padding: 10px 12px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+  }
+
+  .sub-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.76rem;
+    color: var(--steel);
+    margin: 0 0 2px;
+  }
+
+  .row-choices {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .choice {
+    display: block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 14px;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .next-btn {
+    display: block;
+    margin: 20px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--white);
+    color: var(--accent-deep);
+    border: 2px solid var(--accent-deep);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .next-btn[hidden] { display: none; }
+
+  .next-btn:hover {
+    background: var(--highlight-bg);
+  }
+
+  .next-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .pass2 {
+    margin-top: 6px;
+  }
+
+  .pass2[hidden] { display: none; }
+
+  .pass2:focus { outline: none; }
+
+  .feedback {
+    margin-top: 20px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0 0 12px;
+  }
+
+  .fb-detail:last-child { margin-bottom: 0; }
+
+  .fb-rating {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink);
+    line-height: 1.55;
+    margin: 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  .fb-rating[hidden] { display: none; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .row { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Compare and rate</h1>
+
+  <p class="lead-line">The same evidence can support a confident answer for one client and nothing at all for another, without a word of the evidence changing. What changes is the fit.</p>
+
+  <p class="instruction">Below are the conditions the vendor's demonstration actually established, next to a description of one after-sales function's real conditions. Mark each dimension as matched, unmatched, or unknown.</p>
+
+  <div id="pass1-rows"></div>
+
+  <button type="button" class="check-btn" id="check-btn-1" disabled>Check my comparison</button>
+
+  <div class="feedback" id="feedback-1" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status-1"></p>
+    <p class="fb-detail" id="fb-detail-1"></p>
+    <p class="fb-rating" id="fb-rating-1" hidden></p>
+  </div>
+
+  <button type="button" class="next-btn" id="next-btn" hidden>See it with new evidence</button>
+
+  <div class="pass2" id="pass2" tabindex="-1" hidden>
+    <h2>New evidence has arrived</h2>
+    <p class="instruction">Instead of the vendor's demonstration, the after-sales operations lead ran the same assistant, in an untuned setup, against a full month of her team's actual tickets, for eleven days, before stopping it. Compare again.</p>
+
+    <div id="pass2-rows"></div>
+
+    <button type="button" class="check-btn" id="check-btn-2" disabled>Check my comparison</button>
+
+    <div class="feedback" id="feedback-2" tabindex="-1" hidden>
+      <p class="fb-status" id="fb-status-2"></p>
+      <p class="fb-detail" id="fb-detail-2"></p>
+      <p class="fb-rating" id="fb-rating-2" hidden></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var BUCKETS = [
+    { id: "matched", label: "Matched" },
+    { id: "unmatched", label: "Unmatched" },
+    { id: "unknown", label: "Unknown" }
+  ];
+
+  var PASS1 = [
+    { id: "sample", label: "Sample", evidenceLabel: "Demonstrated conditions", evidenceText: "A folder of tickets the after-sales team prepared in advance.",
+      clientText: "A live queue that includes forwarded threads, duplicates, and tickets missing basic fields.",
+      bucket: "unmatched", why: "A folder assembled ahead of time is not the same object as a live queue nobody curated. The demonstration's sample and the client's real intake are different things wearing the same word." },
+    { id: "success", label: "Definition of success", evidenceLabel: "Demonstrated conditions", evidenceText: "Nothing was flagged wrong by the eleven people watching the screen.",
+      clientText: "Whatever the ordinary reviewer, working alone between other tasks, would actually catch or miss.",
+      bucket: "unmatched", why: "Eleven attentive people watching a screen for ninety minutes is a stricter and stranger test than the one ordinary review would ever apply. Nothing flagged under that scrutiny is not the same finding as held up under normal review." },
+    { id: "volume", label: "Volume & task mix", evidenceLabel: "Demonstrated conditions", evidenceText: "Not stated.",
+      clientText: "On the order of forty thousand tickets a year, with a third arriving in non-standard formats.",
+      bucket: "unknown", why: "The demonstration never said how many tickets it covered or how varied they were. You can't compare a stated figure against one that was never given \u2014 you can only mark the comparison as open." },
+    { id: "oversight", label: "Oversight", evidenceLabel: "Demonstrated conditions", evidenceText: "Eleven dedicated watchers, present for the full session.",
+      clientText: "A reviewer with two or three minutes per ticket, fit in around other duties.",
+      bucket: "unmatched", why: "The demonstration's oversight level \u2014 a room full of people with nothing else to do but watch \u2014 has no relationship to what a single reviewer can sustain at real volume." },
+    { id: "time", label: "Time window", evidenceLabel: "Demonstrated conditions", evidenceText: "One sitting, ninety minutes.",
+      clientText: "A commitment being discussed in years, not minutes.",
+      bucket: "unmatched", why: "Ninety minutes, however clean, is not evidence about what holds up over months of ordinary operation." }
+  ];
+
+  var PASS2 = [
+    { id: "sample", label: "Sample", evidenceLabel: "New evidence", evidenceText: "A full month of the team's own live tickets, not a prepared folder.",
+      clientText: "A live queue that includes forwarded threads, duplicates, and tickets missing basic fields.",
+      bucket: "matched", why: "This time the sample is the real thing \u2014 the actual queue, not a folder assembled to look good." },
+    { id: "success", label: "Definition of success", evidenceLabel: "New evidence", evidenceText: "Not stated beyond: she stopped it on day eleven.",
+      clientText: "Whatever the ordinary reviewer, working alone between other tasks, would actually catch or miss.",
+      bucket: "unknown", why: "We know she stopped the trial. We don't know what threshold she was applying when she did. That's still an open question, not a match." },
+    { id: "volume", label: "Volume & task mix", evidenceLabel: "New evidence", evidenceText: "A full month's worth of the team's real ticket mix.",
+      clientText: "On the order of forty thousand tickets a year, with a third arriving in non-standard formats.",
+      bucket: "matched", why: "A live month of the actual queue is close enough to the client's own description of its ticket mix to count as a real match, even though eleven days is short." },
+    { id: "oversight", label: "Oversight", evidenceLabel: "New evidence", evidenceText: "An untuned configuration, run without anyone adjusting it as problems appeared.",
+      clientText: "A reviewer with two or three minutes per ticket, fit in around other duties.",
+      bucket: "unmatched", why: "Untuned and unattended is a different condition from a reviewer actively working the output, even a rushed one. This still isn't the oversight level the client would actually run." },
+    { id: "time", label: "Time window", evidenceLabel: "New evidence", evidenceText: "Eleven days, then stopped.",
+      clientText: "A commitment being discussed in years, not minutes.",
+      bucket: "unmatched", why: "Eleven days is real operating time, which is more than the demonstration offered \u2014 but it's still nowhere near the horizon of a multi-year commitment." }
+  ];
+
+  var CRITERION_TEXT = "A dimension is matched when the evidence's own conditions and the client's real conditions are close enough to trust the transfer. It's unmatched when the two clearly differ. It's unknown when the evidence never said enough on that dimension to compare against anything.";
+  var FIRST_MOVE_TEXT = "For each row, ask: do I actually know both sides well enough to compare them? If one side was never stated, the honest answer is unknown, not a guess in either direction.";
+
+  var PASS1_CORRECT = "Right. Zero of five dimensions match. That's not a harsh reading \u2014 it's what the numbers show once they're actually compared, and it's why the honest rating here is not yet: this claim, on this evidence, hasn't earned a confident answer for this client. Not yet is a complete and defensible answer on its own.";
+  var PASS1_RATING = "Zero matched dimensions out of five. The licensed rating: not yet.";
+
+  var PASS2_CORRECT = "Right. Two of five now match, one is still open, and two still don't. That's real movement \u2014 the same client, the same commitment on the table, and a better answer than before, because better evidence arrived. It still isn't a proceed. Two matched dimensions out of five earns a narrower answer: pilot something bounded and named, not the full rollout the board pack assumed. Nothing about the client changed between the two passes. What changed is what was actually measured.";
+  var PASS2_RATING = "Two matched dimensions out of five. The licensed rating: narrow \u2014 not proceed, and no longer flatly not yet either.";
+
+  function renderRows(containerId, data, passKey) {
+    var container = document.getElementById(containerId);
+    data.forEach(function (row, idx) {
+      var el = document.createElement('fieldset');
+      el.className = 'row';
+
+      var legend = document.createElement('legend');
+      legend.className = 'row-label';
+      legend.textContent = row.label;
+      el.appendChild(legend);
+
+      var evSub = document.createElement('div');
+      evSub.className = 'sub';
+      var evLabel = document.createElement('span');
+      evLabel.className = 'sub-label';
+      evLabel.textContent = row.evidenceLabel + ':';
+      var evText = document.createElement('span');
+      evText.textContent = row.evidenceText;
+      evSub.appendChild(evLabel);
+      evSub.appendChild(evText);
+      el.appendChild(evSub);
+
+      var clSub = document.createElement('div');
+      clSub.className = 'sub';
+      var clLabel = document.createElement('span');
+      clLabel.className = 'sub-label';
+      clLabel.textContent = "This client's conditions:";
+      var clText = document.createElement('span');
+      clText.textContent = row.clientText;
+      clSub.appendChild(clLabel);
+      clSub.appendChild(clText);
+      el.appendChild(clSub);
+
+      var choices = document.createElement('div');
+      choices.className = 'row-choices';
+      BUCKETS.forEach(function (b) {
+        var wrap = document.createElement('label');
+        wrap.className = 'choice';
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.className = 'choice-input';
+        input.name = passKey + idx;
+        input.value = b.id;
+        input.addEventListener('change', function () { updateCheckState(passKey); });
+        var box = document.createElement('span');
+        box.className = 'choice-box';
+        box.textContent = b.label;
+        wrap.appendChild(input);
+        wrap.appendChild(box);
+        choices.appendChild(wrap);
+      });
+      el.appendChild(choices);
+
+      container.appendChild(el);
+    });
+  }
+
+  renderRows('pass1-rows', PASS1, 'p1-');
+  renderRows('pass2-rows', PASS2, 'p2-');
+
+  function allAnswered(data, passKey) {
+    for (var i = 0; i < data.length; i++) {
+      if (!document.querySelector('input[name="' + passKey + i + '"]:checked')) { return false; }
+    }
+    return true;
+  }
+
+  function updateCheckState(passKey) {
+    if (passKey === 'p1-') {
+      document.getElementById('check-btn-1').disabled = !allAnswered(PASS1, 'p1-');
+    } else {
+      document.getElementById('check-btn-2').disabled = !allAnswered(PASS2, 'p2-');
+    }
+  }
+
+  function evaluate(data, passKey) {
+    var diffIndices = [];
+    data.forEach(function (row, idx) {
+      var checked = document.querySelector('input[name="' + passKey + idx + '"]:checked');
+      var val = checked ? checked.value : null;
+      if (val !== row.bucket) { diffIndices.push(idx); }
+    });
+    return diffIndices;
+  }
+
+  function wireCheck(btnId, feedbackId, statusId, detailId, ratingId, data, passKey, correctText, ratingText, onCorrect) {
+    var btn = document.getElementById(btnId);
+    var feedback = document.getElementById(feedbackId);
+    var status = document.getElementById(statusId);
+    var detail = document.getElementById(detailId);
+    var rating = document.getElementById(ratingId);
+
+    btn.addEventListener('click', function () {
+      var diffIndices = evaluate(data, passKey);
+      feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+      rating.hidden = true;
+
+      if (diffIndices.length === 0) {
+        feedback.classList.add('fb-ok');
+        status.textContent = 'Correct.';
+        detail.textContent = correctText;
+        rating.textContent = ratingText;
+        rating.hidden = false;
+        if (onCorrect) { onCorrect(); }
+      } else if (diffIndices.length === 1) {
+        feedback.classList.add('fb-near');
+        status.textContent = 'Close.';
+        var row = data[diffIndices[0]];
+        detail.textContent = 'Look again at: ' + row.label + '. ' + row.why;
+      } else {
+        feedback.classList.add('fb-warn');
+        status.textContent = 'Not yet.';
+        detail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+      }
+
+      feedback.hidden = false;
+      feedback.focus();
+    });
+  }
+
+  var nextBtn = document.getElementById('next-btn');
+  var pass2El = document.getElementById('pass2');
+
+  wireCheck('check-btn-1', 'feedback-1', 'fb-status-1', 'fb-detail-1', 'fb-rating-1', PASS1, 'p1-', PASS1_CORRECT, PASS1_RATING, function () {
+    nextBtn.hidden = false;
+  });
+
+  wireCheck('check-btn-2', 'feedback-2', 'fb-status-2', 'fb-detail-2', 'fb-rating-2', PASS2, 'p2-', PASS2_CORRECT, PASS2_RATING, null);
+
+  nextBtn.addEventListener('click', function () {
+    pass2El.hidden = false;
+    nextBtn.hidden = true;
+    pass2El.focus();
+  });
+})();
+</script>
+</body>
+</html>

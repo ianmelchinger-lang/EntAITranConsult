@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name the interest</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 24px;
+  }
+
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 14px;
+  }
+
+  .item-speaker {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--accent-deep);
+    margin: 0 0 6px;
+  }
+
+  .item-text {
+    display: block;
+    width: 100%;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 14px;
+  }
+
+  .item-choices {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .choice {
+    display: block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 7px 11px;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Name the interest</h1>
+
+  <p class="lead-line">Naming who benefits if a statement is believed isn't an accusation. It's the first thing to check &mdash; on a claim and on any dismissal of one, before either gets to count as evidence.</p>
+
+  <p class="instruction">Each statement below was actually said by someone in this engagement. For each one, decide who benefits if it's believed.</p>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var CHOICES = [
+    { id: "vendor", label: "The vendor" },
+    { id: "sponsor", label: "The sponsoring executive" },
+    { id: "practitioner", label: "A competing practitioner" },
+    { id: "noparty", label: "No single party clearly" }
+  ];
+
+  var ITEMS = [
+    { speaker: "The vendor's account executive:", text: "It runs in production at two of our accounts today, and nothing failed in front of eleven people.", bucket: "vendor",
+      why: "He's accountable for a number this quarter and a reference customer for the next sale. Naming that isn't calling him dishonest \u2014 it's naming why the conditions he chose to show are the conditions that make the product look best." },
+    { speaker: "The sponsoring executive:", text: "The coverage figure is solid \u2014 it's from a study everyone in my peer group cites.", bucket: "sponsor",
+      why: "She's already defended this number to a board once. Believing the figure protects a decision she can't easily unwind, which is exactly why her account of it deserves the same read-back as the vendor's." },
+    { speaker: "A practitioner, in industry forums, whose own consulting work competes with this category of tool:", text: "Anyone quoting that pilot-failure study doesn't know what they're talking about \u2014 in my experience these things don't hold up.", bucket: "practitioner",
+      why: "He sells services that this category of tool would reduce demand for. A dismissal from someone with that stake needs a methodology behind it too, and this one offers none \u2014 which fails the identical test the vendor's unsupported claim fails." },
+    { speaker: "Three operations leads at three unrelated manufacturers, none of them selling anything, each describing their own trial:", text: "We ran it on our own queue for a month, independently of the other two, and here's what we found.", bucket: "noparty",
+      why: "None of the three has a stake in what the others found, and each ran their own measurement rather than repeating someone else's. That's what makes three of these worth more than one study quoted three times." }
+  ];
+
+  var CORRECT_TEXT = "Right. The vendor and the sponsoring executive each have a stake in the claim being believed strong enough that naming it isn't optional. The practitioner's dismissal fails the same way \u2014 a stake, and no methodology to back it up. The three operations leads have no shared stake in each other's results, and each ran an independent measurement, which is exactly why their agreement is worth more than one study repeated three times.";
+  var CRITERION_TEXT = "A statement carries an interested party when believing it protects or advances something the speaker is accountable for \u2014 a quota, a defended number, a book of business \u2014 whether or not the statement is also true. A statement without a clear single interested party is usually one where several independent people measured something themselves and had nothing riding on agreeing with each other.";
+  var FIRST_MOVE_TEXT = "Ask what the speaker is accountable for, separately from whether they're right. If believing the statement protects that thing, name them as the interested party \u2014 that's not an accusation, it's a fact about who chose what to show.";
+
+  var itemsContainer = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', updateCheckState);
+    return wrap;
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fieldset = document.createElement('fieldset');
+    fieldset.className = 'item';
+    var speaker = document.createElement('span');
+    speaker.className = 'item-speaker';
+    speaker.textContent = item.speaker;
+    fieldset.appendChild(speaker);
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = '\u201C' + item.text + '\u201D';
+    fieldset.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    CHOICES.forEach(function (c) {
+      choices.appendChild(makeChoice('item' + idx, c.id, c.label));
+    });
+    fieldset.appendChild(choices);
+    itemsContainer.appendChild(fieldset);
+  });
+
+  function allAnswered() {
+    for (var i = 0; i < ITEMS.length; i++) {
+      if (!document.querySelector('input[name="item' + i + '"]:checked')) { return false; }
+    }
+    return true;
+  }
+
+  function updateCheckState() {
+    checkBtn.disabled = !allAnswered();
+  }
+
+  function evaluate() {
+    var diffIndices = [];
+    ITEMS.forEach(function (item, idx) {
+      var checked = document.querySelector('input[name="item' + idx + '"]:checked');
+      var val = checked ? checked.value : null;
+      if (val !== item.bucket) { diffIndices.push(idx); }
+    });
+    return diffIndices;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diffIndices = evaluate();
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (diffIndices.length === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_TEXT;
+    } else if (diffIndices.length === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      var item = ITEMS[diffIndices[0]];
+      fbDetail.textContent = 'Look again at: \u201C' + item.text + '\u201D ' + item.why;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>

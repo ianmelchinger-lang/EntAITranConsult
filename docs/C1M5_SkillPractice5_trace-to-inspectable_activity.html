@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trace to inspectable</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  h2 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--ink);
+    margin: 36px 0 6px;
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 22px;
+  }
+
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 12px;
+  }
+
+  .item-text {
+    display: block;
+    width: 100%;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 14px;
+  }
+
+  .item-choices {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .choice {
+    display: block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 14px;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 28px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback-block {
+    padding: 16px 18px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+
+  .feedback-block:last-child {
+    margin-bottom: 0;
+  }
+
+  .fb-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--steel);
+    margin: 0 0 6px;
+  }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok { color: var(--ok); }
+  .fb-near { color: var(--accent-deep); }
+  .fb-warn { color: var(--warn); }
+
+  .feedback-block.fb-block-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback-block.fb-block-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback-block.fb-block-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback-block { padding: 14px 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Trace to inspectable</h1>
+
+  <p class="lead-line">Not all evidence about a system is the same kind of thing. A real screen running on records you recognize answers a different question than a report of someone else's conclusion does &mdash; and no number of the second kind adds up to the first.</p>
+
+  <h2>Part 1 &middot; What's actually on file</h2>
+  <p class="instruction">Below are five things currently on record about the vendor's assistant. Sort each into what it actually is.</p>
+
+  <div id="items-a"></div>
+
+  <h2>Part 2 &middot; What would change that</h2>
+  <p class="instruction">Given that nothing on file is inspectable yet, which single request would actually produce inspectable evidence?</p>
+
+  <div id="items-b"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <div class="feedback-block" id="fb-block-a">
+      <span class="fb-tag">What's on file</span>
+      <p class="fb-status" id="fb-status-a"></p>
+      <p class="fb-detail" id="fb-detail-a"></p>
+    </div>
+    <div class="feedback-block" id="fb-block-b">
+      <span class="fb-tag">What would change it</span>
+      <p class="fb-status" id="fb-status-b"></p>
+      <p class="fb-detail" id="fb-detail-b"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var CHOICES_A = [
+    { id: "inspectable", label: "Inspectable" },
+    { id: "report", label: "Report of a conclusion" }
+  ];
+
+  var ITEMS_A = [
+    { text: "A recording of the ninety-minute vendor demonstration, run on a folder the vendor's implementation partner and the client's team prepared together in advance.", bucket: "report",
+      why: "It's real footage of a real system, which makes it tempting to call inspectable. But the folder was selected and the session was run entirely on the vendor's terms \u2014 it's a report of what the vendor chose to show, not something the client directed." },
+    { text: "A case study describing another account's handling time dropping after it adopted the same assistant.", bucket: "report",
+      why: "This reports someone else's outcome, measured under conditions the client has no way to see \u2014 what the baseline period was, how long after launch it was measured, whether that account looks anything like this one." },
+    { text: "The percentage cited in the board pack, drawn from a study of enterprise AI outcomes that nobody in the room has actually read.", bucket: "report",
+      why: "This is several steps removed from any original measurement \u2014 a figure that reached the board pack through repetition, not through anyone here checking how it was produced." },
+    { text: "A one-line note in a status report, stating that the operations lead's own trial ran for eleven days before she stopped it.", bucket: "report",
+      why: "The trial itself, watched directly, would have been close to inspectable. A single line summarizing it after the fact is a report about the trial, not the trial." },
+    { text: "Reference call notes describing two other named accounts running the assistant in production, both configured by the vendor's own implementation team.", bucket: "report",
+      why: "Two accounts, both set up by the vendor rather than run independently, reporting back through a call rather than through anything the client watched happen." }
+  ];
+
+  var ITEMS_B = [
+    { text: "Ask the vendor for two more reference accounts.", correct: false,
+      why: "More reports, however many, still don't become something the client can watch happen. This adds volume to what's already on file, not a new kind of evidence." },
+    { text: "Ask the vendor to run the assistant live on a folder the after-sales team selects that week, with every intermediate step visible on screen.", correct: true,
+      why: "This is the one request that would produce something the client actually directed and can watch happen \u2014 the definition of inspectable, not just a stronger report." },
+    { text: "Ask for the full methodology behind the case study's headline figure.", correct: false,
+      why: "Worth asking, and it would make that one report more honest about its limits. It still wouldn't be something the client can watch happen on its own records." }
+  ];
+
+  var CORRECT_A = "Right. Every one of these is a report of a conclusion someone else reached, including the recording \u2014 a video of the real system is still a report of what the vendor chose to show, not something the client directed. None of them is weaker evidence of the inspectable kind. They're a different kind of thing, and stacking up more of them doesn't change that.";
+  var CRITERION_A = "Something counts as inspectable only when the client chose what it ran on and can see the steps happen, not just the finished result. Everything else \u2014 however real, however specific, however many accounts it names \u2014 is a report of a conclusion reached under conditions the client didn't set and can't fully see.";
+  var FIRST_MOVE_A = "Ask who chose what this ran on. If the answer is anyone other than the client, it's a report, no matter how it's packaged.";
+
+  var CORRECT_B = "Right. Asking the vendor to run the assistant on records the client selects, with the steps visible, is the one request that produces something inspectable rather than another report.";
+  var WRONG_B_PREFIX = "Not quite. ";
+
+  var itemsAContainer = document.getElementById('items-a');
+  var itemsBContainer = document.getElementById('items-b');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', updateCheckState);
+    return wrap;
+  }
+
+  ITEMS_A.forEach(function (item, idx) {
+    var fieldset = document.createElement('fieldset');
+    fieldset.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fieldset.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    CHOICES_A.forEach(function (c) {
+      choices.appendChild(makeChoice('a' + idx, c.id, c.label));
+    });
+    fieldset.appendChild(choices);
+    itemsAContainer.appendChild(fieldset);
+  });
+
+  var bFieldset = document.createElement('fieldset');
+  bFieldset.className = 'item';
+  var bLegend = document.createElement('legend');
+  bLegend.className = 'item-text';
+  bLegend.textContent = 'Choose one:';
+  bFieldset.appendChild(bLegend);
+  ITEMS_B.forEach(function (item, idx) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    wrap.style.display = 'block';
+    wrap.style.marginBottom = '10px';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = 'b';
+    input.value = String(idx);
+    input.addEventListener('change', updateCheckState);
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.style.display = 'block';
+    box.style.fontWeight = '400';
+    box.style.whiteSpace = 'normal';
+    box.style.lineHeight = '1.4';
+    box.textContent = item.text;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    bFieldset.appendChild(wrap);
+  });
+  itemsBContainer.appendChild(bFieldset);
+
+  function allAnswered() {
+    for (var i = 0; i < ITEMS_A.length; i++) {
+      if (!document.querySelector('input[name="a' + i + '"]:checked')) { return false; }
+    }
+    if (!document.querySelector('input[name="b"]:checked')) { return false; }
+    return true;
+  }
+
+  function updateCheckState() {
+    checkBtn.disabled = !allAnswered();
+  }
+
+  function evaluateA() {
+    var diffIndices = [];
+    ITEMS_A.forEach(function (item, idx) {
+      var checked = document.querySelector('input[name="a' + idx + '"]:checked');
+      var val = checked ? checked.value : null;
+      if (val !== item.bucket) { diffIndices.push(idx); }
+    });
+    return diffIndices;
+  }
+
+  function evaluateB() {
+    var checked = document.querySelector('input[name="b"]:checked');
+    var idx = checked ? parseInt(checked.value, 10) : -1;
+    return ITEMS_B[idx] && ITEMS_B[idx].correct;
+  }
+
+  function renderFeedbackA(diffIndices) {
+    var block = document.getElementById('fb-block-a');
+    var statusEl = document.getElementById('fb-status-a');
+    var detailEl = document.getElementById('fb-detail-a');
+    block.classList.remove('fb-block-ok', 'fb-block-near', 'fb-block-warn');
+    statusEl.className = 'fb-status';
+
+    if (diffIndices.length === 0) {
+      statusEl.textContent = 'Correct.';
+      statusEl.classList.add('fb-ok');
+      block.classList.add('fb-block-ok');
+      detailEl.textContent = CORRECT_A;
+    } else if (diffIndices.length === 1) {
+      statusEl.textContent = 'Close.';
+      statusEl.classList.add('fb-near');
+      block.classList.add('fb-block-near');
+      var item = ITEMS_A[diffIndices[0]];
+      detailEl.textContent = 'Look again at: \u201C' + item.text + '\u201D ' + item.why;
+    } else {
+      statusEl.textContent = 'Not yet.';
+      statusEl.classList.add('fb-warn');
+      block.classList.add('fb-block-warn');
+      detailEl.textContent = CRITERION_A + ' ' + FIRST_MOVE_A;
+    }
+  }
+
+  function renderFeedbackB(isCorrect) {
+    var block = document.getElementById('fb-block-b');
+    var statusEl = document.getElementById('fb-status-b');
+    var detailEl = document.getElementById('fb-detail-b');
+    block.classList.remove('fb-block-ok', 'fb-block-near', 'fb-block-warn');
+    statusEl.className = 'fb-status';
+
+    var checked = document.querySelector('input[name="b"]:checked');
+    var idx = checked ? parseInt(checked.value, 10) : -1;
+
+    if (isCorrect) {
+      statusEl.textContent = 'Correct.';
+      statusEl.classList.add('fb-ok');
+      block.classList.add('fb-block-ok');
+      detailEl.textContent = CORRECT_B;
+    } else {
+      statusEl.textContent = 'Not yet.';
+      statusEl.classList.add('fb-warn');
+      block.classList.add('fb-block-warn');
+      detailEl.textContent = WRONG_B_PREFIX + (ITEMS_B[idx] ? ITEMS_B[idx].why : '') + ' ' + ITEMS_B[1].why;
+    }
+  }
+
+  checkBtn.addEventListener('click', function () {
+    renderFeedbackA(evaluateA());
+    renderFeedbackB(evaluateB());
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>
