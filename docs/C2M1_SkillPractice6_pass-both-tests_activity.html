@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Real, fundable, both, or neither yet?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 28px;
+  }
+
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 14px;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .item.moved { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+
+  .item-text {
+    display: block;
+    width: 100%;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 14px;
+  }
+
+  .item-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 10px;
+  }
+
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .choice-input:disabled + .choice-box { opacity: 0.6; cursor: not-allowed; }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+  .second-pass { margin-top: 28px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  .second-pass[hidden] { display: none; }
+
+  .second-pass-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin: 0 0 10px;
+  }
+
+  .second-pass-btn {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 10px 18px;
+    background: var(--white);
+    color: var(--ink);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .second-pass-btn:hover { background: var(--highlight-bg); }
+  .second-pass-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .second-pass-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .second-pass-note { margin-top: 14px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; }
+  .second-pass-note[hidden] { display: none; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Real, fundable, both, or neither yet?</h1>
+
+  <p class="lead-line">Bottom-up discovery finds what is real. Top-down discovery finds what is fundable. A candidate that has passed only one of those two tests is probably not ready yet &mdash; and that's a finding, not a failure of the search.</p>
+
+  <p class="instruction">For each candidate, ask both questions separately: would the person doing the work confirm this is real, and can a budget-holder name the value in the business's own terms? Sort each one by what it's actually passed.</p>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+  <div class="second-pass" id="second-pass" hidden>
+    <span class="second-pass-label">One thing moves</span>
+    <button type="button" class="second-pass-btn" id="second-pass-btn">See what happens after one conversation</button>
+    <p class="second-pass-note" id="second-pass-note" hidden>A planner on the supply-chain team is asked directly about the visibility priority, and confirms: yes, this is what eats her week. That one conversation moves the third candidate into the ready quadrant &mdash; the top-down case didn't change at all. That's the whole value of running both tests separately: each one can close on its own, whenever the missing evidence actually shows up.</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var BUCKETS = [
+    { value: "both", label: "Passes both \u2014 ready" },
+    { value: "bottom-only", label: "Real, not yet fundable" },
+    { value: "top-only", label: "Fundable, not yet confirmed real" },
+    { value: "neither", label: "Neither yet" }
+  ];
+
+  var ITEMS = [
+    { text: "A supplier-nonconformance drafting assistant is live at three plants, the quality engineers who use it every day say it's cut real time off their week, and a funding committee has already approved extending it to three more plants because the case for its value was clear.",
+      bucket: "both",
+      why: "Both tests are already passed here. The people who use it every day confirm the pain was real, and a funding committee has already agreed the value is clear enough to extend it. This is what \u2018ready\u2019 looks like." },
+    { text: "A document-drafting tool, built by one team for itself, has spread to several other groups over four months with no plan behind it. Nobody has yet stood up in a funding conversation and said what it's worth to the business.",
+      bucket: "bottom-only",
+      why: "This clearly passes the bottom-up test \u2014 the spread itself, unplanned and unrequested, is the strongest evidence of real use there is. It hasn't passed the top-down test yet, because nobody has argued its value in terms the business would recognize." },
+    { text: "The enterprise strategy group has named supply-chain visibility as a clear priority for the year and can point to the exact revenue exposure a delay creates. Nobody on the supply-planning team has yet said this is the problem eating their actual hours.",
+      bucket: "top-only",
+      why: "This is the reverse: strategy has already named the priority and can point to a number, which is a top-down case. But nobody has actually asked the people doing the work whether this is the problem that costs them the most \u2014 so it hasn't cleared the bottom-up test yet." },
+    { text: "A team proposes an AI-generated newsletter for the plant cafeteria's weekly menu. Nobody on the cafeteria staff has asked for it, and no budget-holder has named a value it would produce.",
+      bucket: "neither",
+      why: "This is the case for saying no, plainly. No one doing the work asked for it, and no one with a budget has named what it would be worth. It fails both tests, and that's a legitimate, useful finding \u2014 not a gap in the inventory." },
+    { text: "A supply-planning briefing assistant has run daily, unofficially, for eleven months, and the team has absorbed a staffing vacancy for two quarters without the briefing slipping. No one has yet built a funding case around it, because it was never anything but a personal tool someone kept running.",
+      bucket: "bottom-only",
+      why: "Eleven months of daily, unrequested use and a staffing vacancy absorbed without anyone noticing is about as real as evidence gets. What's missing is the other side: nobody has built the case that would let a budget-holder fund it on purpose." }
+  ];
+
+  var CORRECT_TEXT = "Right. Only the first candidate has cleared both tests \u2014 which is exactly the point. A list built only from what's already spreading collects real friction nobody will pay to fix. A list built only from strategic priorities collects fundable ideas that never quite match anyone's actual day. Passing one test is progress. It isn't readiness.";
+  var CRITERION_TEXT = "A candidate is ready only once two separate questions have each been answered yes: would the person doing the work confirm this is real, and can a budget-holder name the value in terms the business recognizes? Passing only one of those means the inventory still has work to do on this candidate, not that the candidate is wrong.";
+  var FIRST_MOVE_TEXT = "Ask the two questions separately, in this order: first, is there a person actually living with this problem or already using this fix today? Second, independent of that answer, can someone who controls a budget say what it's worth in the business's own terms? Whichever question comes back no is where the finding actually is.";
+
+  var itemsContainer = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var secondPass = document.getElementById('second-pass');
+  var secondPassBtn = document.getElementById('second-pass-btn');
+  var secondPassNote = document.getElementById('second-pass-note');
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', updateCheckState);
+    return wrap;
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fieldset = document.createElement('fieldset');
+    fieldset.className = 'item';
+    fieldset.id = 'item-' + idx;
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fieldset.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    BUCKETS.forEach(function (b) {
+      choices.appendChild(makeChoice('item' + idx, b.value, b.label));
+    });
+    fieldset.appendChild(choices);
+    itemsContainer.appendChild(fieldset);
+  });
+
+  function allAnswered() {
+    for (var i = 0; i < ITEMS.length; i++) {
+      if (!document.querySelector('input[name="item' + i + '"]:checked')) { return false; }
+    }
+    return true;
+  }
+
+  function updateCheckState() { checkBtn.disabled = !allAnswered(); }
+
+  function evaluate() {
+    var diffIndices = [];
+    ITEMS.forEach(function (item, idx) {
+      var checked = document.querySelector('input[name="item' + idx + '"]:checked');
+      var val = checked ? checked.value : null;
+      if (val !== item.bucket) { diffIndices.push(idx); }
+    });
+    return diffIndices;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diffIndices = evaluate();
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (diffIndices.length === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_TEXT;
+    } else if (diffIndices.length === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      var item = ITEMS[diffIndices[0]];
+      fbDetail.textContent = 'Look again at: \u201C' + item.text + '\u201D ' + item.why;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+    secondPass.hidden = false;
+  });
+
+  secondPassBtn.addEventListener('click', function () {
+    secondPassNote.hidden = false;
+    secondPassBtn.disabled = true;
+    var thirdItem = document.getElementById('item-2');
+    if (thirdItem) { thirdItem.classList.add('moved'); }
+  });
+})();
+</script>
+</body>
+</html>

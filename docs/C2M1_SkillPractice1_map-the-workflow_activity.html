@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ready to compare, or not yet a candidate?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 28px;
+  }
+
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 14px;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .item.moved {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+
+  .item-text {
+    display: block;
+    width: 100%;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 14px;
+  }
+
+  .item-note {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--accent-deep);
+    margin: -8px 0 12px;
+  }
+
+  .item-choices {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .choice {
+    display: block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 14px;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .choice-input:disabled + .choice-box {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .second-pass {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .second-pass[hidden] { display: none; }
+
+  .second-pass-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin: 0 0 10px;
+  }
+
+  .second-pass-btn {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 10px 18px;
+    background: var(--white);
+    color: var(--ink);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .second-pass-btn:hover {
+    background: var(--highlight-bg);
+  }
+
+  .second-pass-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .second-pass-note {
+    margin-top: 14px;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+
+  .second-pass-note[hidden] { display: none; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Ready to compare, or not yet a candidate?</h1>
+
+  <p class="lead-line">A workflow that can be walked on paper, step by step, with someone named at every point, is ready to be measured against anything else. A workflow that can't be walked this way isn't a weak candidate. It's a different job &mdash; mapping &mdash; and that job has to finish first.</p>
+
+  <p class="instruction">Each of these six workflows arrived as a candidate AI opportunity. Decide whether it can actually be walked, step by step, with a named owner at every point, or whether a step in it still has nobody attached.</p>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+  <div class="second-pass" id="second-pass" hidden>
+    <span class="second-pass-label">One thing moves</span>
+    <button type="button" class="second-pass-btn" id="second-pass-btn">See what happens when a step loses its owner</button>
+    <p class="second-pass-note" id="second-pass-note" hidden>The maintenance planner in the third workflow was moved to another plant last week, and nobody has been named to take over the weekly schedule review. That workflow now belongs on the "not yet a candidate" side too &mdash; not because the software changed, but because the owner did. Readiness is a fact about who's in the seat right now, not a permanent property of the task.</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var ITEMS = [
+    { text: "A quality engineer inspects a returned part, drafts the nonconformance write-up with an assistant's help, and a quality supervisor reviews and signs it before it's logged.",
+      bucket: "ready",
+      why: "Every step has someone named against it \u2014 the engineer drafts, the supervisor reviews and signs. There's no point in this sequence where the next person doesn't know whose desk it's on." },
+    { text: "A service representative drafts a reply using a tool her own team built, sends it to the customer, and \u2014 for the two other teams that copied the tool for their own use \u2014 nobody has been assigned to check a draft before it goes out.",
+      bucket: "not-yet",
+      why: "The originating team has an owner for its own drafts. The two teams that copied the tool don't \u2014 nobody has been named to check what those teams send before a customer receives it, and that's exactly the missing step." },
+    { text: "A maintenance planner reviews the system's proposed weekly schedule, approves or edits it, and the shift supervisor receives the final version each Monday.",
+      bucket: "ready",
+      why: "The planner owns the review and the edit, the supervisor owns receiving the final version. Every step in the sequence has a name attached." },
+    { text: "A supply-chain planner requests one forecast that blends numbers from nine separate plant systems, and once they're combined, whoever notices a mismatch between two plants' figures is expected to sort it out before the forecast gets used.",
+      bucket: "not-yet",
+      why: "\u2018Whoever notices\u2019 is not an owner. The step where a real disagreement between two plants' numbers gets resolved has nobody's name on it, which means it may not happen at all before the forecast is used." },
+    { text: "A vendor demonstrates a tool that reads an incoming service ticket and suggests where to route it; the after-sales team watches the demo, and it's assumed someone downstream will confirm the routing before a ticket actually moves.",
+      bucket: "not-yet",
+      why: "\u2018It's assumed someone\u2019 is the tell. Confirming a routing suggestion before it acts on a real ticket is a distinct step, and nobody in the sequence has been named to own it." },
+    { text: "A claims desk supervisor screens the applications the assistant marks complete, a claims analyst makes the final call on each one, and a regional lead reviews a sample every week.",
+      bucket: "ready",
+      why: "Screening, deciding, and sampling each have a named role behind them \u2014 the supervisor, the analyst, the regional lead. The sequence can be walked from end to end." }
+  ];
+
+  var CORRECT_TEXT = "Right. The three ready workflows all have this in common: you could walk into the building, find the desk each step lands on, and ask the person there what happens next. The three not-yet workflows each hide the same kind of gap \u2014 a step described with \u2018whoever,\u2019 \u2018someone,\u2019 or \u2018it's assumed\u2019 instead of an actual name \u2014 and that gap is the real work still waiting to be done, not a detail to fill in later.";
+  var CRITERION_TEXT = "A workflow belongs in 'ready to compare' only when every step in it, from start to finish, has an actual person or role named as the one who does it. If any step is covered by 'whoever,' 'someone,' or an unstated assumption, the workflow hasn't been mapped yet \u2014 it's been sketched, and a sketch can't carry a value or effort estimate honestly.";
+  var FIRST_MOVE_TEXT = "Read each workflow and ask, at every step, \u2018who, by name or title, actually does this?\u2019 The moment you hit a step you can only answer with \u2018whoever\u2019 or \u2018someone,\u2019 stop \u2014 that workflow isn't ready yet, and the answer to \u2018who\u2019 is the very first thing to go find.";
+
+  var itemsContainer = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var secondPass = document.getElementById('second-pass');
+  var secondPassBtn = document.getElementById('second-pass-btn');
+  var secondPassNote = document.getElementById('second-pass-note');
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', updateCheckState);
+    return wrap;
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fieldset = document.createElement('fieldset');
+    fieldset.className = 'item';
+    fieldset.id = 'item-' + idx;
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fieldset.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    choices.appendChild(makeChoice('item' + idx, 'ready', 'Ready to compare'));
+    choices.appendChild(makeChoice('item' + idx, 'not-yet', 'Not yet a candidate'));
+    fieldset.appendChild(choices);
+    itemsContainer.appendChild(fieldset);
+  });
+
+  function allAnswered() {
+    for (var i = 0; i < ITEMS.length; i++) {
+      if (!document.querySelector('input[name="item' + i + '"]:checked')) { return false; }
+    }
+    return true;
+  }
+
+  function updateCheckState() {
+    checkBtn.disabled = !allAnswered();
+  }
+
+  function evaluate() {
+    var diffIndices = [];
+    ITEMS.forEach(function (item, idx) {
+      var checked = document.querySelector('input[name="item' + idx + '"]:checked');
+      var val = checked ? checked.value : null;
+      if (val !== item.bucket) { diffIndices.push(idx); }
+    });
+    return diffIndices;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diffIndices = evaluate();
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (diffIndices.length === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_TEXT;
+    } else if (diffIndices.length === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      var item = ITEMS[diffIndices[0]];
+      fbDetail.textContent = 'Look again at: \u201C' + item.text + '\u201D ' + item.why;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+    secondPass.hidden = false;
+  });
+
+  secondPassBtn.addEventListener('click', function () {
+    secondPassNote.hidden = false;
+    secondPassBtn.disabled = true;
+    var thirdItem = document.getElementById('item-2');
+    if (thirdItem) { thirdItem.classList.add('moved'); }
+  });
+})();
+</script>
+</body>
+</html>

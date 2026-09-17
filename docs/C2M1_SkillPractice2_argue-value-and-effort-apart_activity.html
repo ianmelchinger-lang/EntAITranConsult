@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Move the weight, watch the ranking argue with itself</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.25rem, 4vw, 1.7rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 24px;
+  }
+
+  .slider-wrap {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin: 0 0 20px;
+  }
+
+  .slider-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--ink);
+    margin: 0 0 10px;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent-deep);
+  }
+
+  input[type="range"]:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    color: var(--steel);
+    margin-top: 4px;
+  }
+
+  table.score-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 0 26px;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+  }
+
+  .score-table th,
+  .score-table td {
+    text-align: left;
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .score-table th {
+    background: var(--paper);
+    font-weight: 600;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .score-table tbody tr:last-child td { border-bottom: none; }
+
+  .num-cell {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .rank-badge {
+    display: inline-block;
+    min-width: 22px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .rank-1 { color: var(--accent-deep); }
+
+  fieldset {
+    border: none;
+    margin: 0 0 22px;
+    padding: 0;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px 18px;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.98rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 14px;
+  }
+
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .choice { display: block; position: relative; cursor: pointer; }
+
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 12px;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+  .second-pass { margin-top: 28px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  .second-pass[hidden] { display: none; }
+
+  .second-pass-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin: 0 0 10px;
+  }
+
+  .second-pass-btn {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 10px 18px;
+    background: var(--white);
+    color: var(--ink);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .second-pass-btn:hover { background: var(--highlight-bg); }
+  .second-pass-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .second-pass-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .second-pass-note {
+    margin-top: 14px;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  .second-pass-note[hidden] { display: none; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    fieldset { padding: 14px 14px; }
+    .score-table { font-size: 0.8rem; }
+    .score-table th, .score-table td { padding: 8px 6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Move the weight, watch the ranking argue with itself</h1>
+
+  <p class="lead-line">Value and effort are two different questions, answered from two different kinds of evidence. Blend them into one score and the number stops telling you which question actually decided the outcome.</p>
+
+  <p class="instruction">Four candidates from the same round, each carrying its own value estimate and its own effort estimate, argued separately. The slider blends the two into a single ranking score &mdash; move it and watch what happens to the order.</p>
+
+  <div class="slider-wrap">
+    <label class="slider-label" for="weight-slider" id="weight-label">Weighting: 50% toward value, 50% toward effort</label>
+    <input type="range" id="weight-slider" min="0" max="100" value="50" step="1" aria-describedby="weight-label">
+    <div class="slider-ticks" aria-hidden="true"><span>All effort</span><span>All value</span></div>
+  </div>
+
+  <table class="score-table" aria-label="Candidate value, effort, and blended score">
+    <thead>
+      <tr>
+        <th scope="col">Candidate</th>
+        <th scope="col">Value (of 10)</th>
+        <th scope="col">Effort (of 10)</th>
+        <th scope="col">Blended score</th>
+        <th scope="col">Rank</th>
+      </tr>
+    </thead>
+    <tbody id="score-body"></tbody>
+  </table>
+
+  <fieldset id="q1-fieldset">
+    <legend>Push the slider to 0% (all the way toward effort). Which candidate comes out on top?</legend>
+    <div class="item-choices" id="q1-choices"></div>
+  </fieldset>
+
+  <fieldset id="q2-fieldset">
+    <legend>Now push it to 100% (all the way toward value). Which candidate takes over?</legend>
+    <div class="item-choices" id="q2-choices"></div>
+  </fieldset>
+
+  <fieldset id="q3-fieldset">
+    <legend>Nothing about these four candidates' value or effort numbers changed between your two answers. What actually caused the swap?</legend>
+    <div class="item-choices" id="q3-choices"></div>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+  <div class="second-pass" id="second-pass" hidden>
+    <span class="second-pass-label">One thing moves</span>
+    <button type="button" class="second-pass-btn" id="second-pass-btn">See what happens when one estimate gets revised</button>
+    <p class="second-pass-note" id="second-pass-note" hidden>IT flags a data-migration step nobody had counted for the claims-desk dashboard. Its effort estimate rises from 1 to 4 out of 10 &mdash; watch the table update. Push the slider back to 0%: the nonconformance drafting assistant now wins the effort-heavy end, not because its own numbers changed, but because the dashboard's effort estimate just got more honest.</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var CANDIDATES = [
+    { id: "inspection", name: "Visual inspection assistant", value: 8, effort: 7 },
+    { id: "dashboard", name: "Claims-desk dashboard", value: 3, effort: 1 },
+    { id: "forecast", name: "Enterprise forecasting model", value: 9, effort: 9 },
+    { id: "draft", name: "Nonconformance drafting assistant", value: 5, effort: 3 }
+  ];
+
+  var CRITERION_TEXT = "A ranking built by blending value and effort into one number is only ever as stable as the weighting behind it. Move the weighting and the ranking moves with it, even though nothing about any candidate has changed.";
+  var FIRST_MOVE_TEXT = "Push the slider to each extreme and read off the value and effort numbers for whoever's on top \u2014 not the blended score. The candidate that wins at the effort-heavy end will have the best effort number of the four; the one that wins at the value-heavy end will have the best value number. That's the tell.";
+  var Q3_WHY = "The candidates' value and effort estimates never changed between your two answers. The only thing that moved was the weighting used to compare them \u2014 which is exactly why a blended score can't be trusted on its own: the same evidence supports more than one ranking, depending on a choice nobody wrote down.";
+
+  var weightSlider = document.getElementById('weight-slider');
+  var weightLabel = document.getElementById('weight-label');
+  var scoreBody = document.getElementById('score-body');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var secondPass = document.getElementById('second-pass');
+  var secondPassBtn = document.getElementById('second-pass-btn');
+  var secondPassNote = document.getElementById('second-pass-note');
+
+  function fmt(n, dec) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: dec || 0, maximumFractionDigits: dec || 0 });
+  }
+
+  function scoreFor(cand, w) {
+    return w * cand.value + (1 - w) * (10 - cand.effort);
+  }
+
+  function renderTable() {
+    var w = weightSlider.value / 100;
+    weightLabel.textContent = "Weighting: " + weightSlider.value + "% toward value, " + (100 - weightSlider.value) + "% toward effort";
+
+    var scored = CANDIDATES.map(function (c) {
+      return { id: c.id, name: c.name, value: c.value, effort: c.effort, score: scoreFor(c, w) };
+    });
+    scored.sort(function (a, b) { return b.score - a.score; });
+
+    scoreBody.innerHTML = '';
+    scored.forEach(function (c, idx) {
+      var tr = document.createElement('tr');
+
+      var nameTd = document.createElement('td');
+      nameTd.textContent = c.name;
+      tr.appendChild(nameTd);
+
+      var valTd = document.createElement('td');
+      valTd.className = 'num-cell';
+      valTd.textContent = fmt(c.value);
+      tr.appendChild(valTd);
+
+      var effTd = document.createElement('td');
+      effTd.className = 'num-cell';
+      effTd.textContent = fmt(c.effort);
+      tr.appendChild(effTd);
+
+      var scoreTd = document.createElement('td');
+      scoreTd.className = 'num-cell';
+      scoreTd.textContent = fmt(c.score, 1);
+      tr.appendChild(scoreTd);
+
+      var rankTd = document.createElement('td');
+      rankTd.className = 'num-cell';
+      var badge = document.createElement('span');
+      badge.className = 'rank-badge' + (idx === 0 ? ' rank-1' : '');
+      badge.textContent = String(idx + 1);
+      rankTd.appendChild(badge);
+      tr.appendChild(rankTd);
+
+      scoreBody.appendChild(tr);
+    });
+  }
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', updateCheckState);
+    return wrap;
+  }
+
+  var q1Choices = document.getElementById('q1-choices');
+  var q2Choices = document.getElementById('q2-choices');
+  var q3Choices = document.getElementById('q3-choices');
+
+  CANDIDATES.forEach(function (c) {
+    q1Choices.appendChild(makeChoice('q1', c.id, c.name));
+    q2Choices.appendChild(makeChoice('q2', c.id, c.name));
+  });
+  q3Choices.appendChild(makeChoice('q3', 'weight', 'The weighting used to compare them'));
+  q3Choices.appendChild(makeChoice('q3', 'numbers', "The candidates' underlying value and effort estimates"));
+
+  function allAnswered() {
+    return !!document.querySelector('input[name="q1"]:checked') &&
+           !!document.querySelector('input[name="q2"]:checked') &&
+           !!document.querySelector('input[name="q3"]:checked');
+  }
+
+  function updateCheckState() {
+    checkBtn.disabled = !allAnswered();
+  }
+
+  function winnerAt(w) {
+    var best = null;
+    CANDIDATES.forEach(function (c) {
+      var s = scoreFor(c, w);
+      if (!best || s > best.score) { best = { id: c.id, name: c.name, value: c.value, effort: c.effort, score: s }; }
+    });
+    return best;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var winner0 = winnerAt(0);
+    var winner1 = winnerAt(1);
+
+    var q1Val = document.querySelector('input[name="q1"]:checked').value;
+    var q2Val = document.querySelector('input[name="q2"]:checked').value;
+    var q3Val = document.querySelector('input[name="q3"]:checked').value;
+
+    var wrongCount = 0;
+    var wrongWhys = [];
+
+    if (q1Val !== winner0.id) {
+      wrongCount++;
+      wrongWhys.push("At the effort-heavy end, the winner has to be whichever candidate asks for the least work \u2014 and among these four, that's " + winner0.name + ", at an effort estimate of " + fmt(winner0.effort) + " out of 10.");
+    }
+    if (q2Val !== winner1.id) {
+      wrongCount++;
+      wrongWhys.push("At the value-heavy end, the winner has to be whichever candidate promises the most \u2014 and among these four, that's " + winner1.name + ", at a value estimate of " + fmt(winner1.value) + " out of 10.");
+    }
+    if (q3Val !== 'weight') {
+      wrongCount++;
+      wrongWhys.push(Q3_WHY);
+    }
+
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (wrongCount === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = "Right. " + winner0.name + " wins when effort is what counts, because its effort estimate is the best of the four. " + winner1.name + " wins when value is what counts, because its value estimate is the best of the four. Neither candidate's underlying numbers moved between those two answers \u2014 only the weighting did. That's the whole argument a blended score hides: the same four candidates support both rankings, and knowing which one \u2018wins\u2019 tells you nothing until you know what the weighting was doing.";
+    } else if (wrongCount === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      fbDetail.textContent = wrongWhys[0];
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+    secondPass.hidden = false;
+  });
+
+  secondPassBtn.addEventListener('click', function () {
+    var dashboard = CANDIDATES.filter(function (c) { return c.id === 'dashboard'; })[0];
+    dashboard.effort = 4;
+    renderTable();
+    secondPassNote.hidden = false;
+    secondPassBtn.disabled = true;
+  });
+
+  weightSlider.addEventListener('input', renderTable);
+  renderTable();
+})();
+</script>
+</body>
+</html>

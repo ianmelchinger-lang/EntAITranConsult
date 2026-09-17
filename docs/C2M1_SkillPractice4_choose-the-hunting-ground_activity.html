@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How much of this function's value is judgment, and how much is physical?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.2rem, 4vw, 1.65rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 26px;
+  }
+
+  .function-heading {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--accent-deep);
+    margin: 0 0 12px;
+  }
+
+  .function-block { margin: 0 0 26px; }
+
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 14px 16px;
+    margin: 0 0 10px;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .item.moved { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+
+  .item-text {
+    display: block;
+    width: 100%;
+    font-family: var(--font-serif);
+    font-size: 0.98rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 12px;
+  }
+
+  .item-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 12px;
+  }
+
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .choice-input:disabled + .choice-box { opacity: 0.6; cursor: not-allowed; }
+
+  fieldset.final-q {
+    border: none;
+    margin: 0 0 22px;
+    padding: 16px 18px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .final-legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.98rem;
+    color: var(--ink);
+    margin: 0 0 14px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .second-pass { margin-top: 28px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  .second-pass[hidden] { display: none; }
+
+  .second-pass-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin: 0 0 10px;
+  }
+
+  .second-pass-btn {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 10px 18px;
+    background: var(--white);
+    color: var(--ink);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .second-pass-btn:hover { background: var(--highlight-bg); }
+  .second-pass-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .second-pass-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .second-pass-note {
+    margin-top: 14px;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    font-variant-numeric: tabular-nums;
+  }
+  .second-pass-note[hidden] { display: none; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 12px 12px; }
+    .feedback { padding: 14px 16px; }
+    fieldset.final-q { padding: 14px 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>How much of this function's value is judgment, and how much is physical?</h1>
+
+  <p class="lead-line">What these systems supply is inference &mdash; judgment, language, analysis, coordination, produced one instance at a time. A function whose value comes mostly from that kind of work offers a dense field of candidates. A function whose value comes mostly from something physical happening offers a sparse one, however much enthusiasm the search brings to it.</p>
+
+  <p class="instruction">Below are the everyday tasks that make up two functions. Classify each one, then see which function turns out to be the denser hunting ground &mdash; and why.</p>
+
+  <div class="function-block">
+    <p class="function-heading">Plant floor operations</p>
+    <div id="plant-items"></div>
+  </div>
+
+  <div class="function-block">
+    <p class="function-heading">Warranty claims desk</p>
+    <div id="claims-items"></div>
+  </div>
+
+  <fieldset class="final-q" id="final-fieldset">
+    <legend class="final-legend">Based on the mix above, which function is the denser hunting ground for AI candidates?</legend>
+    <div class="item-choices" id="final-choices"></div>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+  <div class="second-pass" id="second-pass" hidden>
+    <span class="second-pass-label">One thing moves</span>
+    <button type="button" class="second-pass-btn" id="second-pass-btn">See what happens when one task changes</button>
+    <p class="second-pass-note" id="second-pass-note" hidden></p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var PLANT_TASKS = [
+    { text: "Operating the stamping press for a production run", bucket: "physical",
+      why: "A person running a press that stamps metal is hands-on-equipment work \u2014 there's no judgment call embedded in operating it once it's set up." },
+    { text: "Moving finished pallets to the loading dock", bucket: "physical",
+      why: "Pallets don't move themselves. This is materials handling, plain and simple." },
+    { text: "Threading a new coil of sheet metal onto the line", bucket: "physical",
+      why: "This is a hands-on mechanical setup task \u2014 there's a right way to thread the coil, but no analysis or writing involved." },
+    { text: "Deciding whether a flagged part should be held or released", bucket: "knowledge",
+      why: "This is a judgment call about a specific part, made by weighing what's known against what the flag says. That's inference, not physical work." },
+    { text: "Writing up the nonconformance report on a defect", bucket: "knowledge",
+      why: "Writing a report, even a short one, is language production \u2014 exactly the kind of output these systems can assist with or substitute for." }
+  ];
+
+  var CLAIMS_TASKS = [
+    { text: "Reading a claim and deciding whether it's covered", bucket: "knowledge",
+      why: "Deciding coverage is a judgment call against a policy \u2014 there's no equipment running and nothing physical happening." },
+    { text: "Drafting the approval or denial letter", bucket: "knowledge",
+      why: "Drafting a letter is language production, the same kind of work a writing assistant is built to help with." },
+    { text: "Comparing this claim against similar ones from the same model year", bucket: "knowledge",
+      why: "This is analysis \u2014 comparing cases against each other to decide what's typical. Nothing here involves a material or a machine." },
+    { text: "Deciding whether an unusual claim needs escalation to a regional lead", bucket: "knowledge",
+      why: "Escalation is a judgment call about who else needs to see this, which is coordination \u2014 one of the four kinds of work these systems substitute for." },
+    { text: "Scanning the paper repair order into the claims system", bucket: "physical",
+      why: "This is a hand moving a piece of paper through a scanner. What's being scanned matters to the claim, but the scanning itself is a physical action." }
+  ];
+
+  var FINAL_WHY = "Two out of five plant tasks here are judgment calls, and four out of five claims-desk tasks are. That's a wider knowledge-labor share at the claims desk \u2014 the denser field, whatever the plant floor's enthusiasm for trying AI.";
+  var CRITERION_TEXT = "A function's density is the share of its tasks that are judgment, writing, analysis, or coordination \u2014 not how many people there wish for an AI tool, and not how visible its problems are. Count the tasks that are actually inference and divide by the whole list.";
+  var FIRST_MOVE_TEXT = "For any task you're unsure about, ask: does this task consist of somebody deciding, writing, analyzing, or coordinating \u2014 or does it consist of a material moving, a machine running, or a hand touching an object? If it's the first, it's knowledge labor. If it's the second, it's physical, however much data or software surrounds it.";
+
+  var plantContainer = document.getElementById('plant-items');
+  var claimsContainer = document.getElementById('claims-items');
+  var finalChoices = document.getElementById('final-choices');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var secondPass = document.getElementById('second-pass');
+  var secondPassBtn = document.getElementById('second-pass-btn');
+  var secondPassNote = document.getElementById('second-pass-note');
+
+  function fmtPct(n) {
+    return Math.round(n).toLocaleString('en-US') + '%';
+  }
+
+  function density(tasks) {
+    var count = 0;
+    tasks.forEach(function (t) { if (t.bucket === 'knowledge') { count++; } });
+    return (count / tasks.length) * 100;
+  }
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', updateCheckState);
+    return wrap;
+  }
+
+  function renderTasks(container, prefix, tasks) {
+    container.innerHTML = '';
+    tasks.forEach(function (task, idx) {
+      var fieldset = document.createElement('fieldset');
+      fieldset.className = 'item';
+      fieldset.id = prefix + '-item-' + idx;
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = task.text;
+      fieldset.appendChild(legend);
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      choices.appendChild(makeChoice(prefix + idx, 'knowledge', 'Judgment, writing, analysis, or coordination'));
+      choices.appendChild(makeChoice(prefix + idx, 'physical', 'Physical \u2014 materials, equipment, or hands on an object'));
+      fieldset.appendChild(choices);
+      container.appendChild(fieldset);
+    });
+  }
+
+  renderTasks(plantContainer, 'plant', PLANT_TASKS);
+  renderTasks(claimsContainer, 'claims', CLAIMS_TASKS);
+  finalChoices.appendChild(makeChoice('final', 'plant', 'Plant floor operations'));
+  finalChoices.appendChild(makeChoice('final', 'claims', 'Warranty claims desk'));
+
+  function allAnswered() {
+    for (var i = 0; i < PLANT_TASKS.length; i++) {
+      if (!document.querySelector('input[name="plant' + i + '"]:checked')) { return false; }
+    }
+    for (var j = 0; j < CLAIMS_TASKS.length; j++) {
+      if (!document.querySelector('input[name="claims' + j + '"]:checked')) { return false; }
+    }
+    if (!document.querySelector('input[name="final"]:checked')) { return false; }
+    return true;
+  }
+
+  function updateCheckState() { checkBtn.disabled = !allAnswered(); }
+
+  checkBtn.addEventListener('click', function () {
+    var wrongItems = [];
+
+    PLANT_TASKS.forEach(function (task, idx) {
+      var checked = document.querySelector('input[name="plant' + idx + '"]:checked');
+      if (!checked || checked.value !== task.bucket) { wrongItems.push(task); }
+    });
+    CLAIMS_TASKS.forEach(function (task, idx) {
+      var checked = document.querySelector('input[name="claims' + idx + '"]:checked');
+      if (!checked || checked.value !== task.bucket) { wrongItems.push(task); }
+    });
+
+    var plantPct = density(PLANT_TASKS);
+    var claimsPct = density(CLAIMS_TASKS);
+    var correctFinal = claimsPct > plantPct ? 'claims' : 'plant';
+    var finalChecked = document.querySelector('input[name="final"]:checked');
+    var finalWrong = !finalChecked || finalChecked.value !== correctFinal;
+    if (finalWrong) { wrongItems.push({ why: FINAL_WHY }); }
+
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (wrongItems.length === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = "Right. Plant floor operations comes out to " + fmtPct(plantPct) + " knowledge labor in this mix \u2014 most of its value is something physical happening. The warranty claims desk comes out to " + fmtPct(claimsPct) + " \u2014 nearly all of its value is judgment, writing, or analysis. That's the whole test: not which team seems more excited about AI, but which one's daily work is made of the kind of material these systems actually work on.";
+    } else if (wrongItems.length === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      fbDetail.textContent = wrongItems[0].why;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+    secondPass.hidden = false;
+  });
+
+  secondPassBtn.addEventListener('click', function () {
+    var oldPct = density(PLANT_TASKS);
+    PLANT_TASKS[0].text = "Approving or rejecting stampings a vision system flags as irregular";
+    PLANT_TASKS[0].bucket = "knowledge";
+    var newPct = density(PLANT_TASKS);
+
+    var firstItem = document.getElementById('plant-item-0');
+    if (firstItem) {
+      firstItem.classList.add('moved');
+      var legend = firstItem.querySelector('.item-text');
+      if (legend) { legend.textContent = PLANT_TASKS[0].text; }
+      var inputs = firstItem.querySelectorAll('input');
+      inputs.forEach(function (inp) { inp.disabled = true; });
+    }
+
+    secondPassNote.textContent = "One thing moves: the plant now runs the press under a vision system that flags irregular stampings for a person to approve or reject, instead of a person just running the press. That one task moves from physical to judgment, and the plant's density rises from " + fmtPct(oldPct) + " to " + fmtPct(newPct) + " \u2014 still behind the claims desk, but closer than before. Density isn't a fixed property of a function; it moves as the work itself changes.";
+    secondPassNote.hidden = false;
+    secondPassBtn.disabled = true;
+  });
+})();
+</script>
+</body>
+</html>

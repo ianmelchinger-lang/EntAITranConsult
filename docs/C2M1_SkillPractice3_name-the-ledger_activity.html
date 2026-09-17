@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where did the saved time actually go?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 28px;
+  }
+
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 14px;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .item.moved { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+
+  .item-text {
+    display: block;
+    width: 100%;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 14px;
+  }
+
+  .item-note {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--accent-deep);
+    margin: -8px 0 12px;
+  }
+
+  .item-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 12px;
+  }
+
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+  .second-pass { margin-top: 28px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  .second-pass[hidden] { display: none; }
+
+  .second-pass-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin: 0 0 10px;
+  }
+
+  .second-pass-btn {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 10px 18px;
+    background: var(--white);
+    color: var(--ink);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .second-pass-btn:hover { background: var(--highlight-bg); }
+  .second-pass-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .second-pass-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .second-pass-note { margin-top: 14px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; }
+  .second-pass-note[hidden] { display: none; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Where did the saved time actually go?</h1>
+
+  <p class="lead-line">A benefit that disappears from one step rarely disappears from the organization. It relocates &mdash; to a colleague, to a different function, to the customer, or, if nobody was named to catch it, nowhere at all. A value claim isn't finished until it says which.</p>
+
+  <p class="instruction">Each of these four value claims looks like pure time saved on its own line. For each one, decide where the leftover checking, correcting, or waiting actually lands.</p>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+  <div class="second-pass" id="second-pass" hidden>
+    <span class="second-pass-label">One thing moves</span>
+    <button type="button" class="second-pass-btn" id="second-pass-btn">See what happens when the reviewer leaves</button>
+    <p class="second-pass-note" id="second-pass-note" hidden>The experienced writer who used to catch a wrong figure in the first vignette was moved to a different team last month. The residue in that vignette no longer lands on a colleague &mdash; right now, it lands on nobody. The ledger line for a candidate isn't fixed once and forgotten; it's a current fact about who's actually in the seat.</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var BUCKETS = [
+    { value: "colleague", label: "A reviewing colleague" },
+    { value: "downstream", label: "A downstream process" },
+    { value: "customer", label: "The customer" },
+    { value: "nobody", label: "Nobody yet" }
+  ];
+
+  var ITEMS = [
+    { text: "A document-drafting tool, built by one team for its own use, spread to several other groups over four months. Each of those groups now sends out drafts as fast as the tool produces them. When a customer questions a figure in one of those drafts, it's the original team's most experienced writer who ends up finding out why \u2014 though she had no part in writing that particular draft.",
+      bucket: "colleague",
+      why: "The team that built the tool stopped double-checking its own output. What didn't disappear is the checking itself \u2014 it reappeared on a colleague who had no part in writing that draft, and who now answers for figures she didn't put there." },
+    { text: "A supplier-nonconformance drafting assistant cuts the average write-up time nearly in half. About one in six of its drafts is sent back through the plant's existing revision process before the quality file will accept it, adding a full review cycle each time that happens.",
+      bucket: "downstream",
+      why: "One draft in six still needs a second pass before the quality file will take it. That correction happens inside the plant's existing revision process \u2014 a distinct downstream step the value claim has to account for, not the drafting step it's claiming credit for." },
+    { text: "A customer-exception workflow classifies an incoming request, drafts a response, and sends it without anyone reviewing it first. Contract terms drawn from a document store are quoted directly in the reply.",
+      bucket: "customer",
+      why: "Nobody reviews the reply before it goes out, and the terms it quotes came straight from a document store. When something in that reply is wrong, the person who finds out is the customer who received it \u2014 which is the most expensive place for a mistake to surface." },
+    { text: "A citizen-built morning briefing pulls from email, calendar, and two other systems to summarize what a small supply-planning team should know before its stand-up. Nobody reviews the summary before the team uses it to decide what to chase that day.",
+      bucket: "nobody",
+      why: "The claim here is time saved for a team that never checks the output. There's no colleague, no downstream step, and no customer in this vignette catching a wrong summary before it's acted on \u2014 which means, right now, nobody is." }
+  ];
+
+  var CORRECT_TEXT = "Right. Each of these four claims describes a different resting place for the same kind of relocated work: a colleague absorbing checking that used to belong to the sender, a downstream process absorbing a revision loop, a customer absorbing a mistake nobody caught first, and a team with nobody assigned to catch anything at all. None of that shows up in a line that only reports time saved.";
+  var CRITERION_TEXT = "A residue lands wherever the checking, correcting, escalating, or waiting actually happens once the change is in place \u2014 not wherever the benefit is booked. Ask who reads the output next, and what they'd have to do if it were wrong.";
+  var FIRST_MOVE_TEXT = "For each claim, find the sentence describing what happens right after the output is produced. Whoever is named in that sentence \u2014 or whoever is conspicuously not named \u2014 is where the ledger line goes.";
+
+  var itemsContainer = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var secondPass = document.getElementById('second-pass');
+  var secondPassBtn = document.getElementById('second-pass-btn');
+  var secondPassNote = document.getElementById('second-pass-note');
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', updateCheckState);
+    return wrap;
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fieldset = document.createElement('fieldset');
+    fieldset.className = 'item';
+    fieldset.id = 'item-' + idx;
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fieldset.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    BUCKETS.forEach(function (b) {
+      choices.appendChild(makeChoice('item' + idx, b.value, b.label));
+    });
+    fieldset.appendChild(choices);
+    itemsContainer.appendChild(fieldset);
+  });
+
+  function allAnswered() {
+    for (var i = 0; i < ITEMS.length; i++) {
+      if (!document.querySelector('input[name="item' + i + '"]:checked')) { return false; }
+    }
+    return true;
+  }
+
+  function updateCheckState() { checkBtn.disabled = !allAnswered(); }
+
+  function evaluate() {
+    var diffIndices = [];
+    ITEMS.forEach(function (item, idx) {
+      var checked = document.querySelector('input[name="item' + idx + '"]:checked');
+      var val = checked ? checked.value : null;
+      if (val !== item.bucket) { diffIndices.push(idx); }
+    });
+    return diffIndices;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diffIndices = evaluate();
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (diffIndices.length === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_TEXT;
+    } else if (diffIndices.length === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      var item = ITEMS[diffIndices[0]];
+      fbDetail.textContent = 'Look again at: \u201C' + item.text + '\u201D ' + item.why;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+    secondPass.hidden = false;
+  });
+
+  secondPassBtn.addEventListener('click', function () {
+    secondPassNote.hidden = false;
+    secondPassBtn.disabled = true;
+    var firstItem = document.getElementById('item-0');
+    if (firstItem) { firstItem.classList.add('moved'); }
+  });
+})();
+</script>
+</body>
+</html>
