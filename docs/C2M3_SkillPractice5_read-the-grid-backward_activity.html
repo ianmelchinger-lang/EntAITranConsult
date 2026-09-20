@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Read the grid backward</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.35rem, 4vw, 1.85rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 24px;
+  }
+
+  .axis-label {
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    color: var(--steel);
+    text-align: center;
+    margin: 0 0 8px;
+  }
+
+  .grid-box {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    margin: 0 0 8px;
+    overflow: hidden;
+  }
+
+  .grid-box::before,
+  .grid-box::after {
+    content: "";
+    position: absolute;
+    background: var(--line);
+  }
+
+  .grid-box::before {
+    left: 8%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+  }
+
+  .grid-box::after {
+    left: 0;
+    right: 0;
+    bottom: 8%;
+    height: 1px;
+  }
+
+  .dot {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    margin-left: -15px;
+    margin-top: -15px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--white);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: left 0.6s ease, top 0.6s ease, background 0.3s ease;
+  }
+
+  .dot.moved {
+    background: var(--accent-deep);
+  }
+
+  .legend-list {
+    list-style: none;
+    margin: 0 0 28px;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+  }
+
+  .legend-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .legend-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 0.72rem;
+    flex: 0 0 auto;
+  }
+
+  .point-card {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 14px;
+  }
+
+  .point-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 10px;
+  }
+
+  .point-name {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .point-line {
+    font-family: var(--font-serif);
+    font-size: 0.98rem;
+    color: var(--ink);
+    margin: 0 0 8px;
+  }
+
+  .point-line .tag {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: var(--steel);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .item-choices {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .choice {
+    display: block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 14px;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0 0 10px;
+  }
+
+  .fb-detail:last-child { margin-bottom: 0; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .point-card { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+    .dot { width: 26px; height: 26px; margin-left: -13px; margin-top: -13px; font-size: 0.82rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read the grid backward</h1>
+
+  <p class="lead-line">A plotted chart looks equally finished whether or not anything underneath it was fixed. Pick a point, and ask what measure actually put it there.</p>
+
+  <p class="instruction">Three candidates are already placed on a value-effort grid. For each, read the fact beside it and decide: does its position reflect the audited measure, or a shortcut?</p>
+
+  <p class="axis-label">Value \u2014 higher sits toward the top</p>
+  <div class="grid-box" id="grid-box" aria-hidden="true">
+    <div class="dot" id="dot-a">A</div>
+    <div class="dot" id="dot-b">B</div>
+    <div class="dot" id="dot-c">C</div>
+  </div>
+  <p class="axis-label">Effort \u2014 higher sits toward the right</p>
+
+  <ul class="legend-list">
+    <li><span class="legend-dot">A</span> Visual quality-inspection assistant</li>
+    <li><span class="legend-dot">B</span> Plant demand-forecasting assistant</li>
+    <li><span class="legend-dot">C</span> Customer-exception workflow</li>
+  </ul>
+
+  <div class="point-card">
+    <div class="point-head"><span class="legend-dot">A</span><span class="point-name">Visual quality-inspection assistant</span></div>
+    <p class="point-line"><span class="tag">As plotted:</span>Escape rate cut from 340 to 210 per million; a small build, already piloted at one plant.</p>
+    <p class="point-line"><span class="tag">Underlying fact:</span>A missed defect reaching a customer costs far more than an inspector's extra look, and that gap was priced into the value shown here before it was plotted.</p>
+    <fieldset>
+      <legend class="sr-only">Is candidate A's position audited or a shortcut?</legend>
+      <div class="item-choices">
+        <label class="choice"><input class="choice-input" type="radio" name="point-a" value="audited"><span class="choice-box">Audited</span></label>
+        <label class="choice"><input class="choice-input" type="radio" name="point-a" value="shortcut"><span class="choice-box">A shortcut</span></label>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="point-card">
+    <div class="point-head"><span class="legend-dot">B</span><span class="point-name">Plant demand-forecasting assistant</span></div>
+    <p class="point-line"><span class="tag">As plotted:</span>Running five months at one plant already; effort scored as a small, finished build.</p>
+    <p class="point-line"><span class="tag">Underlying fact:</span>The planning team stopped trusting the output after six weeks and has kept a parallel spreadsheet running ever since. Nobody has decomposed what it would take to earn that trust back.</p>
+    <fieldset>
+      <legend class="sr-only">Is candidate B's position audited or a shortcut?</legend>
+      <div class="item-choices">
+        <label class="choice"><input class="choice-input" type="radio" name="point-b" value="audited"><span class="choice-box">Audited</span></label>
+        <label class="choice"><input class="choice-input" type="radio" name="point-b" value="shortcut"><span class="choice-box">A shortcut</span></label>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="point-card">
+    <div class="point-head"><span class="legend-dot">C</span><span class="point-name">Customer-exception workflow</span></div>
+    <p class="point-line"><span class="tag">As plotted:</span>Handles 1,150 requests a week on its own; the queue is short and the benefit is counted at full value.</p>
+    <p class="point-line"><span class="tag">Underlying fact:</span>It already declined one paying customer's request by citing a coverage rule that had been superseded for eight months. That's the expensive direction here, and it was never subtracted from the benefit shown.</p>
+    <fieldset>
+      <legend class="sr-only">Is candidate C's position audited or a shortcut?</legend>
+      <div class="item-choices">
+        <label class="choice"><input class="choice-input" type="radio" name="point-c" value="audited"><span class="choice-box">Audited</span></label>
+        <label class="choice"><input class="choice-input" type="radio" name="point-c" value="shortcut"><span class="choice-box">A shortcut</span></label>
+      </div>
+    </fieldset>
+  </div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my reading</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+    <p class="fb-detail" id="fb-detail-2"></p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var POINTS = {
+    a: { name: 'Visual quality-inspection assistant', correct: 'audited',
+         before: { effort: 35, value: 78 }, after: { effort: 35, value: 78 },
+         why: "A's value already has the expensive error priced in \u2014 a missed defect costs far more than a false alarm, and that was subtracted before the point was plotted. Nothing here needs to move." },
+    b: { name: 'Plant demand-forecasting assistant', correct: 'shortcut',
+         before: { effort: 20, value: 55 }, after: { effort: 60, value: 55 },
+         why: "B's effort was scored as a finished build, but the planning team abandoned its output once already and nobody has priced what it would take to win that trust back. Decomposed properly, its effort moves right." },
+    c: { name: 'Customer-exception workflow', correct: 'shortcut',
+         before: { effort: 25, value: 85 }, after: { effort: 25, value: 40 },
+         why: "C's value is the raw claimed benefit. It already produced one wrongful decline on stale terms, which is the expensive direction here, and that cost was never netted out. Priced properly, its value drops." }
+  };
+
+  var MARGIN = 10, RANGE = 80;
+
+  function toLeft(effort) { return MARGIN + (effort / 100) * RANGE; }
+  function toTop(value) { return MARGIN + ((100 - value) / 100) * RANGE; }
+
+  function place(el, effort, value) {
+    el.style.left = toLeft(effort) + '%';
+    el.style.top = toTop(value) + '%';
+  }
+
+  var dotA = document.getElementById('dot-a');
+  var dotB = document.getElementById('dot-b');
+  var dotC = document.getElementById('dot-c');
+
+  place(dotA, POINTS.a.before.effort, POINTS.a.before.value);
+  place(dotB, POINTS.b.before.effort, POINTS.b.before.value);
+  place(dotC, POINTS.c.before.effort, POINTS.c.before.value);
+
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var fbDetail2 = document.getElementById('fb-detail-2');
+
+  function allAnswered() {
+    return document.querySelector('input[name="point-a"]:checked')
+      && document.querySelector('input[name="point-b"]:checked')
+      && document.querySelector('input[name="point-c"]:checked');
+  }
+
+  ['point-a', 'point-b', 'point-c'].forEach(function (name) {
+    var inputs = document.querySelectorAll('input[name="' + name + '"]');
+    for (var i = 0; i < inputs.length; i++) {
+      inputs[i].addEventListener('change', function () {
+        checkBtn.disabled = !allAnswered();
+      });
+    }
+  });
+
+  var CORRECT_TEXT = "Right. A's value was already netted against its expensive error, so it stays put. B's effort was build size only, and C's value was the raw claimed benefit \u2014 both axes had a step skipped, and both points move once the skipped step is priced in.";
+  var CRITERION_TEXT = "A point is audited when its height reflects value net of a named expensive error, and its distance reflects effort decomposed into named frictions. It's a shortcut when either axis was never audited that way \u2014 the grid still looks finished either way.";
+  var FIRST_MOVE_TEXT = "For each point, ask: was the error direction priced into this value, and was this effort actually decomposed? If either answer is no, the point is a shortcut, whatever it looks like on the grid.";
+
+  checkBtn.addEventListener('click', function () {
+    var wrongKeys = [];
+    ['a', 'b', 'c'].forEach(function (key) {
+      var checked = document.querySelector('input[name="point-' + key + '"]:checked');
+      if (!checked || checked.value !== POINTS[key].correct) { wrongKeys.push(key); }
+    });
+
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fbDetail2.textContent = '';
+
+    if (wrongKeys.length === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_TEXT;
+    } else if (wrongKeys.length === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      fbDetail.textContent = 'Look again at candidate ' + wrongKeys[0].toUpperCase() + ': ' + POINTS[wrongKeys[0]].why;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    fbDetail2.textContent = 'The grid above now shows each point at its corrected position.';
+
+    place(dotB, POINTS.b.after.effort, POINTS.b.after.value);
+    place(dotC, POINTS.c.after.effort, POINTS.c.after.value);
+    dotB.classList.add('moved');
+    dotC.classList.add('moved');
+
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>

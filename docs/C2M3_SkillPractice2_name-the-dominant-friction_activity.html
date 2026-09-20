@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Which friction is doing the work?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.35rem, 4vw, 1.85rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .context {
+    border-left: 3px solid var(--accent);
+    padding-left: 18px;
+    margin: 0 0 24px;
+    font-size: 1rem;
+    color: var(--ink);
+  }
+
+  .table-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 4px 18px;
+    margin: 0 0 20px;
+  }
+
+  .row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .row:last-child { border-bottom: none; }
+
+  .row-label {
+    font-family: var(--font-sans);
+    font-size: 0.96rem;
+    color: var(--ink);
+  }
+
+  .row-value {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .row.total {
+    border-top: 2px solid var(--ink);
+    border-bottom: none;
+    margin-top: 4px;
+  }
+
+  .row.total .row-label,
+  .row.total .row-value {
+    font-weight: 700;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0 0 20px;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    margin: 0 0 14px;
+  }
+
+  .choice-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .choice {
+    display: block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 14px;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn, .pass-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .check-btn:not(:disabled):hover,
+  .pass-btn:hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible, .pass-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .second-pass {
+    margin-top: 28px;
+  }
+
+  .second-pass[hidden] { display: none; }
+
+  .pass-panel {
+    margin-top: 18px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .pass-panel[hidden] { display: none; }
+  .pass-panel:focus { outline: none; }
+
+  .pass-panel p {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0 0 14px;
+  }
+
+  .pass-panel p:last-child { margin-bottom: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .table-card { padding: 2px 14px; }
+    .feedback, .pass-panel { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Which friction is doing the work?</h1>
+
+  <p class="lead-line">A single effort number hides which friction is actually driving a candidate's cost. Reported by component, the same total points at something specific &mdash; and at someone who could change it.</p>
+
+  <p class="context">A document-reading assistant has been proposed for the quality organization: it would read supplier-quality documents and surface exceptions for a quality engineer to review. Nothing about it decides anything on its own. The estimate below breaks its effort into four independent parts, in advisor-hours to stand it up.</p>
+
+  <div class="table-card" id="table-original">
+    <div class="row"><span class="row-label">Data condition</span><span class="row-value" id="val-data-1"></span></div>
+    <div class="row"><span class="row-label">Integration surface</span><span class="row-value" id="val-integration-1"></span></div>
+    <div class="row"><span class="row-label">Compliance burden</span><span class="row-value" id="val-compliance-1"></span></div>
+    <div class="row"><span class="row-label">Adoption resistance</span><span class="row-value" id="val-adoption-1"></span></div>
+    <div class="row total"><span class="row-label">Total</span><span class="row-value" id="val-total-1"></span></div>
+  </div>
+
+  <fieldset id="dominant-fieldset">
+    <legend>Which single component is this total mostly made of?</legend>
+    <div class="choice-row" id="dominant-choices"></div>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answer</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+  <div class="second-pass" id="second-pass" hidden>
+    <button type="button" class="pass-btn" id="pass-btn">Move one assumption: read a nightly export instead of a live connection</button>
+    <div class="pass-panel" id="pass-panel" tabindex="-1" hidden>
+      <p id="pass-intro"></p>
+      <div class="table-card" id="table-reshaped">
+        <div class="row"><span class="row-label">Data condition</span><span class="row-value" id="val-data-2"></span></div>
+        <div class="row"><span class="row-label">Integration surface</span><span class="row-value" id="val-integration-2"></span></div>
+        <div class="row"><span class="row-label">Compliance burden</span><span class="row-value" id="val-compliance-2"></span></div>
+        <div class="row"><span class="row-label">Adoption resistance</span><span class="row-value" id="val-adoption-2"></span></div>
+        <div class="row total"><span class="row-label">Total</span><span class="row-value" id="val-total-2"></span></div>
+      </div>
+      <p id="pass-outro"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var LABELS = { data: 'data condition', integration: 'integration surface', compliance: 'compliance burden', adoption: 'adoption resistance' };
+
+  var ORIGINAL = { data: 40, integration: 220, compliance: 30, adoption: 50 };
+  var RESHAPED = { data: 40, integration: 35, compliance: 30, adoption: 50 };
+
+  function fmt(n) {
+    return n.toLocaleString('en-US') + ' hrs';
+  }
+
+  function fillTable(profile, suffix) {
+    var total = profile.data + profile.integration + profile.compliance + profile.adoption;
+    document.getElementById('val-data-' + suffix).textContent = fmt(profile.data);
+    document.getElementById('val-integration-' + suffix).textContent = fmt(profile.integration);
+    document.getElementById('val-compliance-' + suffix).textContent = fmt(profile.compliance);
+    document.getElementById('val-adoption-' + suffix).textContent = fmt(profile.adoption);
+    document.getElementById('val-total-' + suffix).textContent = fmt(total);
+    return total;
+  }
+
+  function dominantOf(profile) {
+    var best = 'data';
+    var keys = ['data', 'integration', 'compliance', 'adoption'];
+    for (var i = 1; i < keys.length; i++) {
+      if (profile[keys[i]] > profile[best]) { best = keys[i]; }
+    }
+    return best;
+  }
+
+  fillTable(ORIGINAL, '1');
+
+  var CORRECT_TEXT = "Right. Integration is carrying almost two-thirds of this estimate, because the design assumes a live read into two systems that were never built to share data. That's a specific, addressable cost \u2014 not a general statement that the candidate is expensive.";
+  var CRITERION_TEXT = "The dominant friction is whichever named component the total is mostly made of \u2014 not the largest-sounding word, the largest number.";
+  var FIRST_MOVE_TEXT = "Compare the four figures directly. Whichever one is largest is the friction actually driving this candidate's cost, and it's the one worth asking who owns and what would change it.";
+
+  var dominantChoices = document.getElementById('dominant-choices');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var secondPass = document.getElementById('second-pass');
+  var passBtn = document.getElementById('pass-btn');
+  var passPanel = document.getElementById('pass-panel');
+
+  ['data', 'integration', 'compliance', 'adoption'].forEach(function (key) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'dominant';
+    input.className = 'choice-input';
+    input.value = key;
+    input.addEventListener('change', function () { checkBtn.disabled = false; });
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = LABELS[key].charAt(0).toUpperCase() + LABELS[key].slice(1);
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    dominantChoices.appendChild(wrap);
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var checked = document.querySelector('input[name="dominant"]:checked');
+    var chosen = checked ? checked.value : null;
+    var actual = dominantOf(ORIGINAL);
+
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (chosen === actual) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_TEXT;
+    } else {
+      var sorted = ['data', 'integration', 'compliance', 'adoption'].slice().sort(function (a, b) { return ORIGINAL[b] - ORIGINAL[a]; });
+      if (chosen === sorted[1]) {
+        feedback.classList.add('fb-near');
+        fbStatus.textContent = 'Close.';
+        fbDetail.textContent = 'The ' + LABELS[chosen] + ' figure is real, but it isn\u2019t the largest one here. ' + CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+      } else {
+        feedback.classList.add('fb-warn');
+        fbStatus.textContent = 'Not yet.';
+        fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+      }
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+    secondPass.hidden = false;
+  });
+
+  passBtn.addEventListener('click', function () {
+    var beforeDominant = dominantOf(ORIGINAL);
+    var afterDominant = dominantOf(RESHAPED);
+    fillTable(RESHAPED, '2');
+
+    document.getElementById('pass-intro').textContent = "The first release now reads a nightly export from the quality system instead of holding a live connection into it. Nothing else about the candidate changed.";
+    document.getElementById('pass-outro').textContent = "The " + LABELS[beforeDominant] + " figure drops, and the total falls with it \u2014 but the candidate isn't simply cheaper now. The friction that would decide whether this ships has moved from " + LABELS[beforeDominant] + " to " + LABELS[afterDominant] + ", which needs a different remedy: support and a champion in the quality organization, not a smaller integration.";
+
+    passPanel.hidden = false;
+    passPanel.focus();
+    passBtn.disabled = true;
+  });
+})();
+</script>
+</body>
+</html>

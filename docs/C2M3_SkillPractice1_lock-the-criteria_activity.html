@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Locked, or still forming?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.35rem, 4vw, 1.85rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 28px;
+  }
+
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 16px 18px;
+    margin: 0 0 14px;
+  }
+
+  .item-text {
+    display: block;
+    width: 100%;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 14px;
+  }
+
+  .item-choices {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .choice {
+    display: block;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .choice-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .choice-box {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 14px;
+  }
+
+  .choice-input:checked + .choice-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .choice-input:focus-visible + .choice-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Locked, or still forming?</h1>
+
+  <p class="lead-line">A criterion means something only if it was fixed before anyone could see which candidate it would end up favoring. Test each one the way a reviewer would: could this be stated exactly like this with the candidate list still closed?</p>
+
+  <p class="instruction">Six criteria were proposed this quarter for scoring candidate AI initiatives. Decide whether each one is genuinely locked &mdash; statable and answerable without the list open &mdash; or still forming.</p>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var ITEMS = [
+    { text: "Impact means the value returned to the business in the first year, expressed in dollars and checked against the sponsoring function's own figures.", bucket: "locked",
+      why: "This can be written down before the list opens and it means the same thing for whichever candidate shows up. Nothing about it depends on already knowing which initiative is on the table." },
+    { text: "Effort will be scored across four parts: what the data needs to become, what has to connect to what, the compliance load, and what the receiving team can absorb.", bucket: "locked",
+      why: "This names a method, not an outcome. It can be handed to any candidate later and produce a score, which is exactly what a locked criterion has to do." },
+    { text: "This initiative should score high on impact because it already runs successfully at one plant.", bucket: "forming",
+      why: "\u201CThis initiative\u201D gives it away \u2014 whoever wrote this already had a specific candidate in view. It also mistakes already running for high impact, which are different questions." },
+    { text: "Impact means whatever matters most to the sponsor putting the initiative forward.", bucket: "forming",
+      why: "This can't be stated the same way twice. It changes with every sponsor and every candidate, so a scorer with the list closed has nothing fixed to apply." },
+    { text: "Effort is heavier for any candidate whose system needs a live connection into more than one other system it doesn't already touch.", bucket: "locked",
+      why: "This is a general, testable rule. It can be checked against any candidate without knowing in advance which one is being scored." },
+    { text: "The visual-inspection candidate's escape-rate reduction should count as a full point of impact on its own.", bucket: "forming",
+      why: "This names a specific candidate outright. Whatever the merits of that candidate, a criterion written around one named entry was written after the list was already open." }
+  ];
+
+  var CORRECT_TEXT = "Right. Every locked criterion here can be written down before the list opens and applied the same way to whichever candidate shows up. Every criterion marked still forming either names a specific candidate outright or depends on information \u2014 a sponsor's preference, a candidate's own history \u2014 that isn't fixed until the list is already in front of you.";
+  var CRITERION_TEXT = "A criterion is locked when a scorer could write it down exactly like this before the candidate list opens, and it would mean the same thing for every candidate that later shows up. It's still forming if it depends on which candidate you already have in mind, or if it's too vague to produce the same score twice.";
+  var FIRST_MOVE_TEXT = "Read each criterion and ask: does it name a candidate, or would answering it require knowing which candidate you're looking at? If either is true, it isn't locked yet.";
+
+  var itemsContainer = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  function makeChoice(name, value, label) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', updateCheckState);
+    return wrap;
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fieldset = document.createElement('fieldset');
+    fieldset.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fieldset.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    choices.appendChild(makeChoice('item' + idx, 'locked', 'Locked'));
+    choices.appendChild(makeChoice('item' + idx, 'forming', 'Still forming'));
+    fieldset.appendChild(choices);
+    itemsContainer.appendChild(fieldset);
+  });
+
+  function allAnswered() {
+    for (var i = 0; i < ITEMS.length; i++) {
+      if (!document.querySelector('input[name="item' + i + '"]:checked')) { return false; }
+    }
+    return true;
+  }
+
+  function updateCheckState() {
+    checkBtn.disabled = !allAnswered();
+  }
+
+  function evaluate() {
+    var diffIndices = [];
+    ITEMS.forEach(function (item, idx) {
+      var checked = document.querySelector('input[name="item' + idx + '"]:checked');
+      var val = checked ? checked.value : null;
+      if (val !== item.bucket) { diffIndices.push(idx); }
+    });
+    return diffIndices;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diffIndices = evaluate();
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (diffIndices.length === 0) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_TEXT;
+    } else if (diffIndices.length === 1) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      var item = ITEMS[diffIndices[0]];
+      fbDetail.textContent = 'Look again at: \u201C' + item.text + '\u201D ' + item.why;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+  });
+})();
+</script>
+</body>
+</html>

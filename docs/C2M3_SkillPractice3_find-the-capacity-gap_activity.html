@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Find the capacity gap</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.35rem, 4vw, 1.85rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .context {
+    border-left: 3px solid var(--accent);
+    padding-left: 18px;
+    margin: 0 0 24px;
+    font-size: 1rem;
+    color: var(--ink);
+  }
+
+  .fact-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 4px 18px;
+    margin: 0 0 20px;
+  }
+
+  .row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .row:last-child { border-bottom: none; }
+
+  .row-label {
+    font-family: var(--font-sans);
+    font-size: 0.96rem;
+    color: var(--ink);
+  }
+
+  .row-value {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .ask {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.98rem;
+    margin: 0 0 12px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0 0 18px;
+  }
+
+  .num-input {
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    font-size: 1rem;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    width: 140px;
+    background: var(--white);
+    color: var(--ink);
+  }
+
+  .num-input:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 1px;
+  }
+
+  .input-unit {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+  }
+
+  .check-btn {
+    display: block;
+    margin: 0 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback {
+    margin-top: 20px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .stage-two {
+    margin-top: 28px;
+  }
+
+  .stage-two[hidden] { display: none; }
+
+  .compare-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 4px 18px;
+    margin: 16px 0 20px;
+  }
+
+  .compare-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-sans);
+    font-size: 0.94rem;
+  }
+
+  .compare-row:last-child { border-bottom: none; }
+
+  .compare-row .name { color: var(--ink); }
+  .compare-row .figure { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .compare-row.over .figure { color: var(--warn); }
+  .compare-row.under .figure { color: var(--ok); }
+
+  fieldset { border: none; margin: 0 0 16px; padding: 0; }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.98rem;
+    color: var(--ink);
+    margin: 0 0 14px;
+  }
+
+  .option {
+    display: block;
+    position: relative;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+
+  .option-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .option-box {
+    display: block;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    padding: 12px 16px;
+    background: var(--white);
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .option-input:checked + .option-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .option-input:focus-visible + .option-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .fact-card, .compare-card { padding: 2px 14px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Find the capacity gap</h1>
+
+  <p class="lead-line">Absorption capacity never travels with a candidate's paperwork. It belongs to the operation, and it comes from asking the team that would do the work.</p>
+
+  <p class="context">A maintenance-scheduling automation recommends work orders, and a supervisor reviews every one before it's released. It's running well at two plants and a committee has approved extending it to seven. Here's what the review team can actually do.</p>
+
+  <div class="fact-card">
+    <div class="row"><span class="row-label">Reviewers assigned</span><span class="row-value" id="reviewers"></span></div>
+    <div class="row"><span class="row-label">Productive review hours per week</span><span class="row-value" id="hours"></span></div>
+    <div class="row"><span class="row-label">Minutes per work order, for a review that actually catches an error</span><span class="row-value" id="minutes"></span></div>
+  </div>
+
+  <p class="ask">How many work orders can this team review per week, at that pace?</p>
+
+  <div class="input-row">
+    <input type="number" inputmode="numeric" class="num-input" id="capacity-input" aria-label="Weekly review capacity in work orders">
+    <span class="input-unit">work orders per week</span>
+  </div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my number</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+  <div class="stage-two" id="stage-two" hidden>
+    <p class="context">Now set that capacity against the volume the schedule actually produces.</p>
+
+    <div class="compare-card">
+      <div class="compare-row under"><span class="name">Volume today, two plants</span><span class="figure" id="vol-two"></span></div>
+      <div class="compare-row over"><span class="name">Volume proposed, seven plants</span><span class="figure" id="vol-seven"></span></div>
+      <div class="compare-row"><span class="name">Reviewers this would actually require</span><span class="figure" id="reviewers-needed"></span></div>
+      <div class="compare-row over"><span class="name">Real seconds available per order, at seven plants and one reviewer</span><span class="figure" id="seconds-available"></span></div>
+      <div class="compare-row over"><span class="name">Plausible-but-wrong schedules caught, at that pace</span><span class="figure" id="catch-rate"></span></div>
+    </div>
+
+    <fieldset id="disposition-fieldset">
+      <legend>What's the honest finding for extending to seven plants as scoped?</legend>
+      <label class="option">
+        <input class="option-input" type="radio" name="disposition" value="proceed">
+        <span class="option-box">Proceed. The two-plant pilot already proved the capacity.</span>
+      </label>
+      <label class="option">
+        <input class="option-input" type="radio" name="disposition" value="redesign">
+        <span class="option-box">Extend only once the review is redesigned or reviewer headcount is added.</span>
+      </label>
+      <label class="option">
+        <input class="option-input" type="radio" name="disposition" value="descope">
+        <span class="option-box">De-scope. A human review of this kind can never keep pace.</span>
+      </label>
+    </fieldset>
+
+    <button type="button" class="check-btn" id="disposition-btn">Check my finding</button>
+
+    <div class="feedback" id="disposition-feedback" tabindex="-1" hidden>
+      <p class="fb-status" id="disp-status"></p>
+      <p class="fb-detail" id="disp-detail"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var REVIEWERS = 1;
+  var HOURS_PER_WEEK = 40;
+  var MINUTES_PER_ORDER = 3.0;
+  var VOLUME_TWO = 640;
+  var VOLUME_SEVEN = 2080;
+  var SECONDS_AT_SEVEN = 69;
+  var CATCH_AT_3MIN = 0.70;
+  var CATCH_AT_69S = 0.25;
+
+  var CAPACITY = Math.round((HOURS_PER_WEEK * 60) / MINUTES_PER_ORDER);
+  var REVIEWERS_NEEDED = (VOLUME_SEVEN * MINUTES_PER_ORDER) / (HOURS_PER_WEEK * 60);
+
+  function fmt(n) {
+    return n.toLocaleString('en-US');
+  }
+
+  document.getElementById('reviewers').textContent = fmt(REVIEWERS);
+  document.getElementById('hours').textContent = fmt(HOURS_PER_WEEK);
+  document.getElementById('minutes').textContent = MINUTES_PER_ORDER.toLocaleString('en-US', { minimumFractionDigits: 1 });
+
+  var input = document.getElementById('capacity-input');
+  var checkBtn = document.getElementById('check-btn');
+  var feedback = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var stageTwo = document.getElementById('stage-two');
+
+  var CORRECT_NUM_TEXT = "Right. One reviewer, forty hours a week, at three minutes an order, comes to 800 work orders a week \u2014 that's this team's real weekly capacity, and it's a fact about the operation, not about the schedule.";
+  var CLOSE_NUM_TEXT = "Close, but check the arithmetic again: forty hours is 2,400 minutes, and at three minutes an order that's 800 work orders a week.";
+  var OFF_NUM_TEXT = "The capacity is hours available divided by minutes needed per order: 40 hours \u00d7 60 minutes, divided by 3.0 minutes per order, comes to 800 work orders a week.";
+
+  checkBtn.addEventListener('click', function () {
+    var val = parseFloat(input.value);
+    feedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (isNaN(val)) {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Enter a number first.';
+      fbDetail.textContent = OFF_NUM_TEXT;
+    } else if (Math.abs(val - CAPACITY) <= 5) {
+      feedback.classList.add('fb-ok');
+      fbStatus.textContent = 'Correct.';
+      fbDetail.textContent = CORRECT_NUM_TEXT;
+    } else if (Math.abs(val - CAPACITY) <= 100) {
+      feedback.classList.add('fb-near');
+      fbStatus.textContent = 'Close.';
+      fbDetail.textContent = CLOSE_NUM_TEXT;
+    } else {
+      feedback.classList.add('fb-warn');
+      fbStatus.textContent = 'Not yet.';
+      fbDetail.textContent = OFF_NUM_TEXT;
+    }
+
+    feedback.hidden = false;
+    feedback.focus();
+
+    document.getElementById('vol-two').textContent = fmt(VOLUME_TWO) + ' / week';
+    document.getElementById('vol-seven').textContent = fmt(VOLUME_SEVEN) + ' / week';
+    document.getElementById('reviewers-needed').textContent = REVIEWERS_NEEDED.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    document.getElementById('seconds-available').textContent = fmt(SECONDS_AT_SEVEN) + ' sec';
+    document.getElementById('catch-rate').textContent = Math.round(CATCH_AT_69S * 100) + '%, down from ' + Math.round(CATCH_AT_3MIN * 100) + '%';
+
+    stageTwo.hidden = false;
+  });
+
+  var dispositionBtn = document.getElementById('disposition-btn');
+  var dispositionFeedback = document.getElementById('disposition-feedback');
+  var dispStatus = document.getElementById('disp-status');
+  var dispDetail = document.getElementById('disp-detail');
+
+  var DISPOSITION_CORRECT = "Right. The two-plant volume fits comfortably inside 800 a week; the seven-plant volume needs " + REVIEWERS_NEEDED.toFixed(1) + " reviewers and this team has one. The surplus doesn't vanish \u2014 it shows up as sixty-nine seconds a order instead of three minutes, and the share of plausible-but-wrong schedules actually caught falls from 70% to 25%. That's not a reason to kill the initiative; it's a reason to add reviewers or redesign the check before extending it.";
+  var DISPOSITION_NEAR_PROCEED = "The two-plant pilot proved the automation, not the review. A pilot run inside capacity tells you nothing about what happens once volume triples past it.";
+  var DISPOSITION_NEAR_DESCOPE = "The review isn't structurally impossible \u2014 it's short-staffed for the volume proposed. Redesigning the check or adding a reviewer is a smaller move than dropping the initiative.";
+  var DISPOSITION_CRITERION = "The honest finding follows the numbers above: capacity fits at two plants and doesn't at seven, and the gap resolves into slower, worse reviews unless something about the review itself changes.";
+
+  dispositionBtn.addEventListener('click', function () {
+    var checked = document.querySelector('input[name="disposition"]:checked');
+    dispositionFeedback.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+
+    if (!checked) {
+      dispositionFeedback.classList.add('fb-warn');
+      dispStatus.textContent = 'Choose a finding first.';
+      dispDetail.textContent = DISPOSITION_CRITERION;
+    } else if (checked.value === 'redesign') {
+      dispositionFeedback.classList.add('fb-ok');
+      dispStatus.textContent = 'Correct.';
+      dispDetail.textContent = DISPOSITION_CORRECT;
+    } else if (checked.value === 'proceed') {
+      dispositionFeedback.classList.add('fb-warn');
+      dispStatus.textContent = 'Not yet.';
+      dispDetail.textContent = DISPOSITION_NEAR_PROCEED + ' ' + DISPOSITION_CRITERION;
+    } else {
+      dispositionFeedback.classList.add('fb-warn');
+      dispStatus.textContent = 'Not yet.';
+      dispDetail.textContent = DISPOSITION_NEAR_DESCOPE + ' ' + DISPOSITION_CRITERION;
+    }
+
+    dispositionFeedback.hidden = false;
+    dispositionFeedback.focus();
+  });
+})();
+</script>
+</body>
+</html>

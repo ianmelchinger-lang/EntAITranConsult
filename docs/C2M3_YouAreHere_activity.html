@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Read this first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 24px;
+    color: var(--ink);
+  }
+
+  .scenario {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin: 0 0 28px;
+  }
+
+  .scenario p {
+    margin: 0 0 16px;
+  }
+
+  .scenario p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prompt-lead {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 16px;
+  }
+
+  .option {
+    display: block;
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .option-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .option-box {
+    display: block;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 18px;
+    background: var(--white);
+  }
+
+  .option-lead {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .option-detail {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .option-input:checked + .option-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .option-input:focus-visible + .option-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  fieldset.locked .option {
+    cursor: default;
+  }
+
+  fieldset.locked .option-box {
+    opacity: 0.9;
+  }
+
+  .reveal-btn {
+    display: block;
+    margin: 22px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .reveal-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .reveal-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .reveal-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .reveal {
+    margin-top: 32px;
+    padding: 22px 24px;
+    background: var(--highlight-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .reveal[hidden] {
+    display: none;
+  }
+
+  .reveal:focus {
+    outline: none;
+  }
+
+  .reveal-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--accent-deep);
+    margin: 0 0 4px;
+  }
+
+  .reveal-chosen {
+    font-family: var(--font-sans);
+    font-style: italic;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p {
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read this first</h1>
+
+  <div class="scenario">
+    <p>A proxy multinational manufacturer has spent a quarter collecting candidate AI initiatives from its plants, its supply-chain function, its quality organization, its service business, finance, and HR. The result sits on one spreadsheet tab: eleven or twelve lines, a sponsor's name beside each, a sentence of description, and here and there a benefit figure carried over intact from a vendor's slide. The order in the file is the order the submissions arrived. The steering group meets in a week and expects a sequence.</p>
+    <p>Each proposal describes its own value in its own terms, against no stated measure &mdash; one in units saved, one in hours returned, one in a risk avoided that nobody has priced &mdash; and none of them says what it would cost anyone beyond the team that would build it.</p>
+  </div>
+
+  <p class="prompt-lead">Before reading on, choose the reading that comes closest to your own first instinct.</p>
+
+  <fieldset id="reading-fieldset">
+    <legend>What's actually going on here, and what should happen next?</legend>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="a">
+      <span class="option-box">
+        <span class="option-lead">The list is most of a ranking already.</span>
+        <span class="option-detail">Eleven or twelve scored proposals just need tidying and sequencing. The real work is confirming the order at the top.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="b">
+      <span class="option-box">
+        <span class="option-lead">Effort is the tractable half.</span>
+        <span class="option-detail">Impact is subjective, but effort is basically the size of the build. A technical function can size each candidate and the ranking follows.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="c">
+      <span class="option-box">
+        <span class="option-lead">The market's failure-rate numbers set the pace.</span>
+        <span class="option-detail">Widely cited figures on how many AI pilots fail should decide how cautiously this list gets sequenced.</span>
+      </span>
+    </label>
+  </fieldset>
+
+  <button type="button" class="reveal-btn" id="reveal-btn" disabled>See what this misses</button>
+
+  <div class="reveal" id="reveal" role="region" aria-label="What this reading misses" tabindex="-1" hidden>
+    <span class="reveal-tag">You read this as:</span>
+    <p class="reveal-chosen" id="reveal-chosen"></p>
+    <div class="reveal-body" id="reveal-body"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var READINGS = {
+    a: {
+      lead: "The list is most of a ranking already.",
+      rebuttal: "A ranking is a comparison, and a comparison requires that two things were measured against the same thing. Here, each proposal scored itself against a yardstick of its own choosing \u2014 one in units saved, one in hours returned, one in a risk nobody priced. No arithmetic puts numbers like that in order, because there is no common quantity to order them by. The ranking still gets made regardless: by seniority, by whoever speaks last, by whichever sponsor already has budget committed. That mechanism produces a decision nobody wrote the grounds for, and nobody can defend when it gets revisited."
+    },
+    b: {
+      lead: "Effort is the tractable half.",
+      rebuttal: "Effort is not one quantity. It is several independent ones reported as a single number: what the data would have to become, what has to be integrated with what, the regulatory and compliance load, and how much resistance the change will meet. One more sits outside every document the candidate arrives with. A screening step that flags items for review produces a volume of flags, and that volume meets a receiving team's throughput. Score effort as build size, and the number is not merely imprecise \u2014 it measures the wrong organization, because the operation that will absorb the workload was never asked."
+    },
+    c: {
+      lead: "The market's failure-rate numbers set the pace.",
+      rebuttal: "Headline failure rates circulating in the market are numbers detached from the narrow studies behind them. An advisor who sequences a list against a figure like that has substituted a claim for evidence, without knowing what the underlying study actually measured, over what period, or under what conditions. It settles nothing about this particular list, however confidently it is quoted in the room."
+    }
+  };
+
+  var CLOSING = "What's missing is a fixed measure of impact and effort, agreed and weighted before anyone opens the candidate list, and a way of costing effort that goes past build size to what the organization can actually absorb. Until both exist, sorting this list, however carefully, produces an order nobody can defend in a month.";
+
+  var radios = document.querySelectorAll('input[name="reading"]');
+  var revealBtn = document.getElementById('reveal-btn');
+  var revealPanel = document.getElementById('reveal');
+  var revealChosen = document.getElementById('reveal-chosen');
+  var revealBody = document.getElementById('reveal-body');
+  var fieldset = document.getElementById('reading-fieldset');
+
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function () {
+      revealBtn.disabled = false;
+    });
+  }
+
+  revealBtn.addEventListener('click', function () {
+    var chosen = null;
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { chosen = radios[i].value; }
+    }
+    if (!chosen) { return; }
+
+    for (var j = 0; j < radios.length; j++) {
+      radios[j].disabled = true;
+    }
+    fieldset.classList.add('locked');
+    revealBtn.disabled = true;
+
+    var data = READINGS[chosen];
+    revealChosen.textContent = '\u201C' + data.lead + '\u201D';
+
+    revealBody.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = data.rebuttal;
+    var p2 = document.createElement('p');
+    p2.textContent = CLOSING;
+    revealBody.appendChild(p1);
+    revealBody.appendChild(p2);
+
+    revealPanel.hidden = false;
+    revealPanel.focus();
+  });
+})();
+</script>
+</body>
+</html>
