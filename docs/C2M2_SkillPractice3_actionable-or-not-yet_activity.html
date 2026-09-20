@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Actionable, or not yet</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+
+  .instruction {
+    font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft);
+    background: var(--white); border: 1px solid var(--line); border-radius: 4px;
+    padding: 14px 16px; margin: 0 0 26px;
+  }
+
+  .card-row { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; margin-bottom: 14px; }
+  .card-name { display: block; font-family: var(--font-sans); font-weight: 700; font-size: 0.92rem; color: var(--ink); margin: 0 0 8px; }
+  .card-facts { margin: 0 0 12px; padding-left: 18px; font-size: 0.95rem; }
+  .card-facts li { margin-bottom: 4px; }
+
+  .card-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+  .choice-btn {
+    font-family: var(--font-sans); font-size: 0.88rem; padding: 8px 14px;
+    border: 1px solid var(--line); border-radius: 20px; background: var(--paper);
+    color: var(--ink-soft); cursor: pointer;
+  }
+  .choice-btn[aria-pressed="true"] { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+  .choice-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .check-btn {
+    display: block; margin: 8px 0 0; font-family: var(--font-sans); font-weight: 600;
+    font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white);
+    border: none; border-radius: 4px; cursor: pointer;
+  }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback { margin-top: 22px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+  @media (max-width: 480px) { .container { padding: 32px 16px 48px; } .card-row { padding: 14px 14px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Actionable, or not yet</h1>
+
+  <p class="lead-line">A correct prediction is worth nothing on its own. It's worth something only once it reaches a person, in time, who has the authority to act and somewhere for the decision to go.</p>
+
+  <p class="instruction">Each candidate below is given as three facts only: who its output reaches, which decision it's meant to change, and what the record shows about what actually happens next. Sort each one into whether value can appear, or whether it's accurate with nothing to act on yet.</p>
+
+  <div id="card-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+
+<script>
+(function () {
+  var CANDIDATES = [
+    { id: 'c1', name: 'Plant demand-forecasting assistant \u2014 Operations',
+      facts: [
+        'Reaches: the planning team\u2019s shared folder, automatically, each morning.',
+        'Decision it\u2019s meant to change: how much material the plant orders for the week ahead.',
+        'What the record shows: planning has kept running its own parallel spreadsheet since the sixth week, and the forecast has never fully taken over the ordering decision.'
+      ],
+      bucket: 'not-yet',
+      why: "A parallel process still owns the decision, so the forecast hasn't actually reached anyone with sole authority to act on it \u2014 the decision has nowhere new to go." },
+    { id: 'c2', name: 'Warranty and service response drafting assistant \u2014 Sales & Service',
+      facts: [
+        'Reaches: the service agent handling that exact case, before the reply goes out.',
+        'Decision it\u2019s meant to change: the wording of the response sent to the customer.',
+        'What the record shows: the agent reviews and can edit or reject each draft before anything is sent.'
+      ],
+      bucket: 'appear',
+      why: "It reaches the right person, in time, with clear authority to change what happens \u2014 all three conditions are met." },
+    { id: 'c3', name: 'Enterprise demand-forecasting model \u2014 Supply Chain',
+      facts: [
+        'Reaches: no one in particular; the candidate has been requested for two years with no named recipient.',
+        'Decision it\u2019s meant to change: unstated in the submission.',
+        'What the record shows: no one has said which planning meeting this would feed, or who in that meeting would be authorized to act on it.'
+      ],
+      bucket: 'not-yet',
+      why: "There's no decision on the other end for it to reach \u2014 no named person, no named meeting, no stated authority." },
+    { id: 'c4', name: 'Maintenance-scheduling automation \u2014 Operations',
+      facts: [
+        'Reaches: the maintenance planner, before the shift starts.',
+        'Decision it\u2019s meant to change: which work order a technician picks up next.',
+        'What the record shows: the planner signs off on the schedule before any work order goes out.'
+      ],
+      bucket: 'appear',
+      why: "It reaches the planner in time, with the authority to sign off before anything acts \u2014 a real decision is waiting on it." }
+  ];
+
+  var CRITERION_TEXT = "Value can appear only when all three hold together: the output reaches a specific person, in time to change a decision, and that person holds the authority to change it. If any one of the three is missing, the claim may still be accurate \u2014 it just hasn't started to matter yet.";
+  var FIRST_MOVE_TEXT = "For any candidate, ask the third question first: what would that person do differently the moment this arrived? If the answer is blank, or if something else already owns the decision, sort it as not yet actionable.";
+  var CORRECT_TEXT = "Right. Two of these reach a named person, in time, with real authority over what happens next. Two don't \u2014 one because a parallel process never stood down, one because no recipient or decision was ever named. Accuracy was never the question being tested here.";
+
+  var listEl = document.getElementById('card-list');
+  var checkBtn = document.getElementById('check-btn');
+  var feedbackEl = document.getElementById('feedback');
+  var statusEl = document.getElementById('fb-status');
+  var detailEl = document.getElementById('fb-detail');
+  var srStatus = document.getElementById('sr-status');
+  var selections = {};
+
+  function updateCheckEnabled() {
+    checkBtn.disabled = CANDIDATES.some(function (c) { return !selections[c.id]; });
+  }
+
+  CANDIDATES.forEach(function (cand) {
+    var row = document.createElement('div');
+    row.className = 'card-row';
+
+    var name = document.createElement('span');
+    name.className = 'card-name';
+    name.textContent = cand.name;
+    row.appendChild(name);
+
+    var list = document.createElement('ul');
+    list.className = 'card-facts';
+    cand.facts.forEach(function (f) {
+      var li = document.createElement('li');
+      li.textContent = f;
+      list.appendChild(li);
+    });
+    row.appendChild(list);
+
+    var choices = document.createElement('div');
+    choices.className = 'card-choices';
+    choices.setAttribute('role', 'group');
+    choices.setAttribute('aria-label', 'Your answer for ' + cand.name);
+
+    [
+      { value: 'appear', label: 'Value can appear' },
+      { value: 'not-yet', label: 'Accurate, nothing to act on yet' }
+    ].forEach(function (opt) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'choice-btn';
+      btn.setAttribute('aria-pressed', 'false');
+      btn.textContent = opt.label;
+      btn.addEventListener('click', function () {
+        selections[cand.id] = opt.value;
+        choices.querySelectorAll('.choice-btn').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+        btn.setAttribute('aria-pressed', 'true');
+        feedbackEl.hidden = true;
+        updateCheckEnabled();
+      });
+      choices.appendChild(btn);
+    });
+
+    row.appendChild(choices);
+    listEl.appendChild(row);
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diffs = CANDIDATES.filter(function (c) { return selections[c.id] !== c.bucket; });
+
+    feedbackEl.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    if (diffs.length === 0) {
+      feedbackEl.classList.add('fb-ok');
+      statusEl.textContent = 'Correct.';
+      detailEl.textContent = CORRECT_TEXT;
+    } else if (diffs.length === 1) {
+      feedbackEl.classList.add('fb-near');
+      statusEl.textContent = 'Close.';
+      detailEl.textContent = 'Look again at ' + diffs[0].name + ': ' + diffs[0].why;
+    } else {
+      feedbackEl.classList.add('fb-warn');
+      statusEl.textContent = 'Not yet.';
+      detailEl.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+    feedbackEl.hidden = false;
+    feedbackEl.focus();
+    srStatus.textContent = statusEl.textContent;
+  });
+})();
+</script>
+</body>
+</html>

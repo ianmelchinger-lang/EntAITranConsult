@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trace the disagreement</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h1 {
+    font-family: var(--font-serif); font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink);
+  }
+
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+
+  .instruction {
+    font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft);
+    background: var(--white); border: 1px solid var(--line); border-radius: 4px;
+    padding: 14px 16px; margin: 0 0 26px;
+  }
+
+  .card-row {
+    background: var(--white); border: 1px solid var(--line); border-radius: 4px;
+    padding: 16px 18px; margin-bottom: 14px;
+  }
+
+  .card-text { margin: 0 0 12px; font-size: 1rem; }
+
+  .select-label {
+    display: block; font-family: var(--font-sans); font-size: 0.82rem;
+    font-weight: 600; color: var(--accent-deep); margin: 0 0 6px;
+  }
+
+  select.dim-select {
+    font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 4px;
+    padding: 8px 10px; width: 100%; max-width: 320px;
+  }
+
+  select.dim-select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .check-btn {
+    display: block; margin: 8px 0 0; font-family: var(--font-sans); font-weight: 600;
+    font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white);
+    border: none; border-radius: 4px; cursor: pointer;
+  }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback {
+    margin-top: 22px; padding: 18px 20px; background: var(--white);
+    border-left: 4px solid var(--line); border-radius: 4px;
+  }
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .card-row { padding: 14px 14px; }
+    select.dim-select { max-width: 100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Trace the disagreement</h1>
+
+  <p class="lead-line">Seven different questions can hide inside one candidate. A disagreement about it is never really about the candidate as a whole &mdash; it's about exactly one of the seven, and that one traces to a fact somebody already holds.</p>
+
+  <p class="instruction">Below are things people said about the same candidate &mdash; a system that would flag incoming supplier shipments likely to fail inspection. For each statement, choose the one question it's actually answering.</p>
+
+  <div id="card-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+
+<script>
+(function () {
+  var DIMENSIONS = [
+    { value: 'value', label: 'Business value' },
+    { value: 'workflow', label: 'Workflow fit' },
+    { value: 'data', label: 'Data readiness' },
+    { value: 'feasibility', label: 'Technical feasibility' },
+    { value: 'risk', label: 'Risk' },
+    { value: 'sponsorship', label: 'Sponsorship' },
+    { value: 'measurement', label: 'Measurement clarity' }
+  ];
+
+  var STATEMENTS = [
+    { id: 'st1', text: "\u201CThe sensor readings live in one system, and the record of what was actually decided about each shipment lives in another, typed in by hand and not always typed in at all.\u201D", correct: 'data',
+      why: "This is about whether the inputs \u2014 and the outcome record behind them \u2014 can actually be reached and trusted. That's data readiness, and the fact that resolves it belongs to whoever owns those two systems." },
+    { id: 'st2', text: "\u201CAs described today, this becomes an internal alert to a receiving team. If the same score ever reaches a supplier directly, that's a different kind of thing, with obligations attached that have nothing to do with how good the model is.\u201D", correct: 'risk',
+      why: "This is about exposure \u2014 who and what the output touches once it acts. That's risk, and the fact that resolves it belongs to whoever classifies what the output is allowed to become." },
+    { id: 'st3', text: "\u201CEvery candidate that clears this screen lands on the platform team's desk as a request to keep something running, and nobody has said which of these it's allowed to refuse.\u201D", correct: 'sponsorship',
+      why: "This is about who owns the thing once the project team leaves. That's sponsorship, and the fact that resolves it belongs to whoever is supposed to inherit it." },
+    { id: 'st4', text: "\u201CNobody wrote down when the benefit is supposed to show up, so there's no point at which anyone can say the candidate did or didn't work.\u201D", correct: 'measurement',
+      why: "This is about whether success is even checkable later. That's measurement clarity, and the fact that resolves it belongs to whoever is supposed to be watching for the result." },
+    { id: 'st5', text: "\u201CThe receiving team already knows exactly which step this changes and what they'd do differently on a Tuesday morning.\u201D", correct: 'workflow',
+      why: "This is about whether the change lands where the work actually happens. That's workflow fit, and the fact that resolves it belongs to the team doing the work today." },
+    { id: 'st6', text: "\u201CThe two systems this would depend on don't talk to each other today, and no one on the team knows how to keep an integration between them running once the project is over.\u201D", correct: 'feasibility',
+      why: "This is about whether a team can build it and keep it running afterward. That's technical feasibility, and the fact that resolves it belongs to whoever would maintain the integration." }
+  ];
+
+  var CRITERION_TEXT = "Each of these seven questions is asking about a different fact, held by a different person. Match the statement to whichever fact it's actually reporting, not to the general feeling of the sentence.";
+  var FIRST_MOVE_TEXT = "Ask which single person in the room could resolve this statement with one more fact. Whatever that person owns is the dimension.";
+  var CORRECT_TEXT = "Right. Six statements, six different questions, six different owners of the fact that would settle each one. That's the whole point of keeping the dimensions apart: a disagreement stops being a matter of conviction and starts being a matter of who to go ask.";
+
+  var listEl = document.getElementById('card-list');
+  var checkBtn = document.getElementById('check-btn');
+  var feedbackEl = document.getElementById('feedback');
+  var statusEl = document.getElementById('fb-status');
+  var detailEl = document.getElementById('fb-detail');
+  var srStatus = document.getElementById('sr-status');
+  var selections = {};
+
+  function updateCheckEnabled() {
+    checkBtn.disabled = STATEMENTS.some(function (s) { return !selections[s.id]; });
+  }
+
+  STATEMENTS.forEach(function (st, idx) {
+    var row = document.createElement('div');
+    row.className = 'card-row';
+
+    var text = document.createElement('p');
+    text.className = 'card-text';
+    text.textContent = st.text;
+    row.appendChild(text);
+
+    var label = document.createElement('label');
+    label.className = 'select-label';
+    label.setAttribute('for', 'sel-' + st.id);
+    label.textContent = 'This is really about:';
+    row.appendChild(label);
+
+    var select = document.createElement('select');
+    select.className = 'dim-select';
+    select.id = 'sel-' + st.id;
+
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '\u2014 choose a dimension \u2014';
+    select.appendChild(placeholder);
+
+    DIMENSIONS.forEach(function (d) {
+      var opt = document.createElement('option');
+      opt.value = d.value;
+      opt.textContent = d.label;
+      select.appendChild(opt);
+    });
+
+    select.addEventListener('change', function () {
+      selections[st.id] = select.value;
+      feedbackEl.hidden = true;
+      updateCheckEnabled();
+    });
+
+    row.appendChild(select);
+    listEl.appendChild(row);
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diffs = STATEMENTS.filter(function (s) { return selections[s.id] !== s.correct; });
+
+    feedbackEl.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    if (diffs.length === 0) {
+      feedbackEl.classList.add('fb-ok');
+      statusEl.textContent = 'Correct.';
+      detailEl.textContent = CORRECT_TEXT;
+    } else if (diffs.length === 1) {
+      feedbackEl.classList.add('fb-near');
+      statusEl.textContent = 'Close.';
+      detailEl.textContent = diffs[0].why;
+    } else {
+      feedbackEl.classList.add('fb-warn');
+      statusEl.textContent = 'Not yet.';
+      detailEl.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+    feedbackEl.hidden = false;
+    feedbackEl.focus();
+    srStatus.textContent = statusEl.textContent;
+  });
+})();
+</script>
+</body>
+</html>

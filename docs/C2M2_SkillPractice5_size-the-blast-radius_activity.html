@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Size the blast radius</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 640px; margin: 0 auto; padding: 48px 24px 64px; }
+
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+
+  .instruction {
+    font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft);
+    background: var(--white); border: 1px solid var(--line); border-radius: 4px;
+    padding: 14px 16px; margin: 0 0 26px;
+  }
+
+  .card-row { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; margin-bottom: 14px; }
+  .card-name { display: block; font-family: var(--font-sans); font-weight: 700; font-size: 0.92rem; color: var(--ink); margin: 0 0 8px; }
+  .card-text { margin: 0 0 12px; font-size: 0.98rem; }
+
+  .card-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+  .choice-btn {
+    font-family: var(--font-sans); font-size: 0.88rem; padding: 8px 14px;
+    border: 1px solid var(--line); border-radius: 20px; background: var(--paper);
+    color: var(--ink-soft); cursor: pointer;
+  }
+  .choice-btn[aria-pressed="true"] { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+  .choice-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .check-btn {
+    display: block; margin: 8px 0 0; font-family: var(--font-sans); font-weight: 600;
+    font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white);
+    border: none; border-radius: 4px; cursor: pointer;
+  }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback { margin-top: 22px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+  @media (max-width: 480px) { .container { padding: 32px 16px 48px; } .card-row { padding: 14px 14px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Size the blast radius</h1>
+
+  <p class="lead-line">Two questions do the sizing, and neither one asks how the system was built: who and what does a wrong output touch, at what breadth, and can the action it triggers be undone.</p>
+
+  <p class="instruction">For each candidate, decide whether it can move on a light screen or earns real scrutiny &mdash; based only on who it reaches and how reversible its action is, not on how sophisticated it is.</p>
+
+  <div id="card-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+
+<script>
+(function () {
+  var CANDIDATES = [
+    { id: 'b1', name: 'Customer-exception agentic workflow \u2014 Sales & Service',
+      text: "Classifies, writes, sends, and updates the record on its own, for exceptions that reach real customers.",
+      bucket: 'scrutiny',
+      why: "Breadth: reaches customers directly, not just an internal team. Reversibility: once a message is sent and a record updated, undoing it means chasing down an action already taken outside the organization." },
+    { id: 'b2', name: 'Morning briefing agent \u2014 Supply Chain',
+      text: "Reads mail and calendar and produces a personal summary; nothing it does reaches anyone outside the one planner using it.",
+      bucket: 'light',
+      why: "Breadth: one person, nothing sent anywhere else. Reversibility: the planner can ignore or correct the summary with no downstream trace." },
+    { id: 'b3', name: 'HR shortlisting and scheduling support \u2014 People/HR',
+      text: "Recommends which candidates move forward in the hiring process.",
+      bucket: 'scrutiny',
+      why: "Breadth: touches real candidates' standing in a hiring process, an employment-context use with obligations attached to it. Reversibility: a candidate screened out rarely gets a second look, even after a correction." },
+    { id: 'b4', name: 'Supply-planning briefing assistant \u2014 Supply Chain',
+      text: "Produces a daily advisory brief; the planning lead reads it and decides everything that happens next.",
+      bucket: 'light',
+      why: "Breadth: reaches one planning lead who still makes every call. Reversibility: nothing acts until that person decides to, so a wrong brief costs nothing but a re-read." }
+  ];
+
+  var CRITERION_TEXT = "Sizing runs on two facts only: how far a wrong output reaches, and how easily the action it triggers can be undone. A wide reach or a hard-to-reverse action earns scrutiny whatever the candidate's value score; a narrow, reversible one can move quickly.";
+  var FIRST_MOVE_TEXT = "For any candidate, imagine the same output produced by a much simpler method. If your sizing sentence would stay exactly the same, you're sizing the use \u2014 which is the right thing to size.";
+  var CORRECT_TEXT = "Right. Two of these reach outside the organization or carry consequences that are hard to undo, and earn scrutiny for that reason alone. Two stay with one person who decides everything before anything acts, and can move on a light screen. None of this depended on which technique sits underneath any of them.";
+
+  var listEl = document.getElementById('card-list');
+  var checkBtn = document.getElementById('check-btn');
+  var feedbackEl = document.getElementById('feedback');
+  var statusEl = document.getElementById('fb-status');
+  var detailEl = document.getElementById('fb-detail');
+  var srStatus = document.getElementById('sr-status');
+  var selections = {};
+
+  function updateCheckEnabled() {
+    checkBtn.disabled = CANDIDATES.some(function (c) { return !selections[c.id]; });
+  }
+
+  CANDIDATES.forEach(function (cand) {
+    var row = document.createElement('div');
+    row.className = 'card-row';
+
+    var name = document.createElement('span');
+    name.className = 'card-name';
+    name.textContent = cand.name;
+    row.appendChild(name);
+
+    var text = document.createElement('p');
+    text.className = 'card-text';
+    text.textContent = cand.text;
+    row.appendChild(text);
+
+    var choices = document.createElement('div');
+    choices.className = 'card-choices';
+    choices.setAttribute('role', 'group');
+    choices.setAttribute('aria-label', 'Your exposure answer for ' + cand.name);
+
+    [
+      { value: 'light', label: 'Light screen' },
+      { value: 'scrutiny', label: 'Earns real scrutiny' }
+    ].forEach(function (opt) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'choice-btn';
+      btn.setAttribute('aria-pressed', 'false');
+      btn.textContent = opt.label;
+      btn.addEventListener('click', function () {
+        selections[cand.id] = opt.value;
+        choices.querySelectorAll('.choice-btn').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+        btn.setAttribute('aria-pressed', 'true');
+        feedbackEl.hidden = true;
+        updateCheckEnabled();
+      });
+      choices.appendChild(btn);
+    });
+
+    row.appendChild(choices);
+    listEl.appendChild(row);
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diffs = CANDIDATES.filter(function (c) { return selections[c.id] !== c.bucket; });
+
+    feedbackEl.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    if (diffs.length === 0) {
+      feedbackEl.classList.add('fb-ok');
+      statusEl.textContent = 'Correct.';
+      detailEl.textContent = CORRECT_TEXT;
+    } else if (diffs.length === 1) {
+      feedbackEl.classList.add('fb-near');
+      statusEl.textContent = 'Close.';
+      detailEl.textContent = 'Look again at ' + diffs[0].name + ': ' + diffs[0].why;
+    } else {
+      feedbackEl.classList.add('fb-warn');
+      statusEl.textContent = 'Not yet.';
+      detailEl.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+    feedbackEl.hidden = false;
+    feedbackEl.focus();
+    srStatus.textContent = statusEl.textContent;
+  });
+})();
+</script>
+</body>
+</html>
