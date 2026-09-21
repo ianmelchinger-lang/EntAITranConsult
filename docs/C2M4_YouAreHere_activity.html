@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read this first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 24px;
+    color: var(--ink);
+  }
+
+  .scenario {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin: 0 0 28px;
+  }
+
+  .scenario p {
+    margin: 0 0 16px;
+  }
+
+  .scenario p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prompt-lead {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 16px;
+  }
+
+  .option {
+    display: block;
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .option-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .option-box {
+    display: block;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 18px;
+    background: var(--white);
+  }
+
+  .option-lead {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .option-detail {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .option-input:checked + .option-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .option-input:focus-visible + .option-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  fieldset.locked .option {
+    cursor: default;
+  }
+
+  fieldset.locked .option-box {
+    opacity: 0.9;
+  }
+
+  .reveal-btn {
+    display: block;
+    margin: 22px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .reveal-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .reveal-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .reveal-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .reveal {
+    margin-top: 32px;
+    padding: 22px 24px;
+    background: var(--highlight-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .reveal[hidden] {
+    display: none;
+  }
+
+  .reveal:focus {
+    outline: none;
+  }
+
+  .reveal-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--accent-deep);
+    margin: 0 0 4px;
+  }
+
+  .reveal-chosen {
+    font-family: var(--font-sans);
+    font-style: italic;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p {
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read this first</h1>
+
+  <div class="scenario">
+    <p>A multinational manufacturer with plants on three continents has gathered ideas for its next round of AI work. After duplicates were merged, the transformation lead holds twelve candidates from six functions: two from supply chain, three from the plants, one from quality, two from sales and service, two from finance, and two from HR.</p>
+    <p>The ideas arrived in different shapes. One promises better forecasts. One cuts a quality write-up from 38 minutes to 22. One promises fewer days of inventory. One carries a currency figure with no method behind it. Each sponsor explains why their idea matters, in the terms that favor it.</p>
+    <p>The budget covers three. The steering group meets next month and expects a shortlist, with a reason for each place on it.</p>
+  </div>
+
+  <p class="prompt-lead">Before reading on, choose the reading that comes closest to your own first instinct.</p>
+
+  <fieldset id="reading-fieldset">
+    <legend>How should the twelve become a shortlist of three?</legend>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="a">
+      <span class="option-box">
+        <span class="option-lead">Rank them on experienced judgment.</span>
+        <span class="option-detail">Read all twelve, weigh them against what you know about the business, and put them in order. Judgment is what the steering group is paying for.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="b">
+      <span class="option-box">
+        <span class="option-lead">Score each idea on its own merits.</span>
+        <span class="option-detail">Take the ideas one at a time and test each against the questions its sponsor&rsquo;s case raises. Every function knows its own work best.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="c">
+      <span class="option-box">
+        <span class="option-lead">Blend benefit and difficulty into one score.</span>
+        <span class="option-detail">Give every idea a single number that weighs what it returns against what it costs, then fund the top three. One number is simple to present.</span>
+      </span>
+    </label>
+  </fieldset>
+
+  <button type="button" class="reveal-btn" id="reveal-btn" disabled>See what this misses</button>
+
+  <div class="reveal" id="reveal" role="region" aria-label="What this reading misses" tabindex="-1" hidden>
+    <span class="reveal-tag">You read this as:</span>
+    <p class="reveal-chosen" id="reveal-chosen"></p>
+    <div class="reveal-body" id="reveal-body"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var READINGS = {
+    a: {
+      lead: "Rank them on experienced judgment.",
+      rebuttal: "Judgment ranks what the page shows, and the page shows each sponsor\u2019s framing rather than value or cost. Without a stated measure, the order tends to follow whose idea arrived last, whose sponsor is most senior, or whose story is most vivid. The steering group will ask why the third idea beat the fourth. Experience alone offers no sentence that answers it, and a ranking nobody can explain is a list of preferences."
+    },
+    b: {
+      lead: "Score each idea on its own merits.",
+      rebuttal: "A score means something only beside other scores taken the same way. Test each idea against its own sponsor\u2019s questions and you get twelve separate verdicts, each against a different measure: minutes saved in one case, days of inventory in another, a currency figure in a third. Each verdict may be fair. None can be compared with the others, so no order follows from them."
+    },
+    c: {
+      lead: "Blend benefit and difficulty into one score.",
+      rebuttal: "This is the most disciplined of the three readings, and it still hides the reason behind every position. A middling score could mean an idea worth little, which you would drop. It could also mean an idea worth a great deal but hard to deliver, which you would rescope or schedule later. One number gives both the same label, so the steering group learns the order but not what to do about the ideas near the line."
+    }
+  };
+
+  var CLOSING = "All three readings treat the list as the whole population, and the list holds only what was submitted. Three of the twelve already exist somewhere in the plants, and other AI work is running that nobody submitted at all. What\u2019s missing is a comparable set: every candidate the organization actually has, including work already running, stated the same way and held against one measure. Until that set exists, judgment, one-at-a-time scoring, and a blended number will each produce a confident shortlist that answers a smaller question than the budget is asking.";
+
+  var radios = document.querySelectorAll('input[name="reading"]');
+  var revealBtn = document.getElementById('reveal-btn');
+  var revealPanel = document.getElementById('reveal');
+  var revealChosen = document.getElementById('reveal-chosen');
+  var revealBody = document.getElementById('reveal-body');
+  var fieldset = document.getElementById('reading-fieldset');
+
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function () {
+      revealBtn.disabled = false;
+    });
+  }
+
+  revealBtn.addEventListener('click', function () {
+    var chosen = null;
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { chosen = radios[i].value; }
+    }
+    if (!chosen) { return; }
+
+    for (var j = 0; j < radios.length; j++) {
+      radios[j].disabled = true;
+    }
+    fieldset.classList.add('locked');
+    revealBtn.disabled = true;
+
+    var data = READINGS[chosen];
+    revealChosen.textContent = '\u201C' + data.lead + '\u201D';
+
+    revealBody.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = data.rebuttal;
+    var p2 = document.createElement('p');
+    p2.textContent = CLOSING;
+    revealBody.appendChild(p1);
+    revealBody.appendChild(p2);
+
+    revealPanel.hidden = false;
+    revealPanel.focus();
+  });
+})();
+</script>
+</body>
+</html>

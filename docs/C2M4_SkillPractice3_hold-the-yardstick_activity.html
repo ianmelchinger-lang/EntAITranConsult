@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hold the yardstick still</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Hold the yardstick still</h1>
+
+  <p class="lead-line">A fixed criteria set is the list of criteria and weights chosen before scoring begins and applied, unchanged, to every candidate. Once candidates are known, every sponsor has a reason the yardstick should move in their favor. Your job is to tell a fair correction from a moved yardstick.</p>
+
+  <p class="context">A manufacturer's transformation team fixed its benefit criteria before reading any candidate: size of the benefit, weighted at 60 percent, and confidence in the evidence, weighted at 40 percent. Confidence reflects how well the organization's own records could check the claim. Effort is scored separately and isn't part of these requests.</p>
+
+  <div class="table-wrap">
+    <table class="scores" id="base-table">
+      <caption>Candidates ordered on the benefit axis, scored 1 to 5</caption>
+      <thead><tr><th class="num" scope="col">Place</th><th scope="col">Candidate</th><th class="num" scope="col">Size</th><th class="num" scope="col">Confidence</th><th class="num" scope="col">Benefit</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="instruction">
+    <p>Four requests arrived after the scores were published. Each shows what it would do to the order if applied. Decide how to handle each one.</p>
+    <p><b>Accept</b> a request that corrects a score under the same criterion. <b>Record for next cycle</b> a request that would change the criteria or weights for everyone. <b>Decline</b> a request that changes the yardstick for one candidate.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my decisions</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: move the weight yourself</h2>
+    <p>Move the weight on size and watch the order change. Nothing here is checked.</p>
+    <div class="slider-row">
+      <label for="w-size">Weight on size</label>
+      <input type="range" id="w-size" min="0" max="100" step="10" value="60">
+      <span class="slider-value" id="w-size-value" aria-hidden="true"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="scores" id="sp-table">
+        <caption id="sp-caption">Order at the current weights</caption>
+        <thead><tr><th class="num" scope="col">Place</th><th scope="col">Candidate</th><th class="num" scope="col">Benefit</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+
+  var CANDS = [{"id": "UC-04", "name": "Demand forecasting across all nine plants", "S": 5, "C": 3}, {"id": "UC-10", "name": "Wider rollout of the customer-exception workflow", "S": 5, "C": 2}, {"id": "UC-09", "name": "Drafting replies to warranty and service questions", "S": 4, "C": 3}, {"id": "UC-08", "name": "Supplier nonconformance write-ups, drafted and reviewed", "S": 2, "C": 5}, {"id": "UC-16", "name": "Month-end close support in finance", "S": 3, "C": 1}, {"id": "UC-14", "name": "Renewal of the company-wide assistant seats", "S": 1, "C": 3}];
+  var REQS = [{"who": "Quality organization lead", "target": "UC-08", "text": "Our size score was worked out from one plant's volume. The drafting assistant runs at all three plants, which together produce 9,600 write-ups a year.", "change": {"type": "score", "id": "UC-08", "S": 4}, "bucket": "accept", "why": "This corrects a score under the same criterion. Size is still size and the weights haven't moved; the evidence was simply read wrong. The candidate climbs, and it should."}, {"who": "Service function head", "target": "UC-10", "text": "Leave confidence out of our score. Volume figures are all anyone has for a workflow this new.", "change": {"type": "drop_conf", "id": "UC-10"}, "bucket": "decline", "why": "This removes a criterion for one candidate only. Every other candidate is still measured on confidence, so the scores would stop being comparable. Decline it."}, {"who": "Quality organization lead", "target": "UC-08", "text": "Weight confidence at 60 percent and size at 40. The steering group should reward ideas with strong evidence, like ours.", "change": {"type": "weights", "wS": 40}, "bucket": "next", "why": "It would apply to everyone, but it resets the weights after every candidate is known, and it comes from the sponsor it favors. Record it for the next cycle's criteria, set before anyone reads the list."}, {"who": "IT and data lead", "target": "UC-14", "text": "Score our renewal on reach instead of size. The seats touch every corporate function, so reach is the fairer measure for us.", "change": {"type": "swap_size", "id": "UC-14", "S": 5}, "bucket": "decline", "why": "This swaps in a different criterion for one candidate. Reach might be a reasonable criterion for a future cycle, but only if every candidate is measured on it. For one candidate now, it moves the yardstick. Decline it."}];
+  var BUCKETS = [{"value": "accept", "label": "Accept"}, {"value": "next", "label": "Record for next cycle"}, {"value": "decline", "label": "Decline"}];
+  var CRITERION_TEXT = "Ask what each request changes. A corrected score under the same criterion keeps the yardstick where it was, so accept it. A change to the criteria or weights for everyone moves the yardstick after the candidates are known, so it waits for the next cycle. A change for one candidate moves the yardstick for that candidate alone, so decline it.";
+  var FIRST_MOVE_TEXT = "Ignore how far the requester's candidate would climb. Every request here moves someone up, including the fair one. Ask only whether the criteria, the weights, or the evidence would change.";
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function score10(c, wS) {
+    if (c.noConf) { return 10 * c.S; }
+    return (wS * c.S + (100 - wS) * c.C) / 10;
+  }
+  function ranked(cands, wS) {
+    var rows = cands.map(function (c) { return { id: c.id, name: c.name, S: c.S, C: c.C, s10: score10(c, wS) }; });
+    rows.sort(function (a, b) { return b.s10 - a.s10; });
+    rows.forEach(function (r) {
+      var higher = rows.filter(function (x) { return x.s10 > r.s10; }).length;
+      var tied = rows.filter(function (x) { return x.s10 === r.s10; }).length > 1;
+      r.place = higher + 1; r.tied = tied;
+    });
+    return rows;
+  }
+  function ord(n) { return n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
+  function placeText(r) { return (r.tied ? 'tied ' : '') + ord(r.place); }
+  function fmt(n10) { return (n10 / 10).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+  function nameOf(id) { return CANDS.filter(function (c) { return c.id === id; })[0].name; }
+
+  function applyReq(req) {
+    var cands = clone(CANDS), wS = 60, ch = req.change;
+    if (ch.type === 'score' || ch.type === 'swap_size') { cands.forEach(function (c) { if (c.id === ch.id) { c.S = ch.S; } }); }
+    if (ch.type === 'drop_conf') { cands.forEach(function (c) { if (c.id === ch.id) { c.noConf = true; } }); }
+    if (ch.type === 'weights') { wS = ch.wS; }
+    return ranked(cands, wS);
+  }
+
+  var BASE = ranked(CANDS, 60);
+  function placeIn(rows, id) { return rows.filter(function (r) { return r.id === id; })[0]; }
+
+  var tbody = document.querySelector('#base-table tbody');
+  BASE.forEach(function (r) {
+    var tr = document.createElement('tr');
+    [placeText(r), r.name, String(r.S), String(r.C), fmt(r.s10)].forEach(function (v, i) {
+      var td = document.createElement('td'); td.textContent = v; if (i !== 1) { td.className = 'num'; } tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  var ITEMS = REQS.map(function (req) {
+    var before = placeIn(BASE, req.target), after = placeIn(applyReq(req), req.target);
+    return { text: req.text, meta: 'From the ' + req.who.toLowerCase() + ', sponsor of \u201C' + nameOf(req.target) + '\u201D',
+             effect: 'If applied: this candidate moves from ' + placeText(before) + ' to ' + placeText(after) + '.',
+             bucket: req.bucket, why: req.why, before: before.place, after: after.place };
+  });
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ['Right. All four requests would lift the requester\u2019s candidate, and only one deserved to. The distance a candidate climbs says nothing about whether the request is fair. What decides it is whether the yardstick moves.']);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at the request: \u201C' + it.text + '\u201D', it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+  });
+
+  var slider = document.getElementById('w-size');
+  var sv = document.getElementById('w-size-value');
+  var spBody = document.querySelector('#sp-table tbody');
+  var spNote = document.getElementById('sp-note');
+  var srStatus = document.getElementById('sr-status');
+  function renderSlider() {
+    var wS = parseInt(slider.value, 10);
+    var label = 'Size ' + wS + '%, confidence ' + (100 - wS) + '%';
+    sv.textContent = label;
+    slider.setAttribute('aria-valuetext', label);
+    var rows = ranked(CANDS, wS);
+    spBody.innerHTML = '';
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      if (placeIn(BASE, r.id).place !== r.place || placeIn(BASE, r.id).tied !== r.tied) { tr.className = 'moved'; }
+      [placeText(r), r.name, fmt(r.s10)].forEach(function (v, i) {
+        var td = document.createElement('td'); td.textContent = v; if (i !== 1) { td.className = 'num'; } tr.appendChild(td);
+      });
+      spBody.appendChild(tr);
+    });
+    var top = rows.filter(function (r) { return r.place === 1; }).map(function (r) { return r.name; });
+    spNote.textContent = (wS === 60 ? 'These are the fixed weights. ' : 'Highlighted rows have moved from the fixed order. ') + 'In first place: ' + top.join(' and ') + '. Every setting produces an order that looks defensible, which is why the weights are fixed before anyone reads the candidates.';
+    srStatus.textContent = label + '. First place: ' + top.join(' and ') + '.';
+  }
+  slider.addEventListener('input', renderSlider);
+  renderSlider();
+
+})();
+</script>
+</body>
+</html>

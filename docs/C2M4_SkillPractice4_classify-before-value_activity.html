@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classify before you value</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Classify before you value</h1>
+
+  <p class="lead-line">Regulatory exposure is the set of legal and oversight obligations a system carries once it runs. Where a regime sorts AI by risk, the higher tiers bring documentation, human oversight, and monitoring, and those duties cost money for as long as the system runs. Classify exposure first and that cost can change the order. Classify it last and a review can only approve or block what already sits at the top.</p>
+
+  <p class="context">A manufacturer's transformation team has six candidates. Each card gives three facts: what the system decides, whom those decisions affect, and how much human review stands before the outcome.</p>
+
+  <div class="instruction">
+    <p>Flag any candidate that makes decisions about people or acts without human review. Leave the rest unflagged.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my flags</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="order-panel" tabindex="-1" hidden>
+    <p>The steering group's rule: consider candidates with an effort score of 3 or less, rank them by benefit, and take the top three. In this exercise, a flag adds 2 points of effort for documentation, review, and monitoring.</p>
+    <div class="shortlists">
+      <div><h3>Classify first</h3><ol id="list-first"></ol></div>
+      <div><h3>Classify last</h3><ol id="list-last"></ol></div>
+    </div>
+    <p id="order-note"></p>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: add a review step</h2>
+    <p>Suppose the planner who built the morning briefing agent changes how it works. It now drafts its changes, and the planner approves them before anything happens in the connected systems. Nothing here is checked.</p>
+    <div id="sp-item"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+
+  var CANDS = [{"id": "UC-08", "name": "Supplier nonconformance write-ups, drafted and reviewed", "B": 44, "E": 2, "facts": [["Decides", "the first draft of each nonconformance write-up in the quality file"], ["Affects", "supplier firms"], ["Human review", "a quality engineer reviews every draft before it is filed"]], "people": false, "unreviewed": false, "why": "Its drafts concern supplier firms rather than people, and a quality engineer reviews every one. No flag.", "bucket": "none"}, {"id": "UC-18", "name": "HR shortlisting and scheduling support", "B": 40, "E": 2, "facts": [["Decides", "which job applicants move forward to interview"], ["Affects", "job applicants"], ["Human review", "recruiters see its recommendations; no review step is documented"]], "people": true, "unreviewed": true, "why": "It makes decisions about people: whether a job applicant moves forward. That alone earns the flag, before anyone asks what it's worth.", "bucket": "flag"}, {"id": "UC-09", "name": "Drafting replies to warranty and service questions", "B": 36, "E": 1, "facts": [["Decides", "the wording of a draft reply"], ["Affects", "customers who receive the reply"], ["Human review", "a service agent edits and sends every reply"]], "people": false, "unreviewed": false, "why": "Customers read the result, but the tool decides nothing about them. An agent edits and sends every reply. Customer-facing is not the same as deciding about people. No flag.", "bucket": "none"}, {"id": "UC-11", "name": "Morning briefing agent built by a supply planner", "B": 30, "E": 2, "facts": [["Decides", "what to change in four connected systems each morning"], ["Affects", "the planner's own schedule and records"], ["Human review", "none; it acts on a schedule"]], "people": false, "unreviewed": true, "why": "It decides nothing about other people, but it acts in four systems with no one reviewing first. Acting without review earns the flag.", "bucket": "flag"}, {"id": "UC-16", "name": "Month-end close support in finance", "B": 22, "E": 1, "facts": [["Decides", "nothing; it prepares reconciliations for analysts"], ["Affects", "ledger entries"], ["Human review", "finance analysts review and post everything"]], "people": false, "unreviewed": false, "why": "It prepares material that analysts review and post, and it decides nothing about anyone. No flag.", "bucket": "none"}, {"id": "UC-10", "name": "Wider rollout of the customer-exception workflow", "B": 38, "E": 4, "facts": [["Decides", "how each customer exception request is classified and answered"], ["Affects", "customers and their records"], ["Human review", "none; it writes, sends, and updates the record itself"]], "people": false, "unreviewed": true, "why": "It writes, sends, and updates records with no one reviewing first. Acting without review earns the flag.", "bucket": "flag"}];
+  var ITEMS = [{"text": "Supplier nonconformance write-ups, drafted and reviewed", "facts": [["Decides", "the first draft of each nonconformance write-up in the quality file"], ["Affects", "supplier firms"], ["Human review", "a quality engineer reviews every draft before it is filed"]], "bucket": "none", "why": "Its drafts concern supplier firms rather than people, and a quality engineer reviews every one. No flag.", "id": "UC-08"}, {"text": "HR shortlisting and scheduling support", "facts": [["Decides", "which job applicants move forward to interview"], ["Affects", "job applicants"], ["Human review", "recruiters see its recommendations; no review step is documented"]], "bucket": "flag", "why": "It makes decisions about people: whether a job applicant moves forward. That alone earns the flag, before anyone asks what it's worth.", "id": "UC-18"}, {"text": "Drafting replies to warranty and service questions", "facts": [["Decides", "the wording of a draft reply"], ["Affects", "customers who receive the reply"], ["Human review", "a service agent edits and sends every reply"]], "bucket": "none", "why": "Customers read the result, but the tool decides nothing about them. An agent edits and sends every reply. Customer-facing is not the same as deciding about people. No flag.", "id": "UC-09"}, {"text": "Morning briefing agent built by a supply planner", "facts": [["Decides", "what to change in four connected systems each morning"], ["Affects", "the planner's own schedule and records"], ["Human review", "none; it acts on a schedule"]], "bucket": "flag", "why": "It decides nothing about other people, but it acts in four systems with no one reviewing first. Acting without review earns the flag.", "id": "UC-11"}, {"text": "Month-end close support in finance", "facts": [["Decides", "nothing; it prepares reconciliations for analysts"], ["Affects", "ledger entries"], ["Human review", "finance analysts review and post everything"]], "bucket": "none", "why": "It prepares material that analysts review and post, and it decides nothing about anyone. No flag.", "id": "UC-16"}, {"text": "Wider rollout of the customer-exception workflow", "facts": [["Decides", "how each customer exception request is classified and answered"], ["Affects", "customers and their records"], ["Human review", "none; it writes, sends, and updates the record itself"]], "bucket": "flag", "why": "It writes, sends, and updates records with no one reviewing first. Acting without review earns the flag.", "id": "UC-10"}];
+  var BUCKETS = [{"value": "flag", "label": "Flag: higher exposure"}, {"value": "none", "label": "No flag"}];
+  var OVERSIGHT = 2, CEILING = 3;
+  var CRITERION_TEXT = "Two facts decide a flag, and either one is enough. Does the system make decisions about people? Does it act without a human reviewing first? Who reads the output, how valuable it is, and how new it is play no part.";
+  var FIRST_MOVE_TEXT = "Read each card's first two lines together: what it decides, and about whom. If the answer is people, flag it. If not, read the review line. No review means a flag.";
+
+  function shortlist(flagMap, withOversight) {
+    var rows = CANDS.map(function (c) {
+      var e = c.E + (withOversight && flagMap[c.id] ? OVERSIGHT : 0);
+      return { id: c.id, name: c.name, B: c.B, E: e, flagged: !!flagMap[c.id] };
+    }).filter(function (r) { return r.E <= CEILING; });
+    rows.sort(function (a, b) { return b.B - a.B; });
+    return rows.slice(0, 3);
+  }
+  function keyFlags(overrides) {
+    var m = {};
+    CANDS.forEach(function (c) { m[c.id] = c.people || c.unreviewed; });
+    if (overrides) { for (var k in overrides) { m[k] = overrides[k]; } }
+    return m;
+  }
+  function fmt(b) { return (b / 10).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+  function fill(ol, rows) {
+    ol.innerHTML = '';
+    rows.forEach(function (r) {
+      var li = document.createElement('li');
+      li.textContent = r.name + ' (benefit ' + fmt(r.B) + ', effort ' + r.E + ')';
+      ol.appendChild(li);
+    });
+  }
+  function ids(rows) { return rows.map(function (r) { return r.id; }); }
+  function nameOf(id) { return CANDS.filter(function (c) { return c.id === id; })[0].name; }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  function renderOrder() {
+    var flags = keyFlags();
+    var first = shortlist(flags, true), last = shortlist(flags, false);
+    fill(document.getElementById('list-first'), first);
+    fill(document.getElementById('list-last'), last);
+    var out = ids(last).filter(function (id) { return ids(first).indexOf(id) === -1; });
+    var inn = ids(first).filter(function (id) { return ids(last).indexOf(id) === -1; });
+    var note = 'These shortlists use the correct flags. ';
+    if (out.length) {
+      note += 'Classify first, and the oversight cost pushes \u201C' + out.map(nameOf).join('\u201D and \u201C') + '\u201D over the effort ceiling, which opens a place for \u201C' + inn.map(nameOf).join('\u201D and \u201C') + '\u201D. ';
+      note += 'Classify last, and the review receives a shortlist with \u201C' + out.map(nameOf).join('\u201D and \u201C') + '\u201D already on it and a sponsor invested in its approval. The review can approve it or block it, but it can\u2019t reorder the list.';
+    }
+    document.getElementById('order-note').textContent = note;
+    document.getElementById('order-panel').hidden = false;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ['Right. Three candidates carry a flag. One makes decisions about people, and two act without review. Their value never entered the classification.']);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: \u201C' + it.text + '\u201D', it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    renderOrder();
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: the briefing agent gains a review step. It still decides nothing about people.
+  var spItem = { text: 'Morning briefing agent, with the approval step',
+    facts: [['Decides', 'what to propose changing in four connected systems'], ['Affects', 'the planner\u2019s own schedule and records'], ['Human review', 'the planner approves every change first']],
+    bucket: 'none', why: '' };
+  renderSortItems(document.getElementById('sp-item'), [spItem], BUCKETS, 'sp', function () {
+    var v = answersFor([spItem], 'sp')[0];
+    var flags = keyFlags({ 'UC-11': false });
+    var before = shortlist(keyFlags(), true), after = shortlist(flags, true);
+    var entered = ids(after).filter(function (id) { return ids(before).indexOf(id) === -1; });
+    var left = ids(before).filter(function (id) { return ids(after).indexOf(id) === -1; });
+    var panel = document.getElementById('sp-panel');
+    panel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = (v === 'none' ? 'Right: ' : 'The rule says otherwise: ') + 'no flag. The agent still decides nothing about other people, and now a human reviews before it acts. Its effort falls back to 2, under the ceiling.';
+    var p2 = document.createElement('p');
+    p2.textContent = 'Classified first, the shortlist changes: \u201C' + entered.map(nameOf).join('\u201D, \u201C') + '\u201D enters and \u201C' + left.map(nameOf).join('\u201D, \u201C') + '\u201D leaves. The same approval step added to the HR tool would not clear its flag, because its decisions would still affect job applicants.';
+    panel.appendChild(p1); panel.appendChild(p2);
+    panel.hidden = false;
+  });
+
+})();
+</script>
+</body>
+</html>

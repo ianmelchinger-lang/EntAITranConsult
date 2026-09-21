@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Same process, different names</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Same process, different names</h1>
+
+  <p class="lead-line">An intake is the tracked place where an organization records every AI build and every request, so that overlapping work can be found. Finding it early is cheap. Finding it after each version has users and a sponsor means paying twice. But a match depends on the process each record changes, not on what anyone called it.</p>
+
+  <p class="context">A manufacturer's intake log has flagged five pairs of records as possible overlaps, because their names or descriptions share words.</p>
+
+  <div class="instruction">
+    <p>For each pair, decide whether the two records change the same business process for the same benefit, or different ones.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my matches</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: when to consolidate</h2>
+    <p>Take the first pair, the two reply-drafting tools. Whether to consolidate them is a question of when, not whether. Decide under each set of conditions. Nothing here is checked.</p>
+    <div id="sp-items"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+
+  var ITEMS = [{"text": "Record 1: Reply helper, team-built in a service team's channel: drafts replies to warranty and service questions. It has spread to several teams over four months.", "meta": "Record 2: Warranty and service response drafting assistant, sanctioned: drafts responses that agents review and send. Small deployment.", "bucket": "same", "why": "Both change the same process, drafting written replies to warranty and service questions, for the same benefit: agent time. Different builders and names don't make them different entries."}, {"text": "Record 1: Plant demand-forecasting assistant, running at one plant: produces that plant's demand forecast each planning cycle.", "meta": "Record 2: Enterprise demand-forecasting model, requested: would forecast demand across all nine plants to cut days of inventory.", "bucket": "same", "why": "Both change demand forecasting for production planning. One runs at one plant and the other is requested for nine, so scope is a question inside a single entry rather than a reason for two."}, {"text": "Record 1: Briefing assistant, team-built in supply planning: writes the daily planning brief the team reads each morning.", "meta": "Record 2: Morning briefing agent, built by one planner: reads that planner's mail and calendar and acts in four connected systems.", "bucket": "diff", "why": "They share a word, not a process. One produces a team's planning brief. The other manages one person's schedule and records."}, {"text": "Record 1: Supplier-quality document reader, requested: reads incoming supplier documents and surfaces exceptions.", "meta": "Record 2: Supplier-nonconformance drafting assistant, sanctioned at three plants: drafts nonconformance write-ups for the quality file.", "bucket": "diff", "why": "Both touch supplier quality, but they change different steps. One screens what suppliers send in. The other writes up a failure after it's found."}, {"text": "Record 1: Warranty-claims assistant, sanctioned in one region: recommends how each claim should be settled.", "meta": "Record 2: Warranty and service response drafting assistant, sanctioned: drafts responses that agents review and send.", "bucket": "diff", "why": "Deciding how a claim is settled and drafting the reply are separate processes with separate benefits. They sit near each other in the same function, which is why the log flagged them."}];
+  var BUCKETS = [{"value": "same", "label": "Same process: one entry"}, {"value": "diff", "label": "Different processes: separate entries"}];
+  var CONDITIONS = [{"label": "As things stand", "text": "Both tools draft text that an agent reviews before anything reaches a customer. Each took a small team a few weeks to build, and the service organization is still learning what drafting help is worth.", "answer": "leave", "why": "Builds are cheap, a mistake stays inside a reviewed draft, and the organization is still discovering what works. Duplication pays for itself here, as long as both stay recorded."}, {"label": "A year later", "text": "The reply helper now sends replies to customers in two regions without review, and each team pays for its own licences.", "answer": "merge", "why": "A mistake now reaches customers in two regions, and the parallel licences are a real cost. Early consolidation pays for itself once the damage from one error widens and parallel spending grows."}];
+  var CRITERION_TEXT = "Two records are one entry when they change the same business process for the same benefit. Their names, their builders, whether they're running or requested, and their scope don't decide it.";
+  var FIRST_MOVE_TEXT = "For each record, say in a few words which process it changes. Then compare the processes, not the names.";
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      var same = ITEMS.filter(function (it) { return it.bucket === 'same'; }).length;
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ['Right. ' + Word(same) + ' of the five pairs are genuine overlaps, even though the two reply-drafting tools share no words in their names. The other ' + word(ITEMS.length - same) + ' share words but change different processes. Only a record of every build lets you make these calls at all.']);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at the pair that begins: \u201C' + it.text.slice(0, 60) + '\u2026\u201D', it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  var CB = [{ value: 'leave', label: 'Leave both running, and recorded' }, { value: 'merge', label: 'Consolidate now' }];
+  var spItems = CONDITIONS.map(function (c) { return { text: c.label, meta: c.text, bucket: c.answer, why: c.why }; });
+  renderSortItems(document.getElementById('sp-items'), spItems, CB, 'sp', function () {
+    var ans = answersFor(spItems, 'sp');
+    var panel = document.getElementById('sp-panel');
+    panel.innerHTML = '';
+    spItems.forEach(function (it, i) {
+      if (ans[i] === null) { return; }
+      var p = document.createElement('p');
+      var label = CB.filter(function (b) { return b.value === it.bucket; })[0].label.toLowerCase();
+      p.textContent = it.text + ': ' + (ans[i] === it.bucket ? '' : 'the conditions point the other way, toward ') + label + '. ' + it.why;
+      panel.appendChild(p);
+    });
+    if (ans.indexOf(null) === -1) {
+      var p2 = document.createElement('p');
+      p2.textContent = 'The pair and the tools never changed. The conditions did, and the answer flipped with them.';
+      panel.appendChild(p2);
+    }
+    panel.hidden = false;
+  });
+
+})();
+</script>
+</body>
+</html>

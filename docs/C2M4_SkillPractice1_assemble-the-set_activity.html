@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build the whole set</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Build the whole set</h1>
+
+  <p class="lead-line">A rank only means something against the population around it. Before anything is ranked, the set has to hold every candidate the organization actually has, stated in one unit: a business process and the benefit expected from changing it.</p>
+
+  <p class="context">A manufacturer's transformation lead is building the candidate set for next year's AI budget. Material has come in from four places: the solicitation list, the intake log that records running AI work, a service team's shared channel, and the vendor file.</p>
+
+  <div class="instruction">
+    <p>Decide where each piece of material belongs.</p>
+    <p><b>Enters as written</b> means it already names a process and a benefit. <b>Enters once restated</b> means it's a real initiative described as a tool, a model, or a history. <b>Stays out</b> means it's evidence about a benefit rather than something to fund.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sort</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: close three of the sources</h2>
+    <p>Suppose the intake log, the team channel, and the vendor file were unavailable, and the set came from the solicitation list alone. Nothing here is checked.</p>
+    <button type="button" class="check-btn" id="sp-btn">Show the set from the solicitation list only</button>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+
+  var ITEMS = [{"text": "Supplier nonconformance write-ups at three plants: drafting each one with an assistant, then reviewing it, cuts the work from 38 minutes to 22.", "meta": "From the solicitation list", "src": "solicitation", "bucket": "as", "why": "It names the business process that changes and the benefit expected from changing it, so it can sit beside any other entry as it stands."}, {"text": "Warranty claims: an assistant cuts average handling time by 4.3 minutes per claim.", "meta": "From the solicitation list", "src": "solicitation", "bucket": "as", "why": "Mentioning an assistant doesn't disqualify it. The entry still names the process, warranty claims handling, and a benefit per claim, which is the common unit."}, {"text": "Time to shortlist job candidates: support that shortens how long HR takes to produce a shortlist for each opening.", "meta": "From the solicitation list", "src": "solicitation", "bucket": "as", "why": "The process, shortlisting candidates, and the benefit, time to shortlist, are both stated. It is ready to compare."}, {"text": "The enterprise forecasting model we have been asking for since two budget cycles ago.", "meta": "From the solicitation list", "src": "solicitation", "bucket": "restate", "why": "This names a model and a history, not a process or a benefit. Restate it as demand forecasting across the plants and the benefit expected, such as fewer days of inventory."}, {"text": "Morning briefing agent: reads one planner's mail and calendar and acts in four connected systems on a schedule. Its builder says it saves an hour a day.", "meta": "From the intake log", "src": "intake", "bucket": "restate", "why": "It is described by what the tool does mechanically. Restate it as the process it changes, preparing a planner's daily brief, with the benefit expected. Nobody submitted it, and that doesn't keep it out."}, {"text": "Briefing assistant, team-built: in daily use for eleven months, and the team says it let them absorb a vacancy.", "meta": "From the intake log", "src": "intake", "bucket": "restate", "why": "A tool name and a usage history. Restate it as the daily supply-planning brief and the analyst hours it covers. Running work that nobody submitted belongs in the set."}, {"text": "The service drafting tool our team built. The fix works and people use it.", "meta": "Posted in a service team's shared channel", "src": "channel", "bucket": "restate", "why": "Usage is not a benefit and a tool is not a process. Restate it as drafting replies to service questions and the time it saves. Where it was found doesn't decide whether it counts."}, {"text": "A vendor case study: a named account reports handling time down 40 percent after launch.", "meta": "From the vendor file", "src": "vendor", "bucket": "out", "why": "This is evidence about someone else's benefit, not an initiative this organization could fund. It may later inform a benefit estimate inside an entry."}, {"text": "A survey summary: users in one function report that an assistant saves them roughly an hour a day.", "meta": "Posted in a service team's shared channel", "src": "channel", "bucket": "out", "why": "A survey result is evidence for a benefit claim, not a candidate. It belongs inside an entry's benefit estimate, where its weakness as self-report can be weighed."}];
+  var BUCKETS = [{"value": "as", "label": "Enters as written"}, {"value": "restate", "label": "Enters once restated as a process"}, {"value": "out", "label": "Stays out: evidence, not an initiative"}];
+  var CORRECT_TEXT = "Right. Where a piece of material came from never decided whether it counts. What decided it was whether it's an initiative, and whether it already names a process and a benefit.";
+  var CRITERION_TEXT = "Place each piece by two questions. Is it something the organization could fund, or evidence about a benefit? If it's an initiative, does it already name the business process it changes and the benefit expected? The source plays no part.";
+  var FIRST_MOVE_TEXT = "Start with any card and cover its source line. Ask what process would change if it went ahead. If you can name the process from the card itself, it enters as written. If you have to translate, it needs restating.";
+  var SOURCE_NOTE = "One or more running initiatives were kept out because nobody submitted them. A ranking against a set that leaves out running work can only rank part of the choice.";
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var ans = answersFor(ITEMS, 'item');
+    var diff = gradeSort(ITEMS, ans);
+    var keptOut = diff.some(function (i) { return ITEMS[i].bucket !== 'out' && ans[i] === 'out' && ITEMS[i].src !== 'solicitation'; });
+    if (diff.length === 0) {
+      var notSubmitted = ITEMS.filter(function (it) { return it.bucket !== 'out' && it.src !== 'solicitation'; }).length;
+      var inSet = ITEMS.filter(function (it) { return it.bucket !== 'out'; }).length;
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [CORRECT_TEXT,
+        'Your set holds ' + word(inSet) + ' candidates, and ' + word(notSubmitted) + ' of them were never submitted. Every one can now be compared with every other.']);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: \u201C' + it.text + '\u201D', it.why]);
+    } else {
+      var paras = [CRITERION_TEXT, FIRST_MOVE_TEXT];
+      if (keptOut) { paras.unshift(SOURCE_NOTE); }
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', paras);
+    }
+    sp.hidden = false;
+  });
+
+  document.getElementById('sp-btn').addEventListener('click', function () {
+    var panel = document.getElementById('sp-panel');
+    var full = ITEMS.filter(function (it) { return it.bucket !== 'out'; });
+    var solo = full.filter(function (it) { return it.src === 'solicitation'; });
+    var lost = full.filter(function (it) { return it.src !== 'solicitation'; });
+    panel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = 'The set shrinks from ' + word(full.length) + ' candidates to ' + word(solo.length) + '. These drop out of view:';
+    panel.appendChild(p1);
+    var ul = document.createElement('ul');
+    ul.style.fontFamily = 'var(--font-sans)'; ul.style.fontSize = '0.92rem'; ul.style.color = 'var(--ink-soft)'; ul.style.margin = '0 0 10px';
+    lost.forEach(function (it) { var li = document.createElement('li'); li.textContent = it.text; ul.appendChild(li); });
+    panel.appendChild(ul);
+    var p2 = document.createElement('p');
+    p2.textContent = 'All ' + word(lost.length) + ' are already running. One has spread across several service teams, and another carried a planning team through a vacancy. A ranking of the smaller set would still produce a confident top three, but it would be ranking part of the choice while the organization keeps paying for the rest.';
+    panel.appendChild(p2);
+    panel.hidden = false;
+    panel.focus();
+  });
+
+})();
+</script>
+</body>
+</html>

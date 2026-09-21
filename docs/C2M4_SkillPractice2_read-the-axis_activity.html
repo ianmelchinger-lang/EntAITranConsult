@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which axis put it there?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Which axis put it there?</h1>
+
+  <p class="lead-line">A low position means two different things depending on which axis produced it. Low benefit means the idea is worth little. High effort means it's valuable but hard. Each calls for a different response, and a blended score can't tell you which you're looking at.</p>
+
+  <p class="context">A manufacturer's transformation team has scored six candidates. Benefit combines the size of the claimed benefit with confidence in the evidence behind it. Effort covers money, time, people, and difficulty. Both run from 1 to 5. A colleague has added a blended score that folds the two into one number.</p>
+
+  <div class="instruction">
+    <p>Choose the response each candidate calls for. Treat 3.5 or more as high benefit and 2.5 or less as low. Treat an effort of 4 or more as high and 2 or less as low.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my responses</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: new evidence behind one benefit score</h2>
+    <p>Month-end close support scored low on confidence because its benefit arrived as a currency figure with no method, and nothing on file could check it. Now the finance partner points out that the system of record already times every step of the close. The benefit could be measured before and after launch, so confidence in the evidence rises from 1 to 5. Nothing here is checked.</p>
+    <div id="sp-item"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+
+  var ITEMS = [{"id": "UC-08", "text": "Supplier nonconformance write-ups, drafted and reviewed", "facts": [["Benefit", "4.4"], ["Effort", "2"], ["Blended score", "4.2"]], "b10": 44, "E": 2, "blend10": 42.0, "bucket": "fund", "why": "Benefit is high at 4.4 and effort is low at 2. Nothing stands in the way, so it's funded now."}, {"id": "UC-04", "text": "Demand forecasting across all nine plants", "facts": [["Benefit", "4.2"], ["Effort", "5"], ["Blended score", "2.6"]], "b10": 42, "E": 5, "blend10": 26.0, "bucket": "later", "why": "Benefit is high at 4.2, but effort is 5, the heaviest on the list. The idea is valuable but hard, so the response is to rescope it or schedule it for later, not to drop it."}, {"id": "UC-14", "text": "Renewal of the company-wide assistant seats", "facts": [["Benefit", "1.8"], ["Effort", "2"], ["Blended score", "2.9"]], "b10": 18, "E": 2, "blend10": 29.0, "bucket": "drop", "why": "Benefit is 1.8, the lowest on the list. Its effort is low too, but cheapness doesn't rescue an idea worth little. Benefit put it here, so it's dropped."}, {"id": "UC-16", "text": "Month-end close support in finance", "facts": [["Benefit", "2.2"], ["Effort", "1"], ["Blended score", "3.6"]], "b10": 22, "E": 1, "blend10": 36.0, "bucket": "drop", "why": "Benefit is 2.2. The effort is minimal, which is exactly why the blended score flatters it. Benefit decides: drop it."}, {"id": "UC-09", "text": "Drafting replies to warranty and service questions", "facts": [["Benefit", "3.6"], ["Effort", "1"], ["Blended score", "4.3"]], "b10": 36, "E": 1, "blend10": 43.0, "bucket": "fund", "why": "Benefit is 3.6 and effort is 1. High benefit at low effort is funded now."}, {"id": "UC-10", "text": "Wider rollout of the customer-exception workflow", "facts": [["Benefit", "3.8"], ["Effort", "4"], ["Blended score", "2.9"]], "b10": 38, "E": 4, "blend10": 29.0, "bucket": "later", "why": "Benefit is high at 3.8 and effort is 4. Effort put it low, so the response is to rescope or sequence it, not to drop it."}];
+  var BUCKETS = [{"value": "fund", "label": "Fund now"}, {"value": "drop", "label": "Drop"}, {"value": "later", "label": "Rescope or schedule later"}];
+  var CRITERION_TEXT = "Read benefit first. Low benefit means the idea is worth little, and the response is to drop it, however cheap it is. High benefit with high effort means valuable but hard, so you rescope it or schedule it later. High benefit with low effort is funded now. The blended score plays no part in any of these.";
+  var FIRST_MOVE_TEXT = "Cover the blended column. For each candidate, ask whether benefit is low. If it is, you're done. If it isn't, look at effort.";
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  function fmt(n) { return (n / 10).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+
+  function tieSentence() {
+    for (var i = 0; i < ITEMS.length; i++) {
+      for (var k = i + 1; k < ITEMS.length; k++) {
+        if (ITEMS[i].blend10 === ITEMS[k].blend10 && ITEMS[i].bucket !== ITEMS[k].bucket) {
+          return 'Look at the blended column. \u201C' + ITEMS[i].text + '\u201D and \u201C' + ITEMS[k].text + '\u201D both score ' + fmt(ITEMS[i].blend10) + ', yet one is dropped and the other is rescoped. One number gave opposite decisions the same label.';
+        }
+      }
+    }
+    return '';
+  }
+
+  function mixSentence() {
+    var n = { fund: 0, later: 0, drop: 0 };
+    ITEMS.forEach(function (it) { n[it.bucket]++; });
+    return 'Read as a mix, the set holds ' + word(n.fund) + ' to fund now, ' + word(n.later) + ' larger bets to rescope or schedule, and ' + word(n.drop) + ' to drop. A single ranked list would have hidden that spread.';
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ['Right. Each response came from the axis that placed the candidate, never from the blend.', tieSentence(), mixSentence()]);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: \u201C' + it.text + '\u201D', it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+  });
+
+  // Second pass: confidence 1 -> 5 for month-end close support.
+  var S = 3, C_NEW = 5, E = 1;
+  var b10New = 6 * S + 4 * C_NEW;
+  var bucketNew = b10New <= 25 ? 'drop' : (E >= 4 ? 'later' : 'fund');
+  var spItem = { text: 'Month-end close support in finance, with the new evidence',
+                 facts: [['Benefit', fmt(b10New) + ' (was 2.2)'], ['Effort', String(E)]], bucket: bucketNew, why: '' };
+  var BL = { fund: 'Fund now', drop: 'Drop', later: 'Rescope or schedule later' };
+  renderSortItems(document.getElementById('sp-item'), [spItem], BUCKETS, 'sp', function () {
+    var v = answersFor([spItem], 'sp')[0];
+    var panel = document.getElementById('sp-panel');
+    panel.innerHTML = '';
+    var p = document.createElement('p');
+    p.textContent = (v === bucketNew ? 'Yes: ' : 'The axes say otherwise: ') + BL[bucketNew].toLowerCase() + '. Benefit rose from 2.2 to ' + fmt(b10New) + ' without any change to the idea itself. Only the evidence changed. A record that can check a claim after launch turns an assertion into a benefit you can score with confidence.';
+    panel.appendChild(p);
+    panel.hidden = false;
+  });
+
+})();
+</script>
+</body>
+</html>
