@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Date the bar</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+  .terms { margin: 10px 0 0; padding: 0; }
+  .terms dt { font-weight: 600; color: var(--ink); margin: 8px 0 0; }
+  .terms dd { margin: 0; color: var(--ink-soft); }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .pick { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-top: 10px; }
+  .pick:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; }
+  .chip-btn { font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; cursor: pointer; }
+  .chip-btn:hover { border-color: var(--accent); }
+  .chip-btn[aria-pressed="true"] { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .chip-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .fb-detail b { color: var(--ink); font-weight: 600; }
+  .panel { margin-top: 20px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel h3 { font-family: var(--font-sans); font-size: 0.95rem; font-weight: 700; margin: 0 0 8px; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 14px; }
+  table.grid { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.grid caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.grid th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.grid tr.moved td { background: var(--highlight-bg); color: var(--ink); }
+  table.grid tr.total td { font-weight: 700; color: var(--ink); background: var(--paper); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .chips { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Date the bar</h1>
+
+  <p class="lead-line">A readiness finding compares an organization with a standard on a date. The standard tells a later reader what the finding was measured against, and the date tells them how far things have moved since. Some measures never need this, because minutes per claim stay minutes per claim. A readiness rating does need it, because the standard moves as the technology moves. Here, the bar means the standard a rating was measured against.</p>
+
+  <p class="context">A manufacturer&rsquo;s steering group has inherited six findings from earlier assessments. Each is shown as it was recorded. The findings are illustrative.</p>
+
+  <div class="instruction">
+    <p>Decide what each finding lets you say today.</p>
+    <p><b>Means what it meant</b> is a measure that stays the same over time, so you can read it without a bar or a date. <b>Readable against its bar and date</b> means you can interpret it, but only by holding it to the bar and date it records. <b>Cannot be interpreted</b> means the page is missing its bar, its date, or a bar specific enough to rebuild.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my choices</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: move the bar</h2>
+    <p>Take the workforce finding that recorded both its bar and its date. It rated 56 percent of the 14,200 knowledge workers ready. Suppose nobody&rsquo;s skill has changed, but this cycle&rsquo;s bar sits higher. The two bars are illustrative, and nothing here is checked.</p>
+    <div class="chips" id="sp-chips" role="group" aria-label="Bar to apply"></div>
+    <div class="panel" id="sp-panel" aria-live="polite" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function quote(t) { return '\u201C' + t + '\u201D'; }
+
+  var BUCKETS = [
+    { value: 'stable', label: 'Means what it meant' },
+    { value: 'readable', label: 'Readable against its bar and date' },
+    { value: 'cannot', label: 'Cannot be interpreted' }
+  ];
+
+  var ITEMS = [
+    { text: 'Governance adequacy: Adequate.',
+      facts: [['Bar', 'Not recorded.'], ['Measured', 'Not recorded.']],
+      key: 'cannot',
+      why: 'With neither a bar nor a date, the word has nothing to refer to. This is the limit of what the rating can tell anyone.' },
+    { text: 'Workforce proficiency: 56% rated ready.',
+      facts: [['Population', 'The 14,200 knowledge workers.'], ['Bar', 'Uses an AI assistant in the daily workflow at least occasionally, even with mixed results.'], ['Measured', '14 March, previous assessment cycle.']],
+      key: 'readable',
+      why: 'The bar and the date are both on the page, and both are specific enough to rebuild. The rating can be read against them. It cannot be compared with a rating measured today until the bar is re-based.' },
+    { text: 'Average handling time per warranty claim, before the assistant: 18.5 minutes.',
+      facts: [['Measure', 'Minutes from claim received to claim closed.'], ['Recorded', 'Last year.']],
+      key: 'stable',
+      why: 'Minutes per claim mean the same thing a year later. A stable measure needs no bar and no date to be read.' },
+    { text: 'Data readiness: Meets the standard.',
+      facts: [['Bar', 'The data quality standard in force at the time.'], ['Measured', '9 September, previous assessment cycle.']],
+      key: 'cannot',
+      why: 'The date is recorded, but the bar is only whatever was in force then. A later reader cannot rebuild it, so no one can re-base the rating on purpose.' },
+    { text: 'Tooling capability: 4 on a 5-point scale.',
+      facts: [['Bar', 'The tooling criteria in the assessment rubric, version dated 2 February of that cycle.'], ['Measured', '21 March, previous assessment cycle.']],
+      key: 'readable',
+      why: 'The rubric version and the date are recorded, so a later reader can find the bar. The rating is readable against it.' },
+    { text: 'Workforce proficiency, plant offices: 52% rated ready.',
+      facts: [['Bar', 'Uses an AI assistant in the daily workflow at least occasionally, even with mixed results.'], ['Measured', 'Not recorded.']],
+      key: 'cannot',
+      why: 'The bar is on the page and the date is not. Without the date, no one can say how far the bar or the organization has moved since.' }
+  ];
+
+  var CRITERION_TEXT = 'Ask two questions of each finding. Does the measure stay the same over time, like minutes per claim, or does it depend on a standard that moves? If it depends on a standard, does the page record which standard, specific enough to rebuild, and the date it was measured?';
+  var FIRST_MOVE_TEXT = 'Cover the headline number and read only the bar and the date. If you could rebuild the measurement from them, the finding can be read against them. If you could not, the number stands alone.';
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  function answersFor() {
+    return ITEMS.map(function (it, idx) {
+      var c = document.querySelector('input[name="item' + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fs.appendChild(legend);
+    var facts = document.createElement('div');
+    facts.className = 'item-facts';
+    item.facts.forEach(function (pair) {
+      var row = document.createElement('div');
+      var b = document.createElement('b');
+      b.textContent = pair[0] + ': ';
+      row.appendChild(b);
+      row.appendChild(document.createTextNode(pair[1]));
+      facts.appendChild(row);
+    });
+    fs.appendChild(facts);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    BUCKETS.forEach(function (b) {
+      choices.appendChild(makeChoice('item' + idx, b.value, b.label, function () {
+        checkBtn.disabled = answersFor().indexOf(null) !== -1;
+      }));
+    });
+    fs.appendChild(choices);
+    itemsEl.appendChild(fs);
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var ans = answersFor();
+    var wrong = [];
+    ITEMS.forEach(function (it, i) { if (ans[i] !== it.key) { wrong.push(i); } });
+    var nCannot = ITEMS.filter(function (it) { return it.key === 'cannot'; }).length;
+
+    if (wrong.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [
+        'Minutes per claim mean the same thing a year later, so that measure needs no dating. The two ratings that record a specific bar and a date can be read, but only against that bar and that date. The other ' + word(nCannot) + ' leave a number that no later reader can interpret.',
+        'The honest answer to a number with no bar or date is that it cannot be interpreted. A re-assessment starts by re-basing the bar, and only then re-measures the organization.'
+      ]);
+    } else if (wrong.length === 1) {
+      var it = ITEMS[wrong[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: ' + quote(it.text), it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+  });
+
+  // Second pass. Segment headcounts come from the workforce fixtures. The bars are illustrative.
+  var SEGMENTS = [
+    { name: 'Novice', note: 'Aware of the tools, not applying them in the workflow', people: 6248 },
+    { name: 'Experimenter', note: 'Occasional use, inconsistent results', people: 4686 },
+    { name: 'Proficient', note: 'A reliable part of the daily workflow', people: 2414 },
+    { name: 'Expert', note: 'AI-native in the role, informally coaching others', people: 852 }
+  ];
+  var BARS = [
+    { id: 'last', label: 'Last cycle\u2019s bar: at least occasional use', counts: ['Experimenter', 'Proficient', 'Expert'] },
+    { id: 'this', label: 'This cycle\u2019s bar: a reliable part of the daily workflow', counts: ['Proficient', 'Expert'] }
+  ];
+
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  function pct(n) { return (n / total() * 100).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+  function total() { return SEGMENTS.reduce(function (s, x) { return s + x.people; }, 0); }
+  function readyUnder(bar) {
+    return SEGMENTS.filter(function (s) { return bar.counts.indexOf(s.name) !== -1; })
+      .reduce(function (s, x) { return s + x.people; }, 0);
+  }
+
+  var chipsEl = document.getElementById('sp-chips');
+  var panel = document.getElementById('sp-panel');
+  var seen = {};
+
+  function renderBar(bar) {
+    seen[bar.id] = true;
+    panel.innerHTML = '';
+    var h = document.createElement('h3');
+    h.textContent = bar.label;
+    panel.appendChild(h);
+
+    var wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    var tbl = document.createElement('table');
+    tbl.className = 'grid';
+    var thead = document.createElement('thead');
+    var hr = document.createElement('tr');
+    [['Segment', ''], ['People', 'num'], ['Counted ready', '']].forEach(function (c) {
+      var th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = c[0];
+      if (c[1]) { th.className = c[1]; }
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    tbl.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    SEGMENTS.forEach(function (s) {
+      var isReady = bar.counts.indexOf(s.name) !== -1;
+      var tr = document.createElement('tr');
+      if (isReady) { tr.className = 'moved'; }
+      var a = document.createElement('td'); a.textContent = s.name + ': ' + s.note.charAt(0).toLowerCase() + s.note.slice(1);
+      var b = document.createElement('td'); b.className = 'num'; b.textContent = fmt(s.people);
+      var c = document.createElement('td'); c.textContent = isReady ? 'Yes' : 'No';
+      tr.appendChild(a); tr.appendChild(b); tr.appendChild(c);
+      tbody.appendChild(tr);
+    });
+    var trT = document.createElement('tr');
+    trT.className = 'total';
+    var t1 = document.createElement('td'); t1.textContent = 'Counted ready under this bar';
+    var t2 = document.createElement('td'); t2.className = 'num'; t2.textContent = fmt(readyUnder(bar)) + ' of ' + fmt(total());
+    var t3 = document.createElement('td'); t3.textContent = pct(readyUnder(bar)) + ' percent';
+    trT.appendChild(t1); trT.appendChild(t2); trT.appendChild(t3);
+    tbody.appendChild(trT);
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    panel.appendChild(wrap);
+
+    var p = document.createElement('p');
+    if (seen.last && seen.this) {
+      p.textContent = 'The same ' + fmt(total()) + ' people rate ' + pct(readyUnder(BARS[0])) + ' percent ready against last cycle\u2019s bar and ' + pct(readyUnder(BARS[1])) + ' percent against this cycle\u2019s. No one lost a skill. A re-assessment that reported only the second number would look like a decline. One that recorded both bars would show that the difference between the bars is itself a finding.';
+    } else {
+      p.textContent = 'Now choose the other bar and compare.';
+    }
+    panel.appendChild(p);
+    panel.hidden = false;
+  }
+
+  BARS.forEach(function (bar) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip-btn';
+    b.setAttribute('aria-pressed', 'false');
+    b.textContent = bar.label;
+    b.addEventListener('click', function () {
+      var all = chipsEl.querySelectorAll('.chip-btn');
+      for (var i = 0; i < all.length; i++) { all[i].setAttribute('aria-pressed', 'false'); }
+      b.setAttribute('aria-pressed', 'true');
+      renderBar(bar);
+    });
+    chipsEl.appendChild(b);
+  });
+
+})();
+</script>
+</body>
+</html>

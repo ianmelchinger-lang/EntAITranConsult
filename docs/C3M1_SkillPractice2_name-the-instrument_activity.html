@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name the instrument</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+  .terms { margin: 10px 0 0; padding: 0; }
+  .terms dt { font-weight: 600; color: var(--ink); margin: 8px 0 0; }
+  .terms dd { margin: 0; color: var(--ink-soft); }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .pick { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-top: 10px; }
+  .pick:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; }
+  .chip-btn { font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; cursor: pointer; }
+  .chip-btn:hover { border-color: var(--accent); }
+  .chip-btn[aria-pressed="true"] { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .chip-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .fb-detail b { color: var(--ink); font-weight: 600; }
+  .panel { margin-top: 20px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel h3 { font-family: var(--font-sans); font-size: 0.95rem; font-weight: 700; margin: 0 0 8px; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 14px; }
+  table.grid { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.grid caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.grid th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.grid tr.moved td { background: var(--highlight-bg); color: var(--ink); }
+  table.grid tr.total td { font-weight: 700; color: var(--ink); background: var(--paper); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .chips { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Name the instrument</h1>
+
+  <p class="lead-line">A passing test is persuasive, and it covers one thing. Testing shows whether a model does its narrow task correctly. Only a structural inventory or a governance review can show whether the organization around the model can support it safely. Those instruments ask people who owns, checks, trains, and touches what. Ask which instrument produced a piece of evidence, and you know which question it can answer.</p>
+
+  <p class="context">A sponsor says the warranty-claims assistant is ready for all four regions and offers six pieces of evidence. Every piece is accurate as described. The question is what each one tells you.</p>
+
+  <div class="instruction">
+    <p>Choose what each piece tells you.</p>
+    <p><b>About the model</b> means it shows whether the assistant does its narrow task correctly. <b>About the organization</b> means it shows whether the people, data, and processes around the assistant can support its use. <b>About neither</b> means it reports on something else, such as whether the platform is running or how much work is moving.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my choices</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change the bundle</h2>
+    <p>Suppose the sponsor adds more evidence. A question counts as answered once an instrument has produced an answer, whatever the answer turns out to be. Nothing here is checked.</p>
+    <div class="chips" id="sp-chips" role="group" aria-label="Evidence to add"></div>
+    <div class="panel" id="sp-panel" aria-live="polite"></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function quote(t) { return '\u201C' + t + '\u201D'; }
+
+  var QUESTIONS = [
+    { id: 'owner', text: 'Who owns each output' },
+    { id: 'checker', text: 'Who checks it before anyone acts on it' },
+    { id: 'exception', text: 'Where an exception goes' },
+    { id: 'records', text: 'Which records it reads and writes' },
+    { id: 'trained', text: 'Who was trained on it' }
+  ];
+
+  var BUCKETS = [
+    { value: 'model', label: 'About the model' },
+    { value: 'org', label: 'About the organization' },
+    { value: 'neither', label: 'About neither' }
+  ];
+
+  var ITEMS = [
+    { text: 'The platform dashboard: capacity and response time read green in all four regions.',
+      meta: 'Platform monitoring', key: 'neither',
+      why: 'It reports that the platform is running. It does not test the model\u2019s determinations, and it cannot show who owns them, who checks them, or where an exception goes.' },
+    { text: 'On a sample of closed claims from the first region, the assistant\u2019s determinations matched the desk\u2019s decisions.',
+      meta: 'A test run', key: 'model',
+      why: 'A test compares outputs with expected results on a set of cases. It shows that the model does its narrow task on those cases, and nothing more.' },
+    { text: 'A register naming the person at each desk who answers for the determinations released there.',
+      meta: 'A structural inventory', key: 'org', answers: 'owner',
+      why: 'It records who answers for each determination. The answer came from people, and it is a description rather than a score.' },
+    { text: 'The weekly volume report: average handling time is falling in three regions.',
+      meta: 'A throughput report', key: 'neither',
+      why: 'It counts how much work is moving and averages the time. It does not test the model or inspect the organization, and an average cannot show work the desk is redoing.' },
+    { text: 'After a vendor software update, the same sample was run again. The result was unchanged.',
+      meta: 'A second test run', key: 'model',
+      why: 'Running the same instrument again answers the same question again. It confirms the model, and it leaves every organizational question where it was.' },
+    { text: 'A roster of which desks and shifts have completed training on the assistant.',
+      meta: 'A structural inventory', key: 'org', answers: 'trained',
+      why: 'It records who was prepared to act on the output. It came from the organization, and it answers a question no test can.' }
+  ];
+
+  var CRITERION_TEXT = 'Every piece of evidence came from some instrument. A test compares outputs with expected results, so it speaks to the model. A structural inventory or governance review asks people who owns, checks, trains, and touches what, so it speaks to the organization. A report that watches the platform or counts work is neither.';
+  var FIRST_MOVE_TEXT = 'Take one piece and name what produced it: a test run, an inventory of the organization, or a report. Then ask which question that instrument can answer.';
+  var TEST_AS_ORG_NOTE = 'One of your choices treated a test result as evidence about the organization. A passing test is persuasive, and it covers the model only.';
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  function answersFor() {
+    return ITEMS.map(function (it, idx) {
+      var c = document.querySelector('input[name="item' + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fs.appendChild(legend);
+    var m = document.createElement('p');
+    m.className = 'item-meta';
+    m.textContent = item.meta;
+    fs.appendChild(m);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    BUCKETS.forEach(function (b) {
+      choices.appendChild(makeChoice('item' + idx, b.value, b.label, function () {
+        checkBtn.disabled = answersFor().indexOf(null) !== -1;
+      }));
+    });
+    fs.appendChild(choices);
+    itemsEl.appendChild(fs);
+  });
+
+  // Control result: which organizational questions a set of answered ids covers.
+  function ledger(answeredIds) {
+    return QUESTIONS.map(function (q) { return { q: q, done: answeredIds.indexOf(q.id) !== -1 }; });
+  }
+  function baseAnswered() {
+    return ITEMS.filter(function (it) { return it.key === 'org'; }).map(function (it) { return it.answers; });
+  }
+  function lc(t) { return t.charAt(0).toLowerCase() + t.slice(1); }
+  function joinList(arr) { return arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + ', and ' + arr[arr.length - 1]; }
+
+  checkBtn.addEventListener('click', function () {
+    var ans = answersFor();
+    var wrong = [];
+    ITEMS.forEach(function (it, i) { if (ans[i] !== it.key) { wrong.push(i); } });
+
+    if (wrong.length === 0) {
+      var led = ledger(baseAnswered());
+      var done = led.filter(function (r) { return r.done; });
+      var open = led.filter(function (r) { return !r.done; });
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [
+        'The test runs speak to the model. The register and the roster speak to the organization. The dashboard and the volume report speak to neither, because they watch the platform and count work.',
+        'Read by instrument, the bundle answers ' + word(done.length) + ' of the organizational questions: ' + joinList(done.map(function (r) { return lc(r.q.text); })) + '. ' + Word(open.length) + ' are still open: ' + joinList(open.map(function (r) { return lc(r.q.text); })) + '.',
+        'The strongest sentence this bundle supports is narrower than \u201Cready for all four regions\u201D: the model does its narrow task on the trial claims, and ' + word(open.length) + ' organizational questions are still open.'
+      ]);
+      sp.hidden = false;
+      renderPanel();
+    } else if (wrong.length === 1) {
+      var it = ITEMS[wrong[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: ' + quote(it.text), it.why]);
+    } else {
+      var paras = [CRITERION_TEXT, FIRST_MOVE_TEXT];
+      var testAsOrg = ITEMS.some(function (item, i) { return item.key === 'model' && ans[i] === 'org'; });
+      if (testAsOrg) { paras.unshift(TEST_AS_ORG_NOTE); }
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', paras);
+    }
+  });
+
+  // Second pass: the bundle changes, the ledger recomputes.
+  var extra = { test: false, review: false };
+  var chipsEl = document.getElementById('sp-chips');
+  var panel = document.getElementById('sp-panel');
+
+  [
+    { id: 'test', label: 'Add a third test run' },
+    { id: 'review', label: 'Add a review of where exceptions go' }
+  ].forEach(function (c) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip-btn';
+    b.setAttribute('aria-pressed', 'false');
+    b.textContent = c.label;
+    b.addEventListener('click', function () {
+      extra[c.id] = !extra[c.id];
+      b.setAttribute('aria-pressed', extra[c.id] ? 'true' : 'false');
+      renderPanel();
+    });
+    chipsEl.appendChild(b);
+  });
+
+  function renderPanel() {
+    var ids = baseAnswered().slice();
+    if (extra.review) { ids.push('exception'); }
+    var led = ledger(ids);
+    var nDone = led.filter(function (r) { return r.done; }).length;
+    var evidenceFor = { owner: 'The register of who answers for determinations', trained: 'The training roster', exception: 'The review of where exceptions go' };
+
+    panel.innerHTML = '';
+    var wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    var tbl = document.createElement('table');
+    tbl.className = 'grid';
+    var cap = document.createElement('caption');
+    cap.textContent = 'The organizational questions and what answers them';
+    tbl.appendChild(cap);
+    var thead = document.createElement('thead');
+    var hr = document.createElement('tr');
+    ['Question', 'Status', 'Answered by'].forEach(function (h) {
+      var th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = h;
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    tbl.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    led.forEach(function (r) {
+      var tr = document.createElement('tr');
+      if (r.done && r.q.id === 'exception') { tr.className = 'moved'; }
+      var c1 = document.createElement('td'); c1.textContent = r.q.text;
+      var c2 = document.createElement('td'); c2.textContent = r.done ? 'Answered' : 'Open';
+      var c3 = document.createElement('td'); c3.textContent = r.done ? evidenceFor[r.q.id] : 'Nothing in the bundle';
+      tr.appendChild(c1); tr.appendChild(c2); tr.appendChild(c3);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    panel.appendChild(wrap);
+
+    var p1 = document.createElement('p');
+    p1.textContent = Word(nDone) + ' answered, ' + word(led.length - nDone) + ' open.';
+    panel.appendChild(p1);
+
+    if (extra.test) {
+      var p2 = document.createElement('p');
+      p2.textContent = 'Three test runs now sit in the bundle. Each one answers the model question again, so the ledger has not moved. Re-testing returns the same kind of answer because a test can only answer the question it was built to answer.';
+      panel.appendChild(p2);
+    }
+    if (extra.review) {
+      var p3 = document.createElement('p');
+      p3.textContent = 'The review of where exceptions go answers a question no number of tests could. The ledger moves because a different instrument produced the evidence.';
+      panel.appendChild(p3);
+    }
+    if (!extra.test && !extra.review) {
+      var p4 = document.createElement('p');
+      p4.textContent = 'Add a piece of evidence and watch what moves.';
+      panel.appendChild(p4);
+    }
+  }
+
+})();
+</script>
+</body>
+</html>

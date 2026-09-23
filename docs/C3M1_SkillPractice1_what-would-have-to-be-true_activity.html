@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask what would have to be true</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+  .terms { margin: 10px 0 0; padding: 0; }
+  .terms dt { font-weight: 600; color: var(--ink); margin: 8px 0 0; }
+  .terms dd { margin: 0; color: var(--ink-soft); }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .pick { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-top: 10px; }
+  .pick:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; }
+  .chip-btn { font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; cursor: pointer; }
+  .chip-btn:hover { border-color: var(--accent); }
+  .chip-btn[aria-pressed="true"] { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .chip-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .fb-detail b { color: var(--ink); font-weight: 600; }
+  .panel { margin-top: 20px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel h3 { font-family: var(--font-sans); font-size: 0.95rem; font-weight: 700; margin: 0 0 8px; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 14px; }
+  table.grid { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.grid caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.grid th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.grid tr.moved td { background: var(--highlight-bg); color: var(--ink); }
+  table.grid tr.total td { font-weight: 700; color: var(--ink); background: var(--paper); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .chips { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Ask what would have to be true</h1>
+
+  <p class="lead-line">A demonstration shows what a model can do. Whether it creates value depends on the organization around the model, and the conditions that decide that are the dimensions of readiness. Ask what would have to be true here, not whether the technology can do the thing, and most of the answers sit outside the software.</p>
+
+  <p class="context">A manufacturer&rsquo;s warranty-claims assistant did well in one region. Its transformation lead is weighing an extension to all four. Each statement below would have to hold for that extension to create value. Some describe the software. The rest describe the organization the software would work inside.</p>
+
+  <div class="instruction">
+    <p>Place each statement. Choose <b>The software</b> if it describes what the assistant does. Otherwise choose the dimension of readiness it describes.</p>
+    <dl class="terms">
+      <dt>Data</dt>
+      <dd>The records the assistant reads are complete, consistent, and current.</dd>
+      <dt>Workflows</dt>
+      <dd>The work around the assistant is designed so its output has somewhere to go, including for cases it cannot handle.</dd>
+      <dt>Ownership</dt>
+      <dd>A named person answers for each output and for each decision made from it.</dd>
+      <dt>Adoption</dt>
+      <dd>The people who do the work use the tool as designed instead of working around it.</dd>
+      <dt>Governance</dt>
+      <dd>Written rules, reviews, and records show the arrangement is under control.</dd>
+      <dt>Measurement</dt>
+      <dd>Someone can see whether the tool delivers what justified it, and what it costs elsewhere.</dd>
+      <dt>Trust</dt>
+      <dd>The people who rely on an output have grounds to rely on it and can check it against something they know.</dd>
+    </dl>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my placements</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: take one dimension away</h2>
+    <p>Suppose the assistant is as accurate as ever and every statement about the software still holds. Choose one dimension and imagine it missing. Nothing here is checked.</p>
+    <div class="chips" id="sp-chips" role="group" aria-label="Dimension to take away"></div>
+    <div class="panel" id="sp-panel" aria-live="polite" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function quote(t) { return '\u201C' + t + '\u201D'; }
+
+  var DIMS = [
+    { value: 'data', label: 'Data',
+      missing: 'The four regional claims systems store the same warranty fact in different ways. A proposal on a multi-part claim cannot be reconciled with the parts record, so the desk cannot release it.' },
+    { value: 'workflows', label: 'Workflows',
+      missing: 'The procedure was written for the first region\u2019s mix of claims. A category it never covered has nowhere to go, so the desk redoes those claims by hand.' },
+    { value: 'ownership', label: 'Ownership',
+      missing: 'Nobody answers for a proposal. An unclear one waits for a decision that nobody is assigned to make.' },
+    { value: 'adoption', label: 'Adoption',
+      missing: 'Desk staff re-enter claims rather than release a proposal. The assistant runs, and its output goes unused.' },
+    { value: 'governance', label: 'Governance',
+      missing: 'A reviewer asks which records the assistant reads and writes, and nobody can say. The review is postponed, and the extension carries on without an answer.' },
+    { value: 'measurement', label: 'Measurement',
+      missing: 'The weekly report shows handling time falling in most regions. The desk\u2019s rework is not counted, so the sponsor sees improvement while the queue grows.' },
+    { value: 'trust', label: 'Trust',
+      missing: 'The desk cannot see enough of a proposal to release it or to defend it to a customer, so it does not release it.' }
+  ];
+
+  var ITEMS = [
+    { text: 'The assistant reads a warranty claim and proposes a determination.', key: 'soft',
+      why: 'This describes what the software does. It says nothing about the organization around it.' },
+    { text: 'Desk staff work from the assistant\u2019s proposals instead of re-entering claims by hand.', key: 'adoption',
+      why: 'This asks whether the people who do the work use the tool as designed. Re-entering claims by hand is working around it, which is adoption.' },
+    { text: 'The four regional claims systems record warranty fields in the same way.', key: 'data',
+      why: 'This concerns the records the assistant reads. If regional systems store the same fact differently, the same claim can produce different proposals. Records are data.' },
+    { text: 'On the first region\u2019s trial claims, its proposals matched the desk\u2019s decisions.', key: 'soft',
+      why: 'A trial result describes the model on the cases it was given. It is a fact about capability, and it holds wherever the assistant runs.' },
+    { text: 'A named person answers for each determination the assistant proposes.', key: 'ownership',
+      why: 'This asks who answers for the output. A named person answering for each determination is ownership.' },
+    { text: 'A report shows, by region, both how long claims take and how much work the desk redoes.', key: 'measurement',
+      why: 'This asks whether anyone can see the effect of the tool, including the work it moves elsewhere. Seeing that effect is measurement.' },
+    { text: 'Every kind of claim the desk receives has a step in the procedure that says how a proposal is used.', key: 'workflows',
+      why: 'This concerns whether the work around the assistant was redesigned for every kind of claim. That is a workflow condition.' },
+    { text: 'It returns a proposal fast enough to keep pace with the claims queue.', key: 'soft',
+      why: 'Speed is a property of the software. Whether anyone acts on the proposal is a different question.' },
+    { text: 'A written rule says which claims records the assistant may read and write, and the review of that rule has been held.', key: 'governance',
+      why: 'This concerns a written rule and a held review about which records the assistant touches. Rules and reviews are governance.' },
+    { text: 'A supervisor can compare a proposal with the parts record and see why the two differ.', key: 'trust',
+      why: 'This asks whether the people relying on a proposal can check it against something they know. Grounds for reliance are trust.' },
+    { text: 'A claim the assistant cannot determine moves on to a defined next step.', key: 'workflows',
+      why: 'This concerns the path a claim takes when the assistant cannot decide it. A defined next step is a workflow condition.' }
+  ];
+
+  var LINE_CRITERION = 'Each statement is about one of two things: what the software does, or what the organization around it has in place. If a statement would still hold after the organization changed everything around the model, it describes the software. Otherwise it belongs to a dimension.';
+  var LINE_FIRST_MOVE = 'Take one statement and ask what the claims desk would experience if it were false. A desk that gets a wrong answer points at the software. A desk with nowhere to send a claim, or no one to ask, points at the organization.';
+  var ORG_IN_SOFTWARE = 'At least one statement about the organization went into the software. That is the confusion this exercise is about. The software can pass every test while the conditions around it go unmet.';
+  var DIM_CRITERION = 'The line between software and organization is right. The dimensions are what differ. Each one is a way the organization can fall short, and each leaves the desk doing something different.';
+  var DIM_FIRST_MOVE = 'For each statement you missed, ask what the desk would be doing if it were false: re-entering claims, waiting for a decision, unable to release a proposal, unable to show a reviewer which records were touched. Then match that to the dimension.';
+
+  function side(v) { return v === 'soft' ? 'soft' : 'org'; }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+  var srStatus = document.getElementById('sr-status');
+
+  function allAnswered() {
+    return ITEMS.every(function (it, i) { return document.getElementById('sel-' + i).value !== ''; });
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var box = document.createElement('div');
+    box.className = 'item';
+    var label = document.createElement('label');
+    label.className = 'item-text';
+    label.setAttribute('for', 'sel-' + idx);
+    label.textContent = item.text;
+    var sel = document.createElement('select');
+    sel.className = 'pick';
+    sel.id = 'sel-' + idx;
+    var o0 = document.createElement('option');
+    o0.value = '';
+    o0.textContent = 'Choose a placement';
+    sel.appendChild(o0);
+    var oSoft = document.createElement('option');
+    oSoft.value = 'soft';
+    oSoft.textContent = 'The software';
+    sel.appendChild(oSoft);
+    var grp = document.createElement('optgroup');
+    grp.label = 'The organization: dimension of readiness';
+    DIMS.forEach(function (d) {
+      var o = document.createElement('option');
+      o.value = d.value;
+      o.textContent = d.label;
+      grp.appendChild(o);
+    });
+    sel.appendChild(grp);
+    sel.addEventListener('change', function () { checkBtn.disabled = !allAnswered(); });
+    box.appendChild(label);
+    box.appendChild(sel);
+    itemsEl.appendChild(box);
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var ans = ITEMS.map(function (it, i) { return document.getElementById('sel-' + i).value; });
+    var wrong = [];
+    var crossers = [];
+    ITEMS.forEach(function (it, i) {
+      if (ans[i] !== it.key) {
+        wrong.push(i);
+        if (side(ans[i]) !== side(it.key)) { crossers.push(i); }
+      }
+    });
+    var nSoft = ITEMS.filter(function (it) { return it.key === 'soft'; }).length;
+    var nOrg = ITEMS.length - nSoft;
+
+    if (wrong.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [
+        Word(nOrg) + ' of the ' + word(ITEMS.length) + ' statements describe the organization, and only ' + word(nSoft) + ' describe the software. A demonstration can speak to the software statements. It cannot speak to the rest.',
+        'That is the shift in the question. Instead of asking whether the technology can do the thing, ask what would have to be true here for it to create value. Then count how many of the answers sit outside the software.'
+      ]);
+    } else if (crossers.length === 0 && wrong.length <= 3) {
+      var paras = ['The line between software and organization is right. Look again at the dimension for ' + (wrong.length === 1 ? 'this statement.' : 'these statements.')];
+      wrong.forEach(function (i) { paras.push(quote(ITEMS[i].text) + ' ' + ITEMS[i].why); });
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', paras);
+    } else if (crossers.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [DIM_CRITERION, DIM_FIRST_MOVE]);
+    } else {
+      var p2 = [LINE_CRITERION, LINE_FIRST_MOVE];
+      var orgInSoft = crossers.some(function (i) { return ITEMS[i].key !== 'soft' && ans[i] === 'soft'; });
+      if (orgInSoft) { p2.unshift(ORG_IN_SOFTWARE); }
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', p2);
+    }
+    sp.hidden = false;
+  });
+
+  var chipsEl = document.getElementById('sp-chips');
+  var panel = document.getElementById('sp-panel');
+
+  DIMS.forEach(function (d) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip-btn';
+    b.setAttribute('aria-pressed', 'false');
+    b.textContent = d.label;
+    b.addEventListener('click', function () {
+      var all = chipsEl.querySelectorAll('.chip-btn');
+      for (var i = 0; i < all.length; i++) { all[i].setAttribute('aria-pressed', 'false'); }
+      b.setAttribute('aria-pressed', 'true');
+      panel.innerHTML = '';
+      var h = document.createElement('h3');
+      h.textContent = 'If ' + d.label.toLowerCase() + ' is missing';
+      var p1 = document.createElement('p');
+      p1.textContent = d.missing;
+      var p2 = document.createElement('p');
+      p2.textContent = 'A test of the model reports the same result as before: the assistant still matches the desk on the trial claims. The stall sits in the organization, so the test cannot see it.';
+      panel.appendChild(h);
+      panel.appendChild(p1);
+      panel.appendChild(p2);
+      panel.hidden = false;
+    });
+    chipsEl.appendChild(b);
+  });
+
+})();
+</script>
+</body>
+</html>

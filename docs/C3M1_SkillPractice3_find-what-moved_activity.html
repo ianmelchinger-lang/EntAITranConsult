@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find what moved</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+  .terms { margin: 10px 0 0; padding: 0; }
+  .terms dt { font-weight: 600; color: var(--ink); margin: 8px 0 0; }
+  .terms dd { margin: 0; color: var(--ink-soft); }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .pick { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-top: 10px; }
+  .pick:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; }
+  .chip-btn { font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; cursor: pointer; }
+  .chip-btn:hover { border-color: var(--accent); }
+  .chip-btn[aria-pressed="true"] { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .chip-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .fb-detail b { color: var(--ink); font-weight: 600; }
+  .panel { margin-top: 20px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel h3 { font-family: var(--font-sans); font-size: 0.95rem; font-weight: 700; margin: 0 0 8px; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 14px; }
+  table.grid { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.grid caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.grid th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.grid tr.moved td { background: var(--highlight-bg); color: var(--ink); }
+  table.grid tr.total td { font-weight: 700; color: var(--ink); background: var(--paper); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .chips { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Find what moved</h1>
+
+  <p class="lead-line">Trustworthiness belongs to a system in context: a model together with the data feeding it, the people acting on its output, and the oversight arranged around it. Change any of the last three and you have a new arrangement, and the reasons the old one was trustworthy have to be established again. A few properties travel with the model itself. Knowing which is which tells you where evidence has to exist before use.</p>
+
+  <p class="context">Suppose an earlier finding said a manufacturer&rsquo;s warranty-claims assistant was trustworthy in its first region: the records were sound, the desk was trained, and a supervisor checked each determination before release. The transformation lead is now weighing eight changes, each on its own.</p>
+
+  <div class="instruction">
+    <p>For each change, choose what it alters.</p>
+    <p><b>The data going in</b> is what the assistant reads. <b>The people acting on the output</b> are the staff who use its determinations. <b>The oversight around it</b> is the check between output and action, and the route for what the assistant cannot handle. <b>Nothing: it carries over</b> means the change leaves the arrangement alone, as a property that travels with the model does.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my choices</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change how much moves</h2>
+    <p>The assistant and its model stay the same. Choose a plan and see which parts of the arrangement move. Nothing here is checked.</p>
+    <div class="chips" id="sp-chips" role="group" aria-label="Plan to compare"></div>
+    <div class="panel" id="sp-panel" aria-live="polite" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function quote(t) { return '\u201C' + t + '\u201D'; }
+
+  var BUCKETS = [
+    { value: 'carry', label: 'Nothing: it carries over' },
+    { value: 'data', label: 'The data going in' },
+    { value: 'people', label: 'The people acting on the output' },
+    { value: 'oversight', label: 'The oversight around it' }
+  ];
+
+  var PARTS = {
+    data: { label: 'The data going in', evidence: 'A note on which records the assistant reads and how current and consistent they are.' },
+    people: { label: 'The people acting on the output', evidence: 'A record of who acts on the output and what training they have had.' },
+    oversight: { label: 'The oversight around it', evidence: 'A record of who checks each output before anyone acts and where an exception goes.' }
+  };
+
+  var ITEMS = [
+    { text: 'The assistant begins reading a second region\u2019s claims system, which stores warranty fields differently.', key: 'data',
+      why: 'What the assistant reads changed, so the earlier finding about the records no longer describes this arrangement.' },
+    { text: 'The supervisor who checks each determination before release is removed to save a step.', key: 'oversight',
+      why: 'A check between output and action was removed. The model is the same, and the arrangement around it is not.' },
+    { text: 'The vendor confirms that the model\u2019s licence terms and benchmark scores are the same as at the trial.', key: 'carry',
+      why: 'Licence terms and benchmark scores stay the same wherever the model runs, so nothing in the arrangement moved.' },
+    { text: 'A second shift begins working from the assistant\u2019s determinations without any training.', key: 'people',
+      why: 'Different people now act on the output, and they were not trained. The finding about who acts on it no longer holds.' },
+    { text: 'The extract the assistant reads stops refreshing, and nobody notices for a month.', key: 'data',
+      why: 'What the assistant reads went stale. A stale extract supports confident wrong answers, and it is a change to the data going in.' },
+    { text: 'Claims the assistant cannot determine now go to a shared inbox that no one is assigned to clear.', key: 'oversight',
+      why: 'The route for what the assistant cannot handle now ends with no one. That is a change to the oversight around it.' },
+    { text: 'The vendor restates its description of the model\u2019s training data, unchanged from the trial.', key: 'carry',
+      why: 'Training data is a property of the model. It travels with the model to every deployment.' },
+    { text: 'A new team of desk staff, in the same region and on the same records, begins acting on its determinations.', key: 'people',
+      why: 'The records and the checks are the same. A new group of people now acts on the output, so the change sits with the people.' }
+  ];
+
+  var PLANS = [
+    { id: 'a', label: 'A new team in the same region', moved: ['people'],
+      text: 'A new team of desk staff in the same region begins acting on the determinations.' },
+    { id: 'b', label: 'All four regions', moved: ['data', 'people'],
+      text: 'The assistant extends to all four regions.' },
+    { id: 'c', label: 'All four regions, check dropped', moved: ['data', 'people', 'oversight'],
+      text: 'The assistant extends to all four regions, and the supervisor\u2019s check is dropped to save a step.' }
+  ];
+
+  var LINE_CRITERION = 'Ask what the change alters. A model\u2019s size, training data, licence terms, and benchmark scores stay the same wherever it runs, so changes to those leave the finding standing. A change to what the assistant reads, to who acts on what it writes, or to what stands between output and action creates a new arrangement.';
+  var LINE_FIRST_MOVE = 'Pick one change and picture the desk before and after. If the assistant would still read the same records, be used by the same people, and be checked in the same way, nothing in the arrangement moved.';
+  var PART_CRITERION = 'The line between what travels and what moves is right. The parts are what differ. A change touches one of three things: what the assistant reads, who acts on what it writes, or what stands between its output and the action.';
+  var PART_FIRST_MOVE = 'For each change you missed, ask which of those three things looks different afterward. If the records differ, it is the data. If the users differ, it is the people. If the check or the route for exceptions differs, it is the oversight.';
+  var MODEL_NOTE = 'At least one change that leaves the model alone was treated as a change to the arrangement, or the reverse. The model\u2019s own properties are the one thing that does not need to be established again.';
+
+  function side(v) { return v === 'carry' ? 'carry' : 'part'; }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  function answersFor() {
+    return ITEMS.map(function (it, idx) {
+      var c = document.querySelector('input[name="item' + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fs.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    BUCKETS.forEach(function (b) {
+      choices.appendChild(makeChoice('item' + idx, b.value, b.label, function () {
+        checkBtn.disabled = answersFor().indexOf(null) !== -1;
+      }));
+    });
+    fs.appendChild(choices);
+    itemsEl.appendChild(fs);
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var ans = answersFor();
+    var wrong = [];
+    var crossers = [];
+    ITEMS.forEach(function (it, i) {
+      if (ans[i] !== it.key) {
+        wrong.push(i);
+        if (side(ans[i]) !== side(it.key)) { crossers.push(i); }
+      }
+    });
+    var nCarry = ITEMS.filter(function (it) { return it.key === 'carry'; }).length;
+    var nMoved = ITEMS.length - nCarry;
+
+    if (wrong.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [
+        Word(nCarry) + ' changes leave the earlier finding standing, because they alter only what travels with the model. The other ' + word(nMoved) + ' each alter one part of the arrangement, and the finding has to be established again for that part. The model itself did not change in any of the eight.',
+        'Each part has evidence a reviewer could ask to see. For the data: ' + lc1(PARTS.data.evidence) + ' For the people: ' + lc1(PARTS.people.evidence) + ' For the oversight: ' + lc1(PARTS.oversight.evidence),
+        'The order matters. Evidence gathered after something goes wrong cannot show that the risk was anticipated, so it has to exist before use.'
+      ]);
+    } else if (crossers.length === 0 && wrong.length <= 3) {
+      var paras = ['The line between what travels and what moves is right. Look again at which part changed for ' + (wrong.length === 1 ? 'this change.' : 'these changes.')];
+      wrong.forEach(function (i) { paras.push(quote(ITEMS[i].text) + ' ' + ITEMS[i].why); });
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', paras);
+    } else if (crossers.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [PART_CRITERION, PART_FIRST_MOVE]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [MODEL_NOTE, LINE_CRITERION, LINE_FIRST_MOVE]);
+    }
+    sp.hidden = false;
+  });
+
+  function lc1(t) { return t.charAt(0).toLowerCase() + t.slice(1); }
+
+  var chipsEl = document.getElementById('sp-chips');
+  var panel = document.getElementById('sp-panel');
+
+  function partNames(ids) {
+    var names = ids.map(function (id) { return lc1(PARTS[id].label); });
+    return names.length < 2 ? names.join('') : names.slice(0, -1).join(', ') + (names.length > 2 ? ',' : '') + ' and ' + names[names.length - 1];
+  }
+
+  function renderPlan(plan) {
+    panel.innerHTML = '';
+    var h = document.createElement('h3');
+    h.textContent = plan.text;
+    panel.appendChild(h);
+
+    var wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    var tbl = document.createElement('table');
+    tbl.className = 'grid';
+    var thead = document.createElement('thead');
+    var hr = document.createElement('tr');
+    ['Part', 'Moved?', 'Evidence to gather before use'].forEach(function (t) {
+      var th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = t;
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    tbl.appendChild(thead);
+    var tbody = document.createElement('tbody');
+
+    function row(label, moved, evidence, highlight) {
+      var tr = document.createElement('tr');
+      if (highlight) { tr.className = 'moved'; }
+      var a = document.createElement('td'); a.textContent = label;
+      var b = document.createElement('td'); b.textContent = moved;
+      var c = document.createElement('td'); c.textContent = evidence;
+      tr.appendChild(a); tr.appendChild(b); tr.appendChild(c);
+      tbody.appendChild(tr);
+    }
+
+    row('The model', 'No', 'None. Its properties travel with it.', false);
+    ['data', 'people', 'oversight'].forEach(function (id) {
+      var isMoved = plan.moved.indexOf(id) !== -1;
+      row(PARTS[id].label, isMoved ? 'Yes' : 'No', isMoved ? PARTS[id].evidence : 'The earlier evidence still describes it.', isMoved);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    panel.appendChild(wrap);
+
+    var p1 = document.createElement('p');
+    p1.textContent = 'Moved: ' + partNames(plan.moved) + '. The model row does not change in any plan.';
+    panel.appendChild(p1);
+    var p2 = document.createElement('p');
+    p2.textContent = 'Parts that did not move keep their old evidence. Whether they still fit the parts that did move is a question the new finding has to answer.';
+    panel.appendChild(p2);
+    panel.hidden = false;
+  }
+
+  PLANS.forEach(function (plan) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip-btn';
+    b.setAttribute('aria-pressed', 'false');
+    b.textContent = plan.label;
+    b.addEventListener('click', function () {
+      var all = chipsEl.querySelectorAll('.chip-btn');
+      for (var i = 0; i < all.length; i++) { all[i].setAttribute('aria-pressed', 'false'); }
+      b.setAttribute('aria-pressed', 'true');
+      renderPlan(plan);
+    });
+    chipsEl.appendChild(b);
+  });
+
+})();
+</script>
+</body>
+</html>
