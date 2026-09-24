@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name the regime, then give the reason</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #56666D;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset + fieldset { margin-top: 12px; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .fact { display: block; position: relative; cursor: pointer; margin: 0 0 8px; }
+  .fact-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .fact-box { display: block; font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px; line-height: 1.45; }
+  .fact-input:checked + .fact-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .fact-input:focus-visible + .fact-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .sub-legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink); padding: 0; margin: 14px 0 8px; }
+  .field-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); margin: 0 0 12px; }
+  .num-input { font-family: var(--font-sans); font-size: 0.95rem; width: 9ch; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .num-input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .passages { margin: 0 0 24px; padding: 0; }
+  .passage { margin: 0 0 10px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; font-size: 0.98rem; }
+  .passage b { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); display: block; margin: 0 0 2px; font-weight: 700; }
+  .path { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; margin: 0 0 22px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel h2 { font-size: 1.05rem; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .num-input { width: 100%; }
+    table.scores { font-size: 0.84rem; }
+    table.scores th, table.scores td { padding: 6px 7px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Name the regime, then give the reason</h1>
+
+  <p class="lead-line">When a client&rsquo;s data is fragmented and partly ungoverned, two positions are defensible. <b>Govern in place</b> means building governance, access control, and permission around the data where it already lives. <b>Foundations first</b> means building a common architecture, with one agreed source per domain, before the use case runs. Both sides accept the same test: whether governance fits the target use case. So the regime follows the use case. Bounded, lower-stakes work proceeds on data governed in place. Automation running on core, regulated, cross-domain data at scale needs the foundations first.</p>
+
+  <p class="context">A manufacturer&rsquo;s transformation team has three use cases in front of it. Each card lists five facts. The finding for each one names a regime and the two facts of scope and stakes that put it there.</p>
+
+  <div class="instruction">
+    <p>For each use case, choose a regime and check exactly two facts. Scope is how far the use case runs. Stakes are what a wrong output costs.</p>
+  </div>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my regimes</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="exploration" tabindex="-1" hidden>
+    <h2 id="explore-h">The third use case</h2>
+    <p id="explore-reading"></p>
+    <p id="explore-pull"></p>
+    <p>Scope and stakes point in different directions here, so there is no single right answer. Name the regime you would defend, and the fact you would have to answer for.</p>
+  </div>
+
+  <div class="panel" id="say-aloud" tabindex="-1" hidden>
+    <h2>Say the regime out loud</h2>
+    <p id="say-1"></p>
+    <p id="say-2"></p>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: move scope and stakes</h2>
+    <p>Take the claims assistant and change one thing at a time. The claims data sits where it sits in every combination. Nothing here is checked.</p>
+    <fieldset>
+      <legend class="sub-legend">Scope</legend>
+      <div class="item-choices" id="sp-scope"></div>
+    </fieldset>
+    <fieldset>
+      <legend class="sub-legend">Stakes</legend>
+      <div class="item-choices" id="sp-stakes"></div>
+    </fieldset>
+    <div class="panel" id="sp-result" hidden>
+      <p id="sp-head"></p>
+      <p id="sp-body"></p>
+    </div>
+  </section>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function fmt(n) { return Number(n).toLocaleString('en-US'); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var srStatus = document.getElementById('sr-status');
+  function showFeedback(kind, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(kind);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) { fbDetail.appendChild(el('p', 'fb-detail', t)); });
+    fb.hidden = false;
+    fb.focus();
+  }
+  function announce(t) { srStatus.textContent = t; }
+
+  var CARDS = [
+    { id: 'k1', title: 'A morning briefing assistant for supply planning', keyed: true, regime: 'place', deciding: ['k1a', 'k1b'],
+      facts: [
+        { id: 'k1c', text: 'Its sources sit in five separate systems, some of them heritage systems.' },
+        { id: 'k1a', text: 'It is advisory. It takes no action and changes no record.' },
+        { id: 'k1d', text: 'The sponsor would like it running this quarter.' },
+        { id: 'k1b', text: 'Four planners in one function read its output.' },
+        { id: 'k1e', text: 'It has run every day for eleven months.' }
+      ],
+      say: 'This use case falls under govern in place because it is advisory and serves four readers in one function.' },
+    { id: 'k2', title: 'A claims assistant that recommends how each warranty claim is disposed of', keyed: true, regime: 'foundations', deciding: ['k2a', 'k2b'],
+      facts: [
+        { id: 'k2d', text: 'The sponsor wants all four regions live by the end of the quarter.' },
+        { id: 'k2a', text: 'Its recommendations decide claim outcomes for customers, using personal data from EU-facing operations.' },
+        { id: 'k2c', text: 'The four regional systems use different field conventions.' },
+        { id: 'k2e', text: 'A demonstration ran cleanly on one region\u2019s records.' },
+        { id: 'k2b', text: 'It runs in all four regions and reads all four regional claims systems.' }
+      ],
+      say: 'This use case falls under foundations first because it makes binding recommendations on personal data, and it runs at scale across four regional systems.' },
+    { id: 'k3', title: 'A drafting assistant for supplier nonconformance write-ups', keyed: false,
+      facts: [
+        { id: 'k3a', text: 'It runs at three plants.', side: 'place' },
+        { id: 'k3c', text: 'Each filed write-up enters the quality file.', side: 'foundations' },
+        { id: 'k3e', text: 'Its corrective-action clauses sit as free text in the quality system.', side: 'neutral' },
+        { id: 'k3b', text: 'An engineer reviews and files each draft.', side: 'place' },
+        { id: 'k3d', text: '14% of write-ups carry a corrective-action commitment or a customer-specific clause.', side: 'foundations' }
+      ] }
+  ];
+  var REGIMES = [['place', 'Govern in place'], ['foundations', 'Foundations first']];
+  var REGIME_LABEL = { place: 'govern in place', foundations: 'foundations first' };
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var sp = document.getElementById('second-pass');
+
+  function factText(card, fid) {
+    for (var i = 0; i < card.facts.length; i++) { if (card.facts[i].id === fid) { return card.facts[i].text; } }
+    return '';
+  }
+
+  CARDS.forEach(function (card) {
+    var fs = el('fieldset', 'item');
+    fs.appendChild(el('legend', 'item-text', card.title));
+    var factSet = el('fieldset', null);
+    factSet.appendChild(el('legend', 'sub-legend', 'The two facts that decide the regime'));
+    card.facts.forEach(function (f) {
+      var label = el('label', 'fact');
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.className = 'fact-input';
+      input.name = 'facts-' + card.id;
+      input.value = f.id;
+      input.addEventListener('change', onChange);
+      label.appendChild(input);
+      label.appendChild(el('span', 'fact-box', f.text));
+      factSet.appendChild(label);
+    });
+    var counter = el('p', 'item-meta', '0 of 2 facts checked');
+    counter.id = 'count-' + card.id;
+    factSet.appendChild(counter);
+    fs.appendChild(factSet);
+    var regimeSet = el('fieldset', null);
+    regimeSet.appendChild(el('legend', 'sub-legend', 'Regime'));
+    var row = el('div', 'item-choices');
+    REGIMES.forEach(function (r) {
+      var label = el('label', 'choice');
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.className = 'choice-input';
+      input.name = 'regime-' + card.id;
+      input.value = r[0];
+      input.addEventListener('change', onChange);
+      label.appendChild(input);
+      label.appendChild(el('span', 'choice-box', r[1]));
+      row.appendChild(label);
+    });
+    regimeSet.appendChild(row);
+    fs.appendChild(regimeSet);
+    itemsEl.appendChild(fs);
+  });
+
+  function checkedFacts(cid) {
+    var out = [];
+    var nodes = document.querySelectorAll('input[name="facts-' + cid + '"]:checked');
+    for (var i = 0; i < nodes.length; i++) { out.push(nodes[i].value); }
+    return out;
+  }
+  function regimeFor(cid) {
+    var r = document.querySelector('input[name="regime-' + cid + '"]:checked');
+    return r ? r.value : null;
+  }
+  function onChange() {
+    var ready = true;
+    CARDS.forEach(function (c) {
+      var n = checkedFacts(c.id).length;
+      document.getElementById('count-' + c.id).textContent = fmt(n) + ' of ' + fmt(2) + ' facts checked';
+      if (n !== 2 || regimeFor(c.id) === null) { ready = false; }
+    });
+    checkBtn.disabled = !ready;
+    fb.hidden = true;
+  }
+
+  var exploration = document.getElementById('exploration');
+  var sayAloud = document.getElementById('say-aloud');
+
+  checkBtn.addEventListener('click', function () {
+    var errs = [];
+    CARDS.forEach(function (c) {
+      if (!c.keyed) { return; }
+      if (regimeFor(c.id) !== c.regime) { errs.push({ card: c, part: 'regime' }); }
+      checkedFacts(c.id).forEach(function (f) {
+        if (c.deciding.indexOf(f) < 0) { errs.push({ card: c, part: 'fact', fact: f }); }
+      });
+    });
+
+    var third = CARDS[2];
+    var chosen = regimeFor(third.id);
+    var picked = checkedFacts(third.id).map(function (f) { return factText(third, f).replace(/\.$/, ''); });
+    document.getElementById('explore-reading').textContent = 'Your reading: ' + REGIME_LABEL[chosen] + ', because ' + picked[0].charAt(0).toLowerCase() + picked[0].slice(1) + ', and ' + picked[1].charAt(0).toLowerCase() + picked[1].slice(1) + '.';
+    var pull = third.facts.filter(function (f) { return f.side !== 'neutral' && f.side !== chosen; }).map(function (f) { return f.text.replace(/\.$/, ''); });
+    document.getElementById('explore-pull').textContent = 'The facts that pull the other way: ' + pull[0].charAt(0).toLowerCase() + pull[0].slice(1) + '; and ' + pull[1].charAt(0).toLowerCase() + pull[1].slice(1) + '.';
+    exploration.hidden = false;
+
+    sayAloud.hidden = true;
+    sp.hidden = true;
+    if (errs.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'The first two cases are right. The number of systems, the sponsor\u2019s deadline, the age of the tool, and a clean demonstration appeared on the cards as facts, and none of them decides the regime. Scope and stakes do.'
+      ]);
+      document.getElementById('say-1').textContent = CARDS[0].say;
+      document.getElementById('say-2').textContent = CARDS[1].say;
+      sayAloud.hidden = false;
+      sp.hidden = false;
+      renderSecond();
+      announce('The first two cases are correct.');
+    } else if (errs.length === 1) {
+      var e = errs[0];
+      var msg;
+      if (e.part === 'regime') {
+        msg = 'The facts you checked for \u201C' + e.card.title.toLowerCase() + '\u201D are right, but the regime you chose doesn\u2019t follow from them. Ask what scope and stakes say for that card.';
+      } else {
+        msg = 'One fact you checked for \u201C' + e.card.title.toLowerCase() + '\u201D doesn\u2019t decide the regime: \u201C' + factText(e.card, e.fact) + '\u201D Ask whether it describes how far the use case runs or what a wrong output costs.';
+      }
+      showFeedback('fb-near', 'Close.', ['Everything else in the first two cases is right. ' + msg]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [
+        'The criterion is scope and stakes. Scope is how far the use case runs. Stakes are what a wrong output costs. Facts about how many systems hold the data, how soon the sponsor wants it, or how a demonstration went are not scope or stakes.',
+        'First move: for each of the first two cases, find the one fact that tells you how far it runs and the one that tells you what a wrong output costs. Then ask which regime those two facts point to.'
+      ]);
+    }
+  });
+
+  var SCOPES = { one: 'One region', four: 'All four regions' };
+  var STAKES = { draft: 'Drafts for an agent to review', binding: 'Binding recommendations on claim outcomes' };
+  function radioSet(containerId, name, opts) {
+    var cont = document.getElementById(containerId);
+    Object.keys(opts).forEach(function (k, i) {
+      var label = el('label', 'choice');
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.className = 'choice-input';
+      input.name = name;
+      input.value = k;
+      if (i === 0) { input.checked = true; }
+      input.addEventListener('change', renderSecond);
+      label.appendChild(input);
+      label.appendChild(el('span', 'choice-box', opts[k]));
+      cont.appendChild(label);
+    });
+  }
+  radioSet('sp-scope', 'sp-scope', SCOPES);
+  radioSet('sp-stakes', 'sp-stakes', STAKES);
+
+  function renderSecond() {
+    var scope = document.querySelector('input[name="sp-scope"]:checked').value;
+    var stakes = document.querySelector('input[name="sp-stakes"]:checked').value;
+    var head;
+    var body;
+    if (scope === 'one' && stakes === 'draft') {
+      head = 'Govern in place.';
+      body = 'The work is bounded and lower-stakes, so it proceeds on data governed where it lives: access control and permission built around one regional claims system.';
+    } else if (scope === 'four' && stakes === 'binding') {
+      head = 'Foundations first.';
+      body = 'The work automates binding decisions on regulated personal data, at scale across four regional systems. It needs one agreed source per domain, under role-based access, before it runs.';
+    } else if (scope === 'one') {
+      head = 'Scope and stakes point in different directions here.';
+      body = 'Scope is bounded, which favors govern in place. Stakes are binding on personal data, which favors foundations first. There is no single right answer. Name the regime you would defend and the fact you would have to answer for.';
+    } else {
+      head = 'Scope and stakes point in different directions here.';
+      body = 'Scope is at scale across four regional systems, which favors foundations first. Stakes are lower because an agent reviews every draft, which favors govern in place. There is no single right answer. Name the regime you would defend and the fact you would have to answer for.';
+    }
+    document.getElementById('sp-head').textContent = head;
+    document.getElementById('sp-body').textContent = body;
+    document.getElementById('sp-result').hidden = false;
+    announce(head + ' ' + body);
+  }
+
+})();
+</script>
+</body>
+</html>

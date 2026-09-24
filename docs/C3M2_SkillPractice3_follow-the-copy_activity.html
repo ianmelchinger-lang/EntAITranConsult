@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Follow each copy back to its source</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #56666D;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset + fieldset { margin-top: 12px; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .fact { display: block; position: relative; cursor: pointer; margin: 0 0 8px; }
+  .fact-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .fact-box { display: block; font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px; line-height: 1.45; }
+  .fact-input:checked + .fact-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .fact-input:focus-visible + .fact-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .sub-legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink); padding: 0; margin: 14px 0 8px; }
+  .field-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); margin: 0 0 12px; }
+  .num-input { font-family: var(--font-sans); font-size: 0.95rem; width: 9ch; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .num-input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .passages { margin: 0 0 24px; padding: 0; }
+  .passage { margin: 0 0 10px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; font-size: 0.98rem; }
+  .passage b { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); display: block; margin: 0 0 2px; font-weight: 700; }
+  .path { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; margin: 0 0 22px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel h2 { font-size: 1.05rem; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .num-input { width: 100%; }
+    table.scores { font-size: 0.84rem; }
+    table.scores th, table.scores td { padding: 6px 7px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Follow each copy back to its source</h1>
+
+  <p class="lead-line">A single source of truth is one agreed, current, access-controlled version of a domain&rsquo;s data that every consumer reads from. It doesn&rsquo;t require one system. Data can live in several places and still have one governing copy per domain. The failure arrives quietly: a consumer reads a copy that lags the governing one, and the answer looks like every other answer, with no marker of its age. The test is arithmetic. Add the refresh intervals along the path from the governing copy to the copy a consumer reads, then compare the total with how far behind that consumer can afford to be.</p>
+
+  <p class="context">A manufacturer keeps parts consumption history. Each plant&rsquo;s manufacturing execution system is the governing copy, and the data steward has named it as such. Two other copies exist. A composite planning extract, built from three plant systems, is rebuilt once every 168 hours (one week). A nightly snapshot copies the extract once every 24 hours. Five consumers read the history, and each states how far behind the governing copy it can afford to be.</p>
+
+  <p class="path"><b>The path:</b> plant system (governing copy), then the composite planning extract (rebuilt every 168 hours), then the nightly snapshot (taken every 24 hours).</p>
+
+  <div class="instruction">
+    <p>A change at the plant system waits at every hop between the governing copy and the copy a consumer reads. For each consumer, enter the longest a change can go unseen, in hours, then choose a verdict.</p>
+    <p><b>Governing copy:</b> reads the copy the steward named. <b>Within tolerance:</b> reads a copy whose lag fits what the consumer needs. <b>Past tolerance:</b> reads a copy that can lag further than the consumer can afford. <b>No agreed copy:</b> reads a copy that nobody agreed governs.</p>
+  </div>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change how often the extract is rebuilt</h2>
+    <p>The nightly snapshot stays at 24 hours. Choose a new rebuild interval for the extract and watch the lags and verdicts move. Nothing here is checked.</p>
+    <fieldset>
+      <legend class="sub-legend">The extract is rebuilt every</legend>
+      <div class="item-choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="table-wrap">
+      <table class="scores" id="sp-table">
+        <caption id="sp-caption">Lags and verdicts</caption>
+        <thead><tr><th scope="col">Consumer</th><th class="num" scope="col">Lag, hours</th><th class="num" scope="col">Needs, hours</th><th scope="col">Verdict</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p id="sp-note"></p>
+  </section>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function fmt(n) { return Number(n).toLocaleString('en-US'); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var srStatus = document.getElementById('sr-status');
+  function showFeedback(kind, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(kind);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) { fbDetail.appendChild(el('p', 'fb-detail', t)); });
+    fb.hidden = false;
+    fb.focus();
+  }
+  function announce(t) { srStatus.textContent = t; }
+
+  var EXTRACT = 168;
+  var SNAP = 24;
+  var CONSUMERS = [
+    { id: 'c1', name: 'Plant supervisor\u2019s shift report', reads: 'the plant system directly', needText: '8 hours (one shift)', need: 8, hops: [], gov: true },
+    { id: 'c2', name: 'Monthly demand review', reads: 'the composite planning extract', needText: '504 hours (three weeks)', need: 504, hops: ['extract'], gov: false },
+    { id: 'c3', name: 'Forecasting assistant', reads: 'the nightly snapshot, which it uses to rebuild the forecast each morning', needText: '48 hours (two days)', need: 48, hops: ['extract', 'snap'], gov: false },
+    { id: 'c4', name: 'Weekly production plan', reads: 'the nightly snapshot', needText: '168 hours (one week)', need: 168, hops: ['extract', 'snap'], gov: false },
+    { id: 'c5', name: 'Planning team\u2019s tracking sheet', reads: 'a spreadsheet the planning team fills by hand from the extract, whenever someone exports it. It has no schedule and no named owner', needText: '48 hours (two days)', need: 48, hops: null, gov: false }
+  ];
+  var VERDICTS = [['gov', 'Governing copy'], ['within', 'Within tolerance'], ['past', 'Past tolerance'], ['none', 'No agreed copy']];
+  var VERDICT_LABEL = { gov: 'Governing copy', within: 'Within tolerance', past: 'Past tolerance', none: 'No agreed copy' };
+
+  function lag(c, extract) {
+    if (c.hops === null) { return null; }
+    var t = 0;
+    c.hops.forEach(function (h) { t += (h === 'extract' ? extract : SNAP); });
+    return t;
+  }
+  function verdict(c, extract) {
+    if (c.hops === null) { return 'none'; }
+    if (c.gov) { return 'gov'; }
+    return lag(c, extract) <= c.need ? 'within' : 'past';
+  }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var sp = document.getElementById('second-pass');
+
+  CONSUMERS.forEach(function (c) {
+    var fs = el('fieldset', 'item');
+    fs.appendChild(el('legend', 'item-text', c.name));
+    fs.appendChild(el('p', 'item-meta', 'Reads ' + c.reads + '. Needs data no more than ' + c.needText + ' behind.'));
+    if (c.hops !== null) {
+      var row = el('div', 'field-row');
+      var lab = el('label', null, 'Longest lag, in hours');
+      lab.setAttribute('for', 'lag-' + c.id);
+      var inp = document.createElement('input');
+      inp.type = 'number';
+      inp.id = 'lag-' + c.id;
+      inp.className = 'num-input';
+      inp.min = '0';
+      inp.step = '1';
+      inp.setAttribute('inputmode', 'numeric');
+      inp.addEventListener('input', onChange);
+      row.appendChild(lab);
+      row.appendChild(inp);
+      fs.appendChild(row);
+    }
+    var choices = el('div', 'item-choices');
+    VERDICTS.forEach(function (v) {
+      var label = el('label', 'choice');
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.className = 'choice-input';
+      input.name = 'verdict-' + c.id;
+      input.value = v[0];
+      input.addEventListener('change', onChange);
+      label.appendChild(input);
+      label.appendChild(el('span', 'choice-box', v[1]));
+      choices.appendChild(label);
+    });
+    fs.appendChild(choices);
+    itemsEl.appendChild(fs);
+  });
+
+  function verdictFor(id) {
+    var r = document.querySelector('input[name="verdict-' + id + '"]:checked');
+    return r ? r.value : null;
+  }
+  function lagFor(id) {
+    var i = document.getElementById('lag-' + id);
+    if (!i || i.value === '') { return null; }
+    return Number(i.value);
+  }
+  function onChange() {
+    var ready = CONSUMERS.every(function (c) {
+      if (verdictFor(c.id) === null) { return false; }
+      if (c.hops !== null && lagFor(c.id) === null) { return false; }
+      return true;
+    });
+    checkBtn.disabled = !ready;
+    fb.hidden = true;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var problems = [];
+    CONSUMERS.forEach(function (c) {
+      var lagOk = true;
+      if (c.hops !== null) { lagOk = (lagFor(c.id) === lag(c, EXTRACT)); }
+      var vOk = (verdictFor(c.id) === verdict(c, EXTRACT));
+      if (!lagOk || !vOk) { problems.push({ c: c, lagOk: lagOk, vOk: vOk }); }
+    });
+    sp.hidden = true;
+    if (problems.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'A change at the plant system reaches the snapshot only after the extract is rebuilt, which can take up to 168 hours, and the snapshot is then taken, which can take up to 24 more. That makes 192 hours for the forecasting assistant and for the weekly plan. Neither answer carries a marker that says so.',
+        'The nightly rhythm hides the weekly one. The tracking sheet has no schedule, so no lag can be stated for it at all. Nobody agreed that it governs anything.'
+      ]);
+      sp.hidden = false;
+      renderSecond();
+      announce('All five consumers are correct.');
+    } else if (problems.length === 1) {
+      var p = problems[0];
+      var msg;
+      if (!p.lagOk) {
+        msg = 'Look again at the lag for the ' + p.c.name.toLowerCase() + '. Trace it back from the copy it reads to the plant system, and add every refresh interval on the way, not only the last hop.';
+      } else {
+        msg = 'The lag for the ' + p.c.name.toLowerCase() + ' is right, but the verdict is not. Set the lag against what this consumer needs, and ask whether anyone agreed the copy it reads governs.';
+      }
+      showFeedback('fb-near', 'Close.', ['Four of the five consumers are right. ' + msg]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [
+        'The criterion is the sum of every refresh interval between the governing copy and the copy a consumer reads, set against what that consumer needs.',
+        'First move: pick one consumer, trace the copy it reads back to the plant system, write down each refresh interval on the way, and add them. A copy with no schedule has no interval to write down.'
+      ]);
+    }
+  });
+
+  var OPTIONS = [24, 72, 168, 336];
+  var OPTION_LABEL = { 24: '24 hours', 72: '72 hours', 168: '168 hours', 336: '336 hours' };
+  var spChoices = document.getElementById('sp-choices');
+  OPTIONS.forEach(function (o) {
+    var label = el('label', 'choice');
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = 'extract-interval';
+    input.value = String(o);
+    if (o === EXTRACT) { input.checked = true; }
+    input.addEventListener('change', renderSecond);
+    label.appendChild(input);
+    label.appendChild(el('span', 'choice-box', OPTION_LABEL[o]));
+    spChoices.appendChild(label);
+  });
+
+  function renderSecond() {
+    var e = Number(document.querySelector('input[name="extract-interval"]:checked').value);
+    var tbody = document.querySelector('#sp-table tbody');
+    tbody.innerHTML = '';
+    var within = 0;
+    var past = 0;
+    CONSUMERS.forEach(function (c) {
+      var v = verdict(c, e);
+      var base = verdict(c, EXTRACT);
+      if (v === 'within') { within += 1; }
+      if (v === 'past') { past += 1; }
+      var tr = document.createElement('tr');
+      if (v !== base) { tr.className = 'moved'; }
+      var l = lag(c, e);
+      tr.appendChild(el('td', null, c.name));
+      tr.appendChild(el('td', 'num', l === null ? 'No lag can be stated' : fmt(l)));
+      tr.appendChild(el('td', 'num', fmt(c.need)));
+      tr.appendChild(el('td', null, VERDICT_LABEL[v]));
+      tbody.appendChild(tr);
+    });
+    document.getElementById('sp-caption').textContent = 'Extract rebuilt every ' + fmt(e) + ' hours. Within tolerance: ' + fmt(within) + '. Past tolerance: ' + fmt(past) + '.';
+    document.getElementById('sp-note').textContent = 'The tracking sheet stays where it is at every setting. Shortening a refresh can\u2019t repair a copy that nobody agreed governs.';
+    announce('Extract rebuilt every ' + fmt(e) + ' hours. Within tolerance: ' + fmt(within) + '. Past tolerance: ' + fmt(past) + '.');
+  }
+
+})();
+</script>
+</body>
+</html>

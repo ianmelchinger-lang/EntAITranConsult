@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read what arrives with the data</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #56666D;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset + fieldset { margin-top: 12px; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .fact { display: block; position: relative; cursor: pointer; margin: 0 0 8px; }
+  .fact-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .fact-box { display: block; font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px; line-height: 1.45; }
+  .fact-input:checked + .fact-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .fact-input:focus-visible + .fact-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .sub-legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink); padding: 0; margin: 14px 0 8px; }
+  .field-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); margin: 0 0 12px; }
+  .num-input { font-family: var(--font-sans); font-size: 0.95rem; width: 9ch; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .num-input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .passages { margin: 0 0 24px; padding: 0; }
+  .passage { margin: 0 0 10px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; font-size: 0.98rem; }
+  .passage b { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); display: block; margin: 0 0 2px; font-weight: 700; }
+  .path { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; margin: 0 0 22px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel h2 { font-size: 1.05rem; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .num-input { width: 100%; }
+    table.scores { font-size: 0.84rem; }
+    table.scores th, table.scores td { padding: 6px 7px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read what arrives with the data</h1>
+
+  <p class="lead-line">Governed data meets four tests. Anyone downstream can trace it to its origin. Someone prepared and labeled it in a documented way. Someone checked it for gaps, meaning missing records, and for skews, meaning cases that are over- or under-represented. And it matches the context the system will run in, not only the context where it was collected. When a dataset arrives labeled ready, the documentation that comes with it shows how far the governance reaches.</p>
+
+  <p class="context">A manufacturer&rsquo;s quality function offers its supplier-quality records as ready. The records are supplier nonconformance write-ups held in the quality management system. They will feed a reader that surfaces exceptions in supplier documents at all nine plants. The package that came with the records has six passages.</p>
+
+  <div class="passages" id="passages"></div>
+
+  <div class="instruction">
+    <p>For each test, judge what the package shows. Choose <b>Shown</b> when a passage shows the test was met. Choose <b>Shown to fail</b> when a passage shows it was not. Choose <b>Not shown</b> when nothing in the package speaks to it.</p>
+  </div>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my verdicts</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change the named use</h2>
+    <p>The package stays the same. Choose where the reader will run and watch which verdicts move. Nothing here is checked.</p>
+    <fieldset>
+      <legend class="sub-legend">Where will the reader run?</legend>
+      <div class="item-choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="table-wrap">
+      <table class="scores" id="sp-table">
+        <caption id="sp-caption">Verdicts for the named use</caption>
+        <thead><tr><th scope="col">Test</th><th scope="col">Verdict</th><th scope="col">What decides it</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p id="sp-note"></p>
+  </section>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function fmt(n) { return Number(n).toLocaleString('en-US'); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var srStatus = document.getElementById('sr-status');
+  function showFeedback(kind, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(kind);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) { fbDetail.appendChild(el('p', 'fb-detail', t)); });
+    fb.hidden = false;
+    fb.focus();
+  }
+  function announce(t) { srStatus.textContent = t; }
+
+  var PASSAGES = [
+    { tag: 'A', title: 'Platform note', text: 'The records sit in the quality management system. The system is backed up nightly, encrypted at rest, and monitored around the clock. Access is by role.' },
+    { tag: 'B', title: 'Lineage note', text: 'Every write-up carries its plant, the supplier record it came from, the date it was opened, and the system where it was keyed. The quality system logs each edit with an editor and a timestamp.' },
+    { tag: 'C', title: 'Preparation note', text: 'The data team cleaned the records before release.' },
+    { tag: 'D', title: 'Size note', text: 'The set holds one year of write-ups, 9,600 in all, which is plenty to work with.' },
+    { tag: 'E', title: 'Sampling note', text: 'The records come from the three European plants. The reader was tested on them and answered correctly. Records from the other six plants were not included.' },
+    { tag: 'F', title: 'Contact note', text: 'Questions about the records go to the quality function\u2019s records team.' }
+  ];
+
+  var TESTS = [
+    { id: 'trace', name: 'Traceable origin', def: 'Anyone downstream can follow a record back to where it came from.', key: 'shown',
+      ask: 'Does any passage show that a record can be followed back to its origin?' },
+    { id: 'prep', name: 'Prepared and labeled in a documented way', def: 'Someone can read how the records were cleaned and labeled.', key: 'none',
+      ask: 'Does any passage document how the records were prepared, or only say that someone did it?' },
+    { id: 'gaps', name: 'Checked for gaps and skews', def: 'Someone looked for missing records and for cases that are over- or under-represented.', key: 'none',
+      ask: 'Does any passage show that someone looked for gaps or skews, or only describe how much data there is?' },
+    { id: 'context', name: 'Matched to the context of use', def: 'The records resemble what the system will meet once it runs.', key: 'fail',
+      ask: 'Compare where the records were collected with where the reader will run. Does the package show a match?' }
+  ];
+  var CHOICES = [['shown', 'Shown'], ['fail', 'Shown to fail'], ['none', 'Not shown']];
+
+  var passagesEl = document.getElementById('passages');
+  PASSAGES.forEach(function (p) {
+    var d = el('div', 'passage');
+    d.appendChild(el('b', null, 'Passage ' + p.tag + '. ' + p.title));
+    d.appendChild(document.createTextNode(p.text));
+    passagesEl.appendChild(d);
+  });
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var sp = document.getElementById('second-pass');
+
+  TESTS.forEach(function (t) {
+    var fs = el('fieldset', 'item');
+    fs.appendChild(el('legend', 'item-text', t.name));
+    fs.appendChild(el('p', 'item-meta', t.def));
+    var row = el('div', 'item-choices');
+    CHOICES.forEach(function (c) {
+      var label = el('label', 'choice');
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.className = 'choice-input';
+      input.name = 'test-' + t.id;
+      input.value = c[0];
+      input.addEventListener('change', onChange);
+      label.appendChild(input);
+      label.appendChild(el('span', 'choice-box', c[1]));
+      row.appendChild(label);
+    });
+    fs.appendChild(row);
+    itemsEl.appendChild(fs);
+  });
+
+  function answerFor(id) {
+    var r = document.querySelector('input[name="test-' + id + '"]:checked');
+    return r ? r.value : null;
+  }
+  function onChange() {
+    checkBtn.disabled = !TESTS.every(function (t) { return answerFor(t.id) !== null; });
+    fb.hidden = true;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var wrong = TESTS.filter(function (t) { return answerFor(t.id) !== t.key; });
+    sp.hidden = true;
+    if (wrong.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'Passage B traces every record to its plant, its source record, its date, and its system, so the first test is met. Passages A, D, and F describe the platform, the size of the set, and a contact. None of them answers any of the four tests.',
+        'Passage C says the records were cleaned but not how, so nothing documents the preparation. No passage shows anyone looking for gaps or skews, and size doesn\u2019t do that job. Passage E shows the reader was tested on records from three plants and will run at nine. The package itself shows the fourth test failing.',
+        'Governed needs all four. For this use, the honest verdict is not yet, and the sequence starts with documentation that doesn\u2019t exist.'
+      ]);
+      sp.hidden = false;
+      renderSecond();
+      announce('All four verdicts are correct.');
+    } else if (wrong.length === 1) {
+      showFeedback('fb-near', 'Close.', [
+        'Three of the four verdicts are right. Look again at \u201C' + wrong[0].name + '.\u201D ' + wrong[0].ask
+      ]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [
+        'The criterion is evidence that someone did the work, not a description of where the data lives or how much of it there is. A passage about the platform, the size, or a contact answers none of the four tests.',
+        'First move: take one test at a time and look for a passage that shows it was done. If no passage does, the test is not shown. If a passage shows the opposite, the test is shown to fail.'
+      ]);
+    }
+  });
+
+  var USES = {
+    nine: { label: 'All nine plants' },
+    three: { label: 'The three European plants only' }
+  };
+  var spChoices = document.getElementById('sp-choices');
+  Object.keys(USES).forEach(function (k, i) {
+    var label = el('label', 'choice');
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = 'named-use';
+    input.value = k;
+    if (i === 0) { input.checked = true; }
+    input.addEventListener('change', renderSecond);
+    label.appendChild(input);
+    label.appendChild(el('span', 'choice-box', USES[k].label));
+    spChoices.appendChild(label);
+  });
+
+  function renderSecond() {
+    var use = document.querySelector('input[name="named-use"]:checked').value;
+    var rows = [
+      { name: 'Traceable origin', v: 'Shown', why: 'Passage B' },
+      { name: 'Documented preparation and labeling', v: 'Not shown', why: 'Passage C says the records were cleaned, not how' },
+      { name: 'Checked for gaps and skews', v: 'Not shown', why: 'Passage D describes size, not a check' },
+      { name: 'Matched to the context of use', v: use === 'nine' ? 'Shown to fail' : 'Shown',
+        why: use === 'nine' ? 'Passage E: tested on three plants, runs at nine' : 'Passage E: tested on the same three plants where it runs' }
+    ];
+    var tbody = document.querySelector('#sp-table tbody');
+    tbody.innerHTML = '';
+    var shown = 0;
+    rows.forEach(function (r, i) {
+      if (r.v === 'Shown') { shown += 1; }
+      var tr = document.createElement('tr');
+      if (i === 3 && use === 'three') { tr.className = 'moved'; }
+      tr.appendChild(el('td', null, r.name));
+      tr.appendChild(el('td', null, r.v));
+      tr.appendChild(el('td', null, r.why));
+      tbody.appendChild(tr);
+    });
+    document.getElementById('sp-caption').textContent = 'Named use: ' + USES[use].label.toLowerCase() + '. Tests shown: ' + fmt(shown) + ' of ' + fmt(4) + '.';
+    document.getElementById('sp-note').textContent = use === 'nine'
+      ? 'The package didn\u2019t change between the two uses. Choose the narrower use to see what moves.'
+      : 'Narrowing the use fixes the fourth test. It doesn\u2019t create documentation for the second and third, so the verdict for either use is still not yet. The narrower use has a shorter sequence to get there.';
+    announce('Named use: ' + USES[use].label + '. Tests shown: ' + fmt(shown) + ' of ' + fmt(4) + '.');
+  }
+
+})();
+</script>
+</body>
+</html>

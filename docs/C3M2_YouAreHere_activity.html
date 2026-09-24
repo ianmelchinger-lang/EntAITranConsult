@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read this first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #56666D;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 24px;
+    color: var(--ink);
+  }
+
+  .scenario {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin: 0 0 28px;
+  }
+
+  .scenario p {
+    margin: 0 0 16px;
+  }
+
+  .scenario p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prompt-lead {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 16px;
+  }
+
+  .option {
+    display: block;
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .option-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .option-box {
+    display: block;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 18px;
+    background: var(--white);
+  }
+
+  .option-lead {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .option-detail {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .option-input:checked + .option-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .option-input:focus-visible + .option-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  fieldset.locked .option {
+    cursor: default;
+  }
+
+  fieldset.locked .option-box {
+    opacity: 0.9;
+  }
+
+  .reveal-btn {
+    display: block;
+    margin: 22px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .reveal-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .reveal-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .reveal-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .reveal {
+    margin-top: 32px;
+    padding: 22px 24px;
+    background: var(--highlight-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .reveal[hidden] {
+    display: none;
+  }
+
+  .reveal:focus {
+    outline: none;
+  }
+
+  .reveal-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--accent-deep);
+    margin: 0 0 4px;
+  }
+
+  .reveal-chosen {
+    font-family: var(--font-sans);
+    font-style: italic;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p {
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read this first</h1>
+
+  <div class="scenario">
+    <p>A multinational manufacturer has funded a first phase of AI work. An operations lead brings the advisor one prioritized use case, with its business case already written, and asks for a single thing: a signature confirming that the data and the systems can carry it before the funding wave closes.</p>
+    <p>The evidence offered is impressive. Plant data from every site has been consolidated onto one modern platform over two years. A vendor demonstration ran on a sample of the manufacturer&rsquo;s own records and answered correctly. The platform owner has confirmed in writing that the architecture can support the use case.</p>
+    <p>Everyone in the room is behaving reasonably. The operations lead has committed a number to the funding cycle and needs the answer to be yes.</p>
+  </div>
+
+  <p class="prompt-lead">Before reading on, choose the reading that comes closest to your own first instinct.</p>
+
+  <fieldset id="reading-fieldset">
+    <legend>What should the advisor do before signing?</legend>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="a">
+      <span class="option-box">
+        <span class="option-lead">Sign, on the strength of the consolidation.</span>
+        <span class="option-detail">Every site&rsquo;s data now sits on one platform behind one access path. The data is there, the systems can reach it, and the people accountable for them have said so.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="b">
+      <span class="option-box">
+        <span class="option-lead">Ask for a bigger demonstration first.</span>
+        <span class="option-detail">Have the vendor rerun the demonstration on a full quarter of records from every site. If it still answers correctly at that volume, the use case is proven.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="c">
+      <span class="option-box">
+        <span class="option-lead">Collect each owner&rsquo;s confirmation in writing.</span>
+        <span class="option-detail">Ask the platform owner, the data steward, and the operations lead each to confirm that the part of the estate they answer for is ready. File the three confirmations with the signature.</span>
+      </span>
+    </label>
+  </fieldset>
+
+  <button type="button" class="reveal-btn" id="reveal-btn" disabled>See what this misses</button>
+
+  <div class="reveal" id="reveal" role="region" aria-label="What this reading misses" tabindex="-1" hidden>
+    <span class="reveal-tag">You read this as:</span>
+    <p class="reveal-chosen" id="reveal-chosen"></p>
+    <div class="reveal-body" id="reveal-body"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var READINGS = {
+    a: {
+      lead: "Sign, on the strength of the consolidation.",
+      rebuttal: "Consolidation moves data into one place. It doesn\u2019t reconcile it. Records that disagreed across nine plant systems still disagree once they sit on one platform, and now they disagree inside a single query result, where the disagreement is harder to see and impossible to attribute. One platform answers whether the data can be reached. It says nothing about whether the data can be trusted for this use, or who may use it that way."
+    },
+    b: {
+      lead: "Ask for a bigger demonstration first.",
+      rebuttal: "A bigger run shows how the system copes with more records. It can\u2019t show where a record came from, whether its copy is current, who is permitted to use it this way, or who answers when it is wrong. A system can pass every run and still act on stale records, because nothing in the run marks a record\u2019s age. Passing more often doesn\u2019t change what the test was built to see."
+    },
+    c: {
+      lead: "Collect each owner\u2019s confirmation in writing.",
+      rebuttal: "Each confirmation describes the part of the estate its author runs or needs. Each is informed and probably honest, and each answers a general question: is the estate ready? None says what this use case would have to reach, integrate with, and sustain, or what anyone tested it against. Filing more confirmations adds volume, not a test."
+    }
+  };
+
+  var CLOSING = "All three readings take the evidence offered as the answer to the readiness question. Consolidation, a demonstration, and a confirmation each describe the estate, or the system, in general. None of them holds the data and the systems against this one use case, so none produces a finding a sponsor can act on. The missing capability is that judgment: deciding whether an organization\u2019s data and technical foundations can support one named use case, and writing the answer as what is true, what isn\u2019t yet, and what would change it.";
+
+  var radios = document.querySelectorAll('input[name="reading"]');
+  var revealBtn = document.getElementById('reveal-btn');
+  var revealPanel = document.getElementById('reveal');
+  var revealChosen = document.getElementById('reveal-chosen');
+  var revealBody = document.getElementById('reveal-body');
+  var fieldset = document.getElementById('reading-fieldset');
+
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function () {
+      revealBtn.disabled = false;
+    });
+  }
+
+  revealBtn.addEventListener('click', function () {
+    var chosen = null;
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { chosen = radios[i].value; }
+    }
+    if (!chosen) { return; }
+
+    for (var j = 0; j < radios.length; j++) {
+      radios[j].disabled = true;
+    }
+    fieldset.classList.add('locked');
+    revealBtn.disabled = true;
+
+    var data = READINGS[chosen];
+    revealChosen.textContent = '\u201C' + data.lead + '\u201D';
+
+    revealBody.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = data.rebuttal;
+    var p2 = document.createElement('p');
+    p2.textContent = CLOSING;
+    revealBody.appendChild(p1);
+    revealBody.appendChild(p2);
+
+    revealPanel.hidden = false;
+    revealPanel.focus();
+  });
+})();
+</script>
+</body>
+</html>

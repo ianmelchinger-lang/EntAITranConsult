@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find where each boundary is enforced</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #56666D;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset + fieldset { margin-top: 12px; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .fact { display: block; position: relative; cursor: pointer; margin: 0 0 8px; }
+  .fact-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .fact-box { display: block; font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px; line-height: 1.45; }
+  .fact-input:checked + .fact-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .fact-input:focus-visible + .fact-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .sub-legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink); padding: 0; margin: 14px 0 8px; }
+  .field-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); margin: 0 0 12px; }
+  .num-input { font-family: var(--font-sans); font-size: 0.95rem; width: 9ch; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .num-input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .passages { margin: 0 0 24px; padding: 0; }
+  .passage { margin: 0 0 10px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; font-size: 0.98rem; }
+  .passage b { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); display: block; margin: 0 0 2px; font-weight: 700; }
+  .path { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; margin: 0 0 22px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel h2 { font-size: 1.05rem; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .num-input { width: 100%; }
+    table.scores { font-size: 0.84rem; }
+    table.scores th, table.scores td { padding: 6px 7px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Find where each boundary is enforced</h1>
+
+  <p class="lead-line">Three boundaries govern any use of data: whether it can be reached, whether it fits the named use, and whether the organization is permitted to use it that way. A boundary is enforced when a system would stop you from crossing it. A policy, a review, or an approval can state a boundary without enforcing it, and a boundary enforced nowhere exists only in the interview.</p>
+
+  <p class="context">A manufacturer&rsquo;s service function is building an assistant that drafts responses to warranty claims for agents to review. It reads claim records from four regional claims systems through the consolidated data platform. The readiness file holds six statements about how the assistant is controlled.</p>
+
+  <div class="instruction">
+    <p><b>Reach:</b> the system can technically get to the data. <b>Fit:</b> the data is trustworthy for this named use, judged by its origin, its currency, its completeness, and how well it represents the conditions the system will meet. <b>Permission:</b> law, contract, or policy allows the organization to use the data this way.</p>
+    <p>Place each statement under the boundary it enforces. If no system would stop anyone from crossing the boundary, place it under Enforces nothing.</p>
+  </div>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my placements</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="result-panel" tabindex="-1" hidden>
+    <h2>Where each boundary stands</h2>
+    <div class="table-wrap">
+      <table class="scores">
+        <caption>What enforces each boundary in the readiness file</caption>
+        <thead><tr><th scope="col">Boundary</th><th scope="col">What enforces it</th></tr></thead>
+        <tbody>
+          <tr><td>Reach</td><td>The access layer.</td></tr>
+          <tr><td>Fit for this use</td><td>The load-date check, for currency only. Origin, completeness, and representativeness have no enforcement point.</td></tr>
+          <tr><td>Permission</td><td>Nothing. The boundary lives in a policy, a form, and an email.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A boundary that nothing enforces is a finding. It tells the sponsor which boundary rests on trust alone.</p>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: move the permission rule</h2>
+    <p>Suppose the rule that claim records may be used only for the purpose they were collected for gets a home. Choose where it lives, then read what would stop the assistant from using the records for any other purpose. Nothing here is checked.</p>
+    <fieldset>
+      <legend class="sub-legend">Where does the purpose rule live?</legend>
+      <div class="item-choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-result" hidden>
+      <p id="sp-stop"></p>
+      <p id="sp-count"></p>
+    </div>
+  </section>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function fmt(n) { return Number(n).toLocaleString('en-US'); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var srStatus = document.getElementById('sr-status');
+  function showFeedback(kind, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(kind);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) { fbDetail.appendChild(el('p', 'fb-detail', t)); });
+    fb.hidden = false;
+    fb.focus();
+  }
+  function announce(t) { srStatus.textContent = t; }
+
+  var LINES = [
+    { id: 'L3', name: 'the policy', key: 'none', text: 'The responsible-AI policy is approved, circulated, and principled.' },
+    { id: 'L1', name: 'the access layer', key: 'reach', text: 'The platform\u2019s access layer lets the assistant\u2019s service role read the four regional claims systems and nothing else. Any other request from that role fails.' },
+    { id: 'L6', name: 'the legal reviewer\u2019s email', key: 'none', text: 'The legal reviewer confirmed by email that drafting responses from claim records is a permitted use.' },
+    { id: 'L2', name: 'the load-date check', key: 'fit', text: 'The claims feed runs a load-date check on every regional extract. An extract more than 24 hours old is rejected, and the drafting run stops until a current one arrives.' },
+    { id: 'L4', name: 'the pre-production form', key: 'none', text: 'The one-page pre-production form was completed and filed before the pilot began.' },
+    { id: 'L5', name: 'the steward\u2019s review', key: 'none', text: 'The data steward reviewed how the four regions record their fields last quarter and wrote up the differences.' }
+  ];
+  var BUCKETS = [['reach', 'Reach'], ['fit', 'Fit'], ['perm', 'Permission'], ['none', 'Enforces nothing']];
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var panel = document.getElementById('result-panel');
+  var sp = document.getElementById('second-pass');
+
+  LINES.forEach(function (line) {
+    var fs = el('fieldset', 'item');
+    fs.appendChild(el('legend', 'item-text', line.text));
+    var row = el('div', 'item-choices');
+    BUCKETS.forEach(function (b) {
+      var label = el('label', 'choice');
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.className = 'choice-input';
+      input.name = 'line-' + line.id;
+      input.value = b[0];
+      input.addEventListener('change', onChange);
+      label.appendChild(input);
+      label.appendChild(el('span', 'choice-box', b[1]));
+      row.appendChild(label);
+    });
+    fs.appendChild(row);
+    itemsEl.appendChild(fs);
+  });
+
+  function answerFor(id) {
+    var r = document.querySelector('input[name="line-' + id + '"]:checked');
+    return r ? r.value : null;
+  }
+
+  function onChange() {
+    var all = LINES.every(function (l) { return answerFor(l.id) !== null; });
+    checkBtn.disabled = !all;
+    fb.hidden = true;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var wrong = LINES.filter(function (l) { return answerFor(l.id) !== l.key; });
+    panel.hidden = true;
+    sp.hidden = true;
+    if (wrong.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'Two statements describe a system that would stop something. The access layer limits what the assistant can reach, and the load-date check keeps a stale extract out of the run. The other four state a boundary without enforcing it. A policy, a completed form, a review, and an email each record that someone thought about the boundary. No system would refuse anything if the assistant went past them.',
+        'Permission ends up with no enforcing statement at all. That is a finding, not a blank: the boundary exists only in the interview until someone builds it where the data lives.'
+      ]);
+      panel.hidden = false;
+      sp.hidden = false;
+      announce('All six placements are correct.');
+    } else if (wrong.length === 1) {
+      showFeedback('fb-near', 'Close.', [
+        'Five of the six sit where they belong. Look again at ' + wrong[0].name + '. Ask: if someone went past it, which system would stop them?'
+      ]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [
+        'The criterion is whether a system would refuse or stop the action. A boundary can be stated in a policy, a form, a review, or an email and still be crossed without anything noticing.',
+        'First move: take each statement and ask what would happen if someone went past it. If a system would refuse, the statement enforces a boundary. If the answer is that someone might notice later, it enforces nothing.'
+      ]);
+    }
+  });
+
+  var SP = {
+    policy: {
+      label: 'In the policy',
+      stop: 'What would stop the assistant: nothing. The policy states the rule, and no system reads it.',
+      count: 2
+    },
+    layer: {
+      label: 'In the data layer',
+      stop: 'What would stop the assistant: the platform. Each claim record carries the purpose it was collected for, and the platform refuses any read for another purpose. The assistant now carries only the authority of the purpose it works for and can\u2019t exceed it.',
+      count: 3
+    }
+  };
+  var spChoices = document.getElementById('sp-choices');
+  var spResult = document.getElementById('sp-result');
+  Object.keys(SP).forEach(function (k) {
+    var label = el('label', 'choice');
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = 'rule-home';
+    input.value = k;
+    input.addEventListener('change', function () {
+      document.getElementById('sp-stop').textContent = SP[k].stop;
+      document.getElementById('sp-count').textContent = 'Boundaries with a named enforcement point: ' + fmt(SP[k].count) + ' of ' + fmt(3) + '.';
+      spResult.hidden = false;
+      announce('Purpose rule moved. ' + SP[k].stop);
+    });
+    label.appendChild(input);
+    label.appendChild(el('span', 'choice-box', SP[k].label));
+    spChoices.appendChild(label);
+  });
+
+})();
+</script>
+</body>
+</html>

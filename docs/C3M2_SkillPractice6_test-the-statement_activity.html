@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask what it was tested against</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #56666D;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset + fieldset { margin-top: 12px; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .fact { display: block; position: relative; cursor: pointer; margin: 0 0 8px; }
+  .fact-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .fact-box { display: block; font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px; line-height: 1.45; }
+  .fact-input:checked + .fact-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .fact-input:focus-visible + .fact-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .sub-legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink); padding: 0; margin: 14px 0 8px; }
+  .field-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); margin: 0 0 12px; }
+  .num-input { font-family: var(--font-sans); font-size: 0.95rem; width: 9ch; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .num-input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .passages { margin: 0 0 24px; padding: 0; }
+  .passage { margin: 0 0 10px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; font-size: 0.98rem; }
+  .passage b { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); display: block; margin: 0 0 2px; font-weight: 700; }
+  .path { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; margin: 0 0 22px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel h2 { font-size: 1.05rem; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .num-input { width: 100%; }
+    table.scores { font-size: 0.84rem; }
+    table.scores th, table.scores td { padding: 6px 7px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Ask what it was tested against</h1>
+
+  <p class="lead-line">A readiness assessment collects statements from the people who run the estate. Two kinds arrive, and they carry different weight. A self-report describes the speaker&rsquo;s own work in general terms, such as &ldquo;the platform can support this.&rdquo; It is usually informed and honest, and it is evidence to test, not a finding to record. A finding comes out of a test, and the speaker can name it. One question separates the two: what did you test it against?</p>
+
+  <p class="context">A manufacturer&rsquo;s transformation team is assessing whether an assistant that drafts warranty responses can run on the consolidated data platform. It will read claim records from four regional systems. Six statements came in from three roles.</p>
+
+  <div class="instruction">
+    <p>Each statement arrives with the answer the speaker gave when asked what they tested it against. Record a statement as a <b>finding</b> when the answer names a test run on this asset or this use. Mark it <b>test against this use first</b> when the answer is general capability, an impression, or a sample someone else chose.</p>
+  </div>
+
+  <div id="items"></div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sort</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="result-panel" tabindex="-1" hidden>
+    <h2>What each statement leaves untested</h2>
+    <div class="table-wrap">
+      <table class="scores" id="result-table">
+        <caption>Treatment and coverage for each statement</caption>
+        <thead><tr><th scope="col">Statement</th><th scope="col">Treatment</th><th scope="col">What it leaves untested</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p>For every statement marked test first, the test is the same: what would this use have to reach, integrate with, and sustain, at the volume and cadence it implies?</p>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: put the volume against the test</h2>
+    <p>The platform owner&rsquo;s load test covered 90,000 claims a year. Choose the regions the assistant will serve and compare the claims a year the use implies with what the test covered. Nothing here is checked.</p>
+    <fieldset>
+      <legend class="sub-legend">Regions served</legend>
+      <div id="sp-regions"></div>
+    </fieldset>
+    <div class="panel" id="sp-result">
+      <p id="sp-implied"></p>
+      <p id="sp-tested"></p>
+      <p id="sp-verdict"></p>
+    </div>
+  </section>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function fmt(n) { return Number(n).toLocaleString('en-US'); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var srStatus = document.getElementById('sr-status');
+  function showFeedback(kind, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(kind);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) { fbDetail.appendChild(el('p', 'fb-detail', t)); });
+    fb.hidden = false;
+    fb.focus();
+  }
+  function announce(t) { srStatus.textContent = t; }
+
+  var STATEMENTS = [
+    { id: 's1', who: 'Platform owner', claim: 'The platform can support the drafting assistant.', tested: 'Our annual capacity review, which covers the platform as a whole.',
+      key: 'test', short: 'Platform can support the assistant', left: 'General capability. It doesn\u2019t say what this use would have to reach, integrate with, and sustain.' },
+    { id: 's4', who: 'Service function head', claim: 'The assistant answered our claims correctly.', tested: 'A demonstration on a sample of claims the vendor selected.',
+      key: 'test', short: 'Assistant answered our claims correctly', left: 'A sample the vendor chose can\u2019t show what the production records hold.' },
+    { id: 's6', who: 'Platform owner', claim: 'The claims tables sustained the assistant\u2019s reads at 90,000 claims a year with no failed queries.', tested: 'A load test on the claims tables, run last month.',
+      key: 'finding', short: 'Claims tables sustained the reads', left: 'Reads at 90,000 claims a year. It says nothing above that volume.' },
+    { id: 's2', who: 'Data steward', claim: 'The claim records are in good shape.', tested: 'Nothing formal. It is my impression from working with them every day.',
+      key: 'test', short: 'Claim records are in good shape', left: 'An impression with no standard behind it.' },
+    { id: 's5', who: 'Platform owner', claim: 'The platform has been stable, with no outage this year.', tested: 'The uptime record, which covers every system on the platform.',
+      key: 'test', short: 'Platform has been stable', left: 'Uptime for the whole platform says nothing about these tables under this assistant\u2019s reads.' },
+    { id: 's3', who: 'Data steward', claim: 'The four regions record the coverage-type field differently, and I keep a mapping between them.', tested: 'A quarterly field-by-field comparison of the four regional extracts against the shared field definitions.',
+      key: 'finding', short: 'Regions record coverage type differently', left: 'How the four regions record one field. It says nothing about whether the records are current.' }
+  ];
+  var CHOICES = [['finding', 'Record as a finding'], ['test', 'Test against this use first']];
+  var TREAT = { finding: 'Record as a finding', test: 'Test against this use first' };
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var panel = document.getElementById('result-panel');
+  var sp = document.getElementById('second-pass');
+
+  STATEMENTS.forEach(function (s) {
+    var fs = el('fieldset', 'item');
+    fs.appendChild(el('legend', 'item-text', s.who + ': \u201C' + s.claim + '\u201D'));
+    fs.appendChild(el('p', 'item-meta', 'Asked what they tested it against: \u201C' + s.tested + '\u201D'));
+    var row = el('div', 'item-choices');
+    CHOICES.forEach(function (c) {
+      var label = el('label', 'choice');
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.className = 'choice-input';
+      input.name = 'st-' + s.id;
+      input.value = c[0];
+      input.addEventListener('change', onChange);
+      label.appendChild(input);
+      label.appendChild(el('span', 'choice-box', c[1]));
+      row.appendChild(label);
+    });
+    fs.appendChild(row);
+    itemsEl.appendChild(fs);
+  });
+
+  function answerFor(id) {
+    var r = document.querySelector('input[name="st-' + id + '"]:checked');
+    return r ? r.value : null;
+  }
+  function onChange() {
+    checkBtn.disabled = !STATEMENTS.every(function (s) { return answerFor(s.id) !== null; });
+    fb.hidden = true;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var wrong = STATEMENTS.filter(function (s) { return answerFor(s.id) !== s.key; });
+    panel.hidden = true;
+    sp.hidden = true;
+    if (wrong.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'The role of the speaker didn\u2019t decide any of these. A platform owner\u2019s load test on these tables is a finding, and a platform owner\u2019s capacity review is not. A steward\u2019s field comparison against shared definitions is a finding, and a steward\u2019s impression is not.',
+        'What separates them is the answer to one question: what did you test it against? A test run on this asset or this use gives you something to record. Anything else gives you something to test.'
+      ]);
+      renderResult();
+      panel.hidden = false;
+      sp.hidden = false;
+      renderSecond();
+      announce('All six statements are sorted correctly.');
+    } else if (wrong.length === 1) {
+      showFeedback('fb-near', 'Close.', [
+        'Five of the six are sorted correctly. Look again at the statement that begins \u201C' + wrong[0].claim + '\u201D Read the answer to what they tested it against. Does it name a test run on this asset or this use?'
+      ]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [
+        'The criterion is what the speaker tested the statement against. It matters more than who said it. General capability, an uptime record, an impression, and a sample someone else chose don\u2019t count as a test on this use.',
+        'First move: skip the speaker and read only the answer to what they tested it against. If it names a test on these tables, these records, or this use, it is something to record. If it doesn\u2019t, it is something to test.'
+      ]);
+    }
+  });
+
+  function renderResult() {
+    var tbody = document.querySelector('#result-table tbody');
+    tbody.innerHTML = '';
+    STATEMENTS.forEach(function (s) {
+      var tr = document.createElement('tr');
+      tr.appendChild(el('td', null, s.short));
+      tr.appendChild(el('td', null, TREAT[s.key]));
+      tr.appendChild(el('td', null, s.left));
+      tbody.appendChild(tr);
+    });
+  }
+
+  var TESTED = 90000;
+  var REGIONS = [
+    { id: 'na', name: 'North America', claims: 74000 },
+    { id: 'eu', name: 'Europe', claims: 52000 },
+    { id: 'apac', name: 'Asia-Pacific', claims: 38000 },
+    { id: 'latam', name: 'Latin America', claims: 22000 }
+  ];
+  var regionsEl = document.getElementById('sp-regions');
+  REGIONS.forEach(function (r) {
+    var label = el('label', 'fact');
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = 'fact-input';
+    input.name = 'region';
+    input.value = r.id;
+    if (r.id === 'latam') { input.checked = true; }
+    input.addEventListener('change', renderSecond);
+    label.appendChild(input);
+    label.appendChild(el('span', 'fact-box', r.name + ': ' + fmt(r.claims) + ' claims a year'));
+    regionsEl.appendChild(label);
+  });
+
+  function renderSecond() {
+    var implied = 0;
+    var count = 0;
+    REGIONS.forEach(function (r) {
+      var box = document.querySelector('input[name="region"][value="' + r.id + '"]');
+      if (box && box.checked) { implied += r.claims; count += 1; }
+    });
+    document.getElementById('sp-implied').textContent = 'Claims a year the use implies: ' + fmt(implied) + '.';
+    document.getElementById('sp-tested').textContent = 'Claims a year the load test covered: ' + fmt(TESTED) + '.';
+    var verdict;
+    if (count === 0) {
+      verdict = 'Choose at least one region to compare.';
+    } else if (implied <= TESTED) {
+      verdict = 'Covered. The finding reaches this volume, with ' + fmt(TESTED - implied) + ' claims a year to spare.';
+    } else {
+      verdict = 'Not covered. The use implies ' + fmt(implied - TESTED) + ' claims a year more than the test covered, about ' + (implied / TESTED).toFixed(2) + ' times the tested volume. The load test is still a finding, but only about 90,000 claims a year.';
+    }
+    document.getElementById('sp-verdict').textContent = verdict;
+    announce('Claims a year implied: ' + fmt(implied) + '. ' + verdict);
+  }
+
+})();
+</script>
+</body>
+</html>
