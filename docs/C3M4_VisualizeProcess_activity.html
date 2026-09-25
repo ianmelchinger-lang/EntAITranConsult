@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the report</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .context {
+    border-left: 3px solid var(--accent);
+    padding-left: 18px;
+    margin: 0 0 24px;
+    font-size: 1rem;
+    color: var(--ink);
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 24px;
+  }
+
+  .order-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .order-badge {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .order-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-serif);
+    font-size: 0.98rem;
+    color: var(--ink);
+  }
+
+  .order-controls {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 4px;
+  }
+
+  .move-btn {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .move-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .move-btn:not(:disabled):hover {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+  }
+
+  .move-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 8px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 20px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Assemble the report</h1>
+
+  <p class="lead-line">None of this is new. Eight pieces of a process you've already practiced, shown out of order. Put them back the way they actually have to run.</p>
+
+  <p class="context">An analyst holds six weeks of assessment notes on a plant's inspection tool, a sponsor who has already signaled the funding decision, and a steering meeting on Thursday.</p>
+
+  <p class="instruction">Below are eight pieces of the path from that folder to a report the steering group can act on, out of order. Use the arrows to put them in the sequence the process requires. Where more than one order works, any of them will pass.</p>
+
+  <div id="order-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my order</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+
+<script>
+(function () {
+  var ITEMS = {
+    PROBLEM: { text: "The problem: six weeks of assessment sit in a folder, a sponsor has already signaled the funding decision, and nothing yet separates what was checked from what was said." },
+    ASSEMBLE: { text: "Assemble every observation gathered, including the ones that cut against the initiative and the ones the sponsor supplied, without editing any of them." },
+    SORT: { text: "Sort each observation by how it was actually learned \u2014 checked directly, read in a document, or told by someone." },
+    STRENGTH: { text: "Write each finding at the strength that sorting supports, keeping the claim and its label visibly separate, however senior the source." },
+    CONSEQUENCE: { text: "Attach to each finding the consequence it has for the decision, in the terms the reader in front of you actually uses." },
+    STRIP: { text: "Move every figure below the line, so that removing all the numbers would leave the argument saying exactly what it said before." },
+    RECOMMEND: { text: "Close with a plain recommendation, reachable as \u201Cnot yet\u201D as honestly as \u201Cyes,\u201D naming the sequence that would change the answer." },
+    SIGNAL: { text: "The signal it worked: a reader who wasn't in the room can weigh every claim, and the recommendation could be rejected on the evidence actually presented." }
+  };
+
+  var CORRECT_TEXT = "Right. This is the whole path: name the problem, assemble every observation without editing it, sort by how each was learned, write each finding at the strength that sorting supports, attach the consequence it has for the decision, strip the figures out of the load-bearing sentences, and only then close with a recommendation that could honestly go either way.";
+  var CRITERION_TEXT = "Each piece depends on something before it being settled first. Sorting needs the assembled set. Strength needs the sorting. Consequence needs the strength. Stripping figures needs the sorted observations and has to land before the recommendation closes. The recommendation needs all of it, and the signal needs the recommendation.";
+  var FIRST_MOVE_TEXT = "Take any two pieces and ask which one supplies something the other needs before it can mean anything. The one supplying it goes first.";
+  var SOFT_NOTE = "One thing to notice: you moved the figures out before attaching what each finding means for the decision. That still passes, since figures only have to be gone by the time the recommendation closes. But stripping this early can tempt you to drop a number before you've decided which sentence it belongs under, as a footnote. Stripping right after each consequence is attached is the steadier habit.";
+
+  var CONSTRAINTS = [
+    { ok: function (pos) { return pos.PROBLEM < pos.ASSEMBLE && pos.PROBLEM < pos.SORT; },
+      why: "The problem has to be framed before anything is gathered or sorted. State it first, or the rest of the process is answering a question nobody has asked yet." },
+    { ok: function (pos) { return pos.ASSEMBLE < pos.SORT; },
+      why: "You can only sort what's already been gathered. Sort before assembling, and anything collected later never gets sorted at all." },
+    { ok: function (pos) { return pos.SORT < pos.STRENGTH; },
+      why: "A finding's strength depends on how it was learned. Write the strength before sorting, and the label is a guess wearing a rule's clothes." },
+    { ok: function (pos) { return pos.STRENGTH < pos.CONSEQUENCE; },
+      why: "Consequence follows strength. Attach what a claim means before its strength is settled, and an asserted claim can end up carrying a verified claim's weight." },
+    { ok: function (pos) { return pos.SORT < pos.STRIP && pos.STRIP < pos.RECOMMEND; },
+      why: "Figures can leave the load-bearing sentences any time once the observations are sorted, but they have to be gone before the recommendation closes, or a number ends up making the case instead of the reasoning." },
+    { ok: function (pos) { return pos.RECOMMEND < pos.SIGNAL; },
+      why: "The signal that the report worked is a property of the recommendation itself \u2014 that it could be rejected on the evidence given. It can't appear before the recommendation exists." }
+  ];
+
+  var srStatus = document.getElementById('sr-status');
+  var containerEl = document.getElementById('order-list');
+  var checkBtnEl = document.getElementById('check-btn');
+  var feedbackEl = document.getElementById('feedback');
+  var statusEl = document.getElementById('fb-status');
+  var detailEl = document.getElementById('fb-detail');
+
+  var order = ['SIGNAL', 'STRENGTH', 'ASSEMBLE', 'RECOMMEND', 'PROBLEM', 'CONSEQUENCE', 'STRIP', 'SORT'];
+  var pendingFocus = null;
+
+  function render() {
+    containerEl.innerHTML = '';
+    order.forEach(function (id, idx) {
+      var row = document.createElement('div');
+      row.className = 'order-row';
+
+      var badge = document.createElement('span');
+      badge.className = 'order-badge';
+      badge.setAttribute('aria-hidden', 'true');
+      badge.textContent = (idx + 1).toLocaleString('en-US');
+
+      var text = document.createElement('span');
+      text.className = 'order-text';
+      text.textContent = ITEMS[id].text;
+
+      var controls = document.createElement('div');
+      controls.className = 'order-controls';
+
+      var upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'move-btn';
+      upBtn.textContent = '\u2191';
+      upBtn.setAttribute('aria-label', 'Move "' + ITEMS[id].text + '" earlier');
+      upBtn.disabled = (idx === 0);
+      upBtn.addEventListener('click', function () { move(idx, -1, id); });
+
+      var downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.className = 'move-btn';
+      downBtn.textContent = '\u2193';
+      downBtn.setAttribute('aria-label', 'Move "' + ITEMS[id].text + '" later');
+      downBtn.disabled = (idx === order.length - 1);
+      downBtn.addEventListener('click', function () { move(idx, 1, id); });
+
+      controls.appendChild(upBtn);
+      controls.appendChild(downBtn);
+      row.appendChild(badge);
+      row.appendChild(text);
+      row.appendChild(controls);
+      containerEl.appendChild(row);
+    });
+
+    if (pendingFocus) {
+      var newIdx = order.indexOf(pendingFocus.id);
+      var rows = containerEl.children;
+      var row2 = rows[newIdx];
+      if (row2) {
+        var btns = row2.querySelectorAll('.move-btn');
+        var preferred = pendingFocus.dir === -1 ? btns[0] : btns[1];
+        if (preferred && !preferred.disabled) { preferred.focus(); }
+        else if (btns[0] && !btns[0].disabled) { btns[0].focus(); }
+        else if (btns[1] && !btns[1].disabled) { btns[1].focus(); }
+      }
+      pendingFocus = null;
+    }
+  }
+
+  function move(idx, delta, id) {
+    var newIdx = idx + delta;
+    if (newIdx < 0 || newIdx >= order.length) { return; }
+    var tmp = order[idx];
+    order[idx] = order[newIdx];
+    order[newIdx] = tmp;
+    srStatus.textContent = ITEMS[id].text + ' moved to position ' + (newIdx + 1).toLocaleString('en-US') + ' of ' + order.length.toLocaleString('en-US') + '.';
+    feedbackEl.hidden = true;
+    pendingFocus = { id: id, dir: delta };
+    render();
+  }
+
+  checkBtnEl.addEventListener('click', function () {
+    var pos = {};
+    order.forEach(function (id, idx) { pos[id] = idx; });
+    var violations = [];
+    CONSTRAINTS.forEach(function (c) { if (!c.ok(pos)) { violations.push(c); } });
+
+    feedbackEl.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    if (violations.length === 0) {
+      feedbackEl.classList.add('fb-ok');
+      statusEl.textContent = 'Correct.';
+      detailEl.textContent = CORRECT_TEXT + (pos.STRIP < pos.CONSEQUENCE ? ' ' + SOFT_NOTE : '');
+    } else if (violations.length === 1) {
+      feedbackEl.classList.add('fb-near');
+      statusEl.textContent = 'Close.';
+      detailEl.textContent = violations[0].why;
+    } else {
+      feedbackEl.classList.add('fb-warn');
+      statusEl.textContent = 'Not yet.';
+      detailEl.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+    feedbackEl.hidden = false;
+    feedbackEl.focus();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

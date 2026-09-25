@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Translate it twice</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden] { display: none; }
+  .feedback:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Translate it twice</h1>
+
+  <p class="lead-line">A governance reader converts a finding into an obligation. A sponsor converts the same finding into a consequence in time or cost. A sentence that only restates the finding hasn't done either job yet.</p>
+
+  <p class="context">Four findings from the same readiness assessment, each already graded verified or asserted. Below each finding is one candidate rewrite of it.</p>
+
+  <div class="instruction">
+    <p>Sort each rewrite into correctly translated for governance, correctly translated for the sponsor, or not translated at all.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sorting</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  var ITEMS = [
+    { text: "Rewrite: \u201CBecause enforcement hasn't been checked, this becomes a verification task on the compliance register, not a closed control.\u201D",
+      facts: [["Finding", "Asserted \u2014 the plant's governance memo states maintenance-log access is restricted to quality engineers, but no independent check has confirmed the restriction holds in the system."]],
+      bucket: "gov",
+      why: "This turns an asserted claim into the obligation it actually creates \u2014 go verify it \u2014 rather than a settled control. Governance." },
+    { text: "Rewrite: \u201CMaintenance-log access is restricted to quality engineers on paper, and enforcement hasn't been checked.\u201D",
+      facts: [["Finding", "Asserted \u2014 the plant's governance memo states maintenance-log access is restricted to quality engineers, but no independent check has confirmed the restriction holds in the system."]],
+      bucket: "none",
+      why: "This just restates what the memo says and that it's unchecked. No obligation named, no cost or date named. Not translated." },
+    { text: "Rewrite: \u201CBecause this gap is verified, it becomes a risk-register entry with an owner and a closing date.\u201D",
+      facts: [["Finding", "Verified \u2014 three of the four plants holding inspection records have recorded them differently for years, confirmed by examining the records directly."]],
+      bucket: "gov",
+      why: "This states what a verified gap becomes on the register: an owned entry with a date. Governance." },
+    { text: "Rewrite: \u201CReconciling the records before scaling adds roughly six weeks to the timeline the funding window has to absorb before results at another plant can be trusted.\u201D",
+      facts: [["Finding", "Verified \u2014 three of the four plants holding inspection records have recorded them differently for years, confirmed by examining the records directly."]],
+      bucket: "sponsor",
+      why: "This converts the same gap into a delay the funding window has to absorb. Sponsor." },
+    { text: "Rewrite: \u201CBecause the only source is the sponsor describing the sponsor's own initiative, this becomes a task to verify against the tool's usage log before it can be entered on the register at all.\u201D",
+      facts: [["Finding", "Asserted \u2014 the operations sponsor describes adoption across the inspection pilot as strong, based on the sponsor's own account."]],
+      bucket: "gov",
+      why: "This names the exact obligation an asserted, self-interested claim creates: go check the usage log first. Governance." },
+    { text: "Rewrite: \u201CThe sponsor says adoption has been strong across the pilot.\u201D",
+      facts: [["Finding", "Asserted \u2014 the operations sponsor describes adoption across the inspection pilot as strong, based on the sponsor's own account."]],
+      bucket: "none",
+      why: "This restates the sponsor's claim without saying what happens to it next. Not translated." },
+    { text: "Rewrite: \u201CBecause every flag still gets a manual re-check, the tool isn't yet cutting headcount hours at the rate the business case assumes, which lengthens the payback period the funding decision rests on.\u201D",
+      facts: [["Finding", "Verified \u2014 the assessor watched a full shift and confirmed every part the inspection tool flags is manually re-checked by an operator before being logged."]],
+      bucket: "sponsor",
+      why: "This converts a verified operational fact into its effect on the payback period the sponsor is weighing. Sponsor." },
+    { text: "Rewrite: \u201CEvery part the tool flags gets manually re-checked by an operator before being logged.\u201D",
+      facts: [["Finding", "Verified \u2014 the assessor watched a full shift and confirmed every part the inspection tool flags is manually re-checked by an operator before being logged."]],
+      bucket: "none",
+      why: "This restates what was observed without saying what it costs anyone. Not translated." }
+  ];
+
+  var BUCKETS = [
+    { value: "gov", label: "Correct \u2014 for governance" },
+    { value: "sponsor", label: "Correct \u2014 for the sponsor" },
+    { value: "none", label: "Not translated" }
+  ];
+
+  var CRITERION_TEXT = "A governance translation states what a finding's evidentiary status makes it become \u2014 a risk entry if it's verified, a verification task if it's asserted. A sponsor translation states a consequence in time or cost against the funding window. A sentence that only restates the finding, however accurately, hasn't done either job yet.";
+  var FIRST_MOVE_TEXT = "Ask two questions of the rewrite: does it name an obligation with a path \u2014 a register entry or a verification task \u2014 or does it name a number or a date the sponsor can weigh? If neither, it's still just the finding.";
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ['Right. Every governance rewrite names an obligation with a path. Every sponsor rewrite names a number or a date against the funding window. Everything else left the finding exactly where it found it.']);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', [it.text, it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
