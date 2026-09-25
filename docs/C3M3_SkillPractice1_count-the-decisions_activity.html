@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Count the decisions</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  .sub { margin: 16px 0 0; }
+  .sub:first-of-type { margin-top: 0; }
+  .sub-q { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink-soft); padding: 0; margin: 0 0 4px; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-title { display: block; width: 100%; font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .facts { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 14px; padding: 0; }
+  .facts .fact { display: grid; grid-template-columns: 5.5rem 1fr; gap: 10px; margin: 0 0 6px; }
+  .facts dt { font-weight: 600; color: var(--ink); margin: 0; }
+  .facts dd { margin: 0; }
+  .quote-row { font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); margin: 0 0 8px; }
+  .quote-row b { font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink-soft); display: block; margin-bottom: 1px; }
+
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .choice-input:disabled + .choice-box { opacity: 0.85; cursor: default; }
+  .choice:has(.choice-input:disabled) { cursor: default; }
+
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .note { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 10px; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.grid { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.grid caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); padding: 0 0 8px; }
+  table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.grid th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.grid td.lead-cell { color: var(--ink); font-weight: 600; }
+  table.grid tr.changed td { background: var(--highlight-bg); }
+  table.grid .by { font-weight: 600; color: var(--ink); }
+  table.grid .small { display: block; font-weight: 400; font-size: 0.84rem; color: var(--ink-soft); margin-top: 2px; }
+  .tag-ok { color: var(--ok); font-weight: 700; }
+  .tag-hope { color: var(--warn); font-weight: 700; }
+
+  .toggle-row { display: flex; gap: 10px; align-items: flex-start; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; margin: 0 0 10px; }
+  .toggle-row input { margin: 3px 0 0; accent-color: var(--accent-deep); flex: 0 0 auto; width: 18px; height: 18px; }
+  .toggle-row input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .toggle-row label { cursor: pointer; }
+  .toggle-row b { color: var(--ink); font-weight: 600; display: block; margin-bottom: 2px; }
+  .mode-group { border: none; margin: 0 0 16px; padding: 0; }
+  .mode-group legend { font-family: var(--font-sans); font-weight: 600; font-size: 0.92rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; color: var(--ink-soft); }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; color: var(--ink); }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .facts .fact { grid-template-columns: 1fr; gap: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Count the decisions</h1>
+
+  <p class="lead-line">Organizational readiness is a condition you can check from outside an organization: people, process, and oversight lined up well enough for AI-supported work to run on an ordinary day. It breaks down into four decisions, and an assessment inventories whether each one was made and by whom. Your job is to tell a decision from something bought, attended, felt, or declared.</p>
+
+  <p class="context">A manufacturer&rsquo;s documentation teams at three plants are moving to assistant-drafted supplier-nonconformance write-ups, the records of parts a supplier delivered outside specification. A person reviews each write-up before it reaches the quality file, the controlled record. The sponsoring executive wants to know whether the change can start next quarter. Below are eight observations from the sponsor&rsquo;s packet and from a first walk through the plants.</p>
+
+  <div class="instruction">
+    <p>Sort each observation by the decision it shows was made, or choose <b>No decision shown</b>. An observation counts toward a decision only when it shows someone did the deciding and shows the result in the work itself.</p>
+    <p><b>Work redesigned:</b> the procedure itself now has the tool in it, with its steps rewritten.</p>
+    <p><b>People trained:</b> the people who use the tool have shown they can do the new work.</p>
+    <p><b>Handoffs defined:</b> what passes between a person and the system, in what form, and when the result becomes the record.</p>
+    <p><b>Judgment placed:</b> someone decided which calls stay with a person.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sort</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="inventory" aria-labelledby="inv-h" tabindex="-1" hidden>
+    <h2 id="inv-h">The inventory</h2>
+    <p id="inv-intro"></p>
+    <div class="table-wrap">
+      <table class="grid" id="inv-table">
+        <caption>What the observations show, decision by decision</caption>
+        <thead><tr><th scope="col">Decision</th><th scope="col">Status</th><th scope="col">Who decided, and what shows it</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h2 id="sp-h" style="margin-top:32px;">Second pass: go and get the missing evidence</h2>
+    <p>Switch on what an advisor could ask for and watch the inventory change. Nothing here is checked.</p>
+    <div class="toggle-row">
+      <input type="checkbox" id="get-trained">
+      <label for="get-trained"><b>Ask for a supervised trial</b>The learning and development lead ran a supervised trial at each plant. Every writer produced two write-ups with the assistant, and a trainer checked each against the quality-file standard.</label>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" id="get-time">
+      <label for="get-time"><b>Ask who decides where the freed hours go</b>The quality organization lead decided that freed writer hours go to the backlog of overdue corrective-action follow-ups.</label>
+    </div>
+    <p class="note" id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  var BUCKETS = [
+    { value: 'work', label: 'Work redesigned' },
+    { value: 'trained', label: 'People trained' },
+    { value: 'handoff', label: 'Handoffs defined' },
+    { value: 'judgment', label: 'Judgment placed' },
+    { value: 'none', label: 'No decision shown' }
+  ];
+
+  var DECISIONS = [
+    { key: 'work', label: 'Work redesigned' },
+    { key: 'trained', label: 'People trained' },
+    { key: 'handoff', label: 'Handoffs defined' },
+    { key: 'judgment', label: 'Judgment placed' }
+  ];
+
+  var ITEMS = [
+    { text: 'The IT and data lead\u2019s license count covers every documentation writer at the three plants.',
+      bucket: 'none',
+      why: 'A license count records what was bought. Access exists, and nobody has yet decided how the work changes.' },
+    { text: 'The quality organization lead reissued the write-up procedure. Drafting from the supplier\u2019s records is now a named step, and the earlier sequence no longer appears in the plants\u2019 manuals.',
+      bucket: 'work', by: 'Quality organization lead',
+      shows: 'The reissued procedure names drafting as a step and retires the old sequence.',
+      why: 'Someone rewrote the procedure, and the result shows in the manuals: a named step, and the old sequence retired. That is the work redesigned.' },
+    { text: 'The learning team\u2019s roster shows every writer attended a two-hour session on drafting with the assistant.',
+      bucket: 'none',
+      why: 'A roster records who attended. It doesn\u2019t show that anyone has done the new work, and attending isn\u2019t the same as being able.' },
+    { text: 'The governance and risk owner decided that corrective-action commitments (what a supplier has promised to fix) and customer-specific clauses are always written by a person and never drafted by the assistant.',
+      bucket: 'judgment', by: 'Governance and risk owner',
+      shows: 'Corrective-action commitments and customer-specific clauses are always written by a person.',
+      why: 'Someone decided which calls stay with a person, and said which ones. That is judgment placed.' },
+    { text: 'In the trial, time per write-up fell from 38 minutes to 22. The plants filled the freed hours with more write-ups.',
+      bucket: 'none',
+      why: 'This shows the tool saved time. It doesn\u2019t show that anyone decided where the time goes, so it refilled with more of the same work. Saved hours do that when nobody directs them.' },
+    { text: 'The documentation team leads agreed a one-page sheet. It states what the writer gives the assistant, what comes back, and the point at which a draft becomes the official record.',
+      bucket: 'handoff', by: 'Documentation team leads',
+      shows: 'A one-page sheet states what the writer gives the assistant, what comes back, and when a draft becomes the official record.',
+      why: 'The sheet defines the exchange: what goes in, what comes back, and when the result becomes the record. Those are the handoffs.' },
+    { text: 'In a survey, most writers said they feel confident using the assistant.',
+      bucket: 'none',
+      why: 'A confidence survey records how people feel. Feeling ready isn\u2019t the same as having shown the skill.' },
+    { text: 'The sponsoring executive\u2019s steering slide states that the workforce is ready to work alongside AI.',
+      bucket: 'none',
+      why: 'A slide declares readiness. It carries no observation of the work, and it doesn\u2019t say who decided what.' }
+  ];
+
+  var EXTRA = {
+    trained: { by: 'Learning and development lead',
+               shows: 'A supervised trial: every writer produced two write-ups with the assistant, and a trainer checked each against the quality-file standard.' },
+    time: { by: 'Quality organization lead',
+            shows: 'Freed writer hours go to the backlog of overdue corrective-action follow-ups.' }
+  };
+
+  var CRITERION_TEXT = 'An observation counts toward a decision only when it shows someone did the deciding and shows the result in the work itself. Something bought, attended, felt, or declared doesn\u2019t meet that test, however reassuring it sounds.';
+  var FIRST_MOVE_TEXT = 'Take one observation and ask two questions. Who decided something? What changed in the work because they did? If you can\u2019t answer both, it belongs under \u201CNo decision shown.\u201D';
+
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  function word(n) { return ['no', 'one', 'two', 'three', 'four', 'five'][n] || fmt(n); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var inventory = document.getElementById('inventory');
+  var invIntro = document.getElementById('inv-intro');
+  var invBody = document.querySelector('#inv-table tbody');
+  var spNote = document.getElementById('sp-note');
+  var srStatus = document.getElementById('sr-status');
+  var getTrained = document.getElementById('get-trained');
+  var getTime = document.getElementById('get-time');
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function answers() {
+    return ITEMS.map(function (item, idx) {
+      var c = document.querySelector('input[name="item' + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  ITEMS.forEach(function (item, idx) {
+    var card = document.createElement('div');
+    card.className = 'item';
+    var fs = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = item.text;
+    fs.appendChild(legend);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    BUCKETS.forEach(function (b) {
+      choices.appendChild(makeChoice('item' + idx, b.value, b.label, function () {
+        checkBtn.disabled = answers().indexOf(null) !== -1;
+      }));
+    });
+    fs.appendChild(choices);
+    card.appendChild(fs);
+    itemsEl.appendChild(card);
+  });
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function decisionState(extraOn) {
+    return DECISIONS.map(function (d) {
+      var item = null;
+      ITEMS.forEach(function (it) { if (it.bucket === d.key) { item = it; } });
+      if (item) { return { label: d.label, observed: true, by: item.by, shows: item.shows, added: false }; }
+      if (extraOn[d.key]) { return { label: d.label, observed: true, by: EXTRA[d.key].by, shows: EXTRA[d.key].shows, added: true }; }
+      return { label: d.label, observed: false, by: 'No one is shown deciding it', shows: 'Nothing in the observations shows this decision.', added: false };
+    });
+  }
+
+  function renderInventory() {
+    var extraOn = { trained: getTrained.checked, time: getTime.checked };
+    var rows = decisionState(extraOn);
+    rows.push(extraOn.time
+      ? { label: 'Where the freed hours go', observed: true, by: EXTRA.time.by, shows: EXTRA.time.shows, added: true, decided: true }
+      : { label: 'Where the freed hours go', observed: false, by: 'No one is shown deciding it', shows: 'The freed hours refilled with more of the same work.', added: false, decided: false });
+
+    invBody.innerHTML = '';
+    rows.forEach(function (r, i) {
+      var tr = document.createElement('tr');
+      if (r.added) { tr.className = 'changed'; }
+      var isTime = (i === rows.length - 1);
+      var status = isTime ? (r.observed ? 'Decided' : 'Not decided') : (r.observed ? 'Observed' : 'Still a hope');
+      var c0 = document.createElement('td');
+      c0.className = 'lead-cell';
+      c0.textContent = r.label;
+      var c1 = document.createElement('td');
+      var tag = document.createElement('span');
+      tag.className = r.observed ? 'tag-ok' : 'tag-hope';
+      tag.textContent = status;
+      c1.appendChild(tag);
+      var c2 = document.createElement('td');
+      var by = document.createElement('span');
+      by.className = 'by';
+      by.textContent = r.by + '.';
+      c2.appendChild(by);
+      c2.appendChild(document.createTextNode(' ' + r.shows));
+      tr.appendChild(c0);
+      tr.appendChild(c1);
+      tr.appendChild(c2);
+      invBody.appendChild(tr);
+    });
+
+    var observed = rows.slice(0, 4).filter(function (r) { return r.observed; }).length;
+    var note, spoken;
+    if (!extraOn.trained && !extraOn.time) {
+      note = '';
+      spoken = Word(observed) + ' of four decisions observed. Where the freed hours go: not decided.';
+    } else if (extraOn.trained && !extraOn.time) {
+      note = 'People trained now has an observation behind it: someone watched writers do the new work. All four decisions are observed. The freed hours are still undecided.';
+      spoken = Word(observed) + ' of four decisions observed. Where the freed hours go: not decided.';
+    } else if (!extraOn.trained && extraOn.time) {
+      note = 'Someone has now decided where the freed hours go. People trained is still a hope.';
+      spoken = Word(observed) + ' of four decisions observed. Where the freed hours go: decided.';
+    } else {
+      note = 'All four decisions have an observation behind them, and someone has decided where the freed hours go. The finding moved because the evidence moved, not because the date did. This inventory covers these decisions only, and an assessment tests more than this.';
+      spoken = Word(observed) + ' of four decisions observed. Where the freed hours go: decided.';
+    }
+    spNote.textContent = note;
+    srStatus.textContent = spoken;
+  }
+
+  getTrained.addEventListener('change', renderInventory);
+  getTime.addEventListener('change', renderInventory);
+
+  checkBtn.addEventListener('click', function () {
+    var given = answers();
+    var diff = [];
+    ITEMS.forEach(function (item, i) { if (given[i] !== item.bucket) { diff.push(i); } });
+
+    if (diff.length === 0) {
+      var inputs = itemsEl.querySelectorAll('input');
+      for (var k = 0; k < inputs.length; k++) { inputs[k].disabled = true; }
+      checkBtn.disabled = true;
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. Three of the four decisions have an observation behind them. The fourth, people trained, has none. The roster and the survey look like evidence for it, and they record attendance and feeling.'
+      ]);
+      invIntro.textContent = 'Read the inventory as a finding rather than a verdict. Three decisions are made. One is a hope. And nobody has decided where the freed hours go. That gives the sponsor a decision to make and a person to make it, which is more useful than a yes or a no on the date.';
+      renderInventory();
+      inventory.hidden = false;
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback('fb-near', 'Close.', ['Look again at this observation: \u201C' + it.text + '\u201D', it.why]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+  });
+})();
+</script>
+</body>
+</html>

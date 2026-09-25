@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read the objection</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  .sub { margin: 16px 0 0; }
+  .sub:first-of-type { margin-top: 0; }
+  .sub-q { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink-soft); padding: 0; margin: 0 0 4px; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-title { display: block; width: 100%; font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .facts { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 14px; padding: 0; }
+  .facts .fact { display: grid; grid-template-columns: 5.5rem 1fr; gap: 10px; margin: 0 0 6px; }
+  .facts dt { font-weight: 600; color: var(--ink); margin: 0; }
+  .facts dd { margin: 0; }
+  .quote-row { font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); margin: 0 0 8px; }
+  .quote-row b { font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink-soft); display: block; margin-bottom: 1px; }
+
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .choice-input:disabled + .choice-box { opacity: 0.85; cursor: default; }
+  .choice:has(.choice-input:disabled) { cursor: default; }
+
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .note { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 10px; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.grid { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.grid caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); padding: 0 0 8px; }
+  table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.grid th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.grid td.lead-cell { color: var(--ink); font-weight: 600; }
+  table.grid tr.changed td { background: var(--highlight-bg); }
+  table.grid .by { font-weight: 600; color: var(--ink); }
+  table.grid .small { display: block; font-weight: 400; font-size: 0.84rem; color: var(--ink-soft); margin-top: 2px; }
+  .tag-ok { color: var(--ok); font-weight: 700; }
+  .tag-hope { color: var(--warn); font-weight: 700; }
+
+  .toggle-row { display: flex; gap: 10px; align-items: flex-start; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; margin: 0 0 10px; }
+  .toggle-row input { margin: 3px 0 0; accent-color: var(--accent-deep); flex: 0 0 auto; width: 18px; height: 18px; }
+  .toggle-row input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .toggle-row label { cursor: pointer; }
+  .toggle-row b { color: var(--ink); font-weight: 600; display: block; margin-bottom: 2px; }
+  .mode-group { border: none; margin: 0 0 16px; padding: 0; }
+  .mode-group legend { font-family: var(--font-sans); font-weight: 600; font-size: 0.92rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; color: var(--ink-soft); }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; color: var(--ink); }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .facts .fact { grid-template-columns: 1fr; gap: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read the objection</h1>
+
+  <p class="lead-line">An objection from the middle of an organization is evidence. The people there built their expertise and standing on how the work runs today, so they often see what a change will break before anyone else does. Each objection identifies something specific: a fact nobody has given them, something they need that isn&rsquo;t there, or something they can&rsquo;t yet do. Your job is to read which.</p>
+
+  <p class="context">A manufacturer&rsquo;s quality organization is moving documentation teams at three plants to assistant-drafted supplier-nonconformance write-ups, the records of parts a supplier delivered outside specification. You asked five people from the middle of the organization what they expect will break. Each card gives the objection, their answer, and what you checked.</p>
+
+  <div class="instruction">
+    <p>Sort each objection by what it identifies. Ask what would have to be true for this person to stop objecting.</p>
+    <p><b>Awareness:</b> what they need already exists, and nobody has told them.</p>
+    <p><b>Support:</b> something they need isn&rsquo;t there yet. A rule, a step, a measure, time, or authority has to be decided or built.</p>
+    <p><b>Ability:</b> what they need is there, and they can&rsquo;t yet do the new work.</p>
+  </div>
+
+  <div id="cards"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sort</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: answer everyone with one message</h2>
+    <p>Executives often answer objections with more messaging or a firmer mandate. Compare that reading with the one you just made. Nothing here is checked.</p>
+    <fieldset class="mode-group">
+      <legend>Response</legend>
+      <div class="item-choices">
+        <label class="choice"><input class="choice-input" type="radio" name="mode" value="matched" checked><span class="choice-box">Match each response to what the objection identifies</span></label>
+        <label class="choice"><input class="choice-input" type="radio" name="mode" value="message"><span class="choice-box">Send one message to everyone</span></label>
+      </div>
+    </fieldset>
+    <div class="table-wrap">
+      <table class="grid" id="sp-table">
+        <caption id="sp-caption">Each objection, written as a finding</caption>
+        <thead><tr><th scope="col">Objection</th><th scope="col">Written as a finding</th><th scope="col">What happens</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="note" id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  var BUCKETS = [
+    { value: 'awareness', label: 'Awareness' },
+    { value: 'support', label: 'Support' },
+    { value: 'ability', label: 'Ability' }
+  ];
+
+  var CARDS = [
+    { who: 'Documentation team lead',
+      objection: 'Half my team stopped using it, and the other half work around it.',
+      breaks: 'The policy says not to upload sensitive information. Nobody will tell us whether a supplier\u2019s record counts, so each of us guesses.',
+      checked: 'The policy doesn\u2019t mention supplier records, and nobody has been asked to rule on them.',
+      bucket: 'support',
+      short: 'Half my team stopped using it',
+      finding: 'The policy is silent on whether a supplier\u2019s record may be uploaded, and nobody owns the ruling.',
+      response: 'Someone decides the rule and publishes it.',
+      why: 'The answer this person needs doesn\u2019t exist yet: the policy is silent on supplier records and nobody has ruled. It sounds like \u201Cnobody told us,\u201D but there is nothing to tell. Someone has to decide, and a message could only ask the team to keep guessing.' },
+    { who: 'Plant lead',
+      objection: 'Why are we doing this now?',
+      breaks: 'Nothing I can point to yet. I first heard the procedure was changing from a plant update, and nobody has said why.',
+      checked: 'The sponsor\u2019s reason is written down in the case for the change. It hasn\u2019t been sent to the plants.',
+      bucket: 'awareness',
+      short: 'Why are we doing this now?',
+      finding: 'The plants haven\u2019t received the sponsor\u2019s reason for the change.',
+      response: 'Send the sponsor\u2019s reason to the plants.',
+      why: 'What this person wants already exists: the sponsor\u2019s reason is written down and hasn\u2019t reached the plants. The plant lead named nothing that will break. A clear explanation closes this one.' },
+    { who: 'Plant supervisor',
+      objection: 'This adds work, and my numbers won\u2019t show it.',
+      breaks: 'About one draft in six goes back for revision. Nobody counts those hours, so they land on my team and nowhere else.',
+      checked: 'No report counts drafts sent back for revision, or who spends the time on them.',
+      bucket: 'support',
+      short: 'My numbers won\u2019t show it',
+      finding: 'No report counts drafts returned for revision or who absorbs the time.',
+      response: 'Build a count of revision hours and who spends them.',
+      why: 'What\u2019s missing is a count of revision hours. Until someone builds it, the cost stays where it lands, and no message changes that.' },
+    { who: 'Quality engineer',
+      objection: 'I don\u2019t trust a draft I didn\u2019t watch being written.',
+      breaks: 'I\u2019ve always checked a write-up by following the writer\u2019s reasoning. A finished draft shows none, and I don\u2019t yet know how to test one.',
+      checked: 'The supplier record and the checking step are both in place. This engineer has only ever checked write-ups written by hand.',
+      bucket: 'ability',
+      short: 'I don\u2019t trust a draft I didn\u2019t watch',
+      finding: 'Reviewers haven\u2019t yet practiced testing a finished draft.',
+      response: 'Have the engineer test assisted drafts from their own work.',
+      why: 'The record and the checking step exist. What\u2019s missing is the skill: this engineer has only checked write-ups written by hand. Practice on assisted drafts from their own work closes it.' },
+    { who: 'Senior writer',
+      objection: 'The customer-specific clauses will come out wrong.',
+      breaks: 'Corrective-action commitments, what a supplier has promised to fix, are agreed by phone. They never reach the supplier record the assistant drafts from, so it can\u2019t include them.',
+      checked: 'No step in the procedure records a phone-agreed commitment before drafting starts.',
+      bucket: 'support',
+      short: 'The clauses will come out wrong',
+      finding: 'No step records phone-agreed commitments before drafting.',
+      response: 'Add a step that records them before drafting.',
+      why: 'The step that would capture a phone-agreed commitment doesn\u2019t exist. The assistant can\u2019t draft what never reaches the record, and reassurance can\u2019t add the step.' }
+  ];
+
+  var CRITERION_TEXT = 'Ask what would have to be true for this person to stop objecting. If hearing something would do it, the objection identifies awareness. If something has to be decided or built, it identifies support. If they have to learn to do something, it identifies ability.';
+  var FIRST_MOVE_TEXT = 'Start with what you checked: does the thing this person needs already exist? If it doesn\u2019t, telling them can\u2019t close the objection.';
+
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  function word(n) { return ['no', 'one', 'two', 'three', 'four', 'five'][n] || fmt(n); }
+
+  var cardsEl = document.getElementById('cards');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+  var spBody = document.querySelector('#sp-table tbody');
+  var spNote = document.getElementById('sp-note');
+  var srStatus = document.getElementById('sr-status');
+
+  function answers() {
+    return CARDS.map(function (c, idx) {
+      var el = document.querySelector('input[name="card' + idx + '"]:checked');
+      return el ? el.value : null;
+    });
+  }
+
+  CARDS.forEach(function (c, idx) {
+    var card = document.createElement('div');
+    card.className = 'item';
+    var fs = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.className = 'item-title';
+    legend.textContent = c.who;
+    fs.appendChild(legend);
+
+    [['Objection', c.objection], ['Expects will break', c.breaks], ['You checked', c.checked]].forEach(function (pair) {
+      var p = document.createElement('p');
+      p.className = 'quote-row';
+      var b = document.createElement('b');
+      b.textContent = pair[0];
+      p.appendChild(b);
+      p.appendChild(document.createTextNode(pair[1]));
+      fs.appendChild(p);
+    });
+
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    choices.style.marginTop = '12px';
+    BUCKETS.forEach(function (bk) {
+      var wrap = document.createElement('label');
+      wrap.className = 'choice';
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.className = 'choice-input';
+      input.name = 'card' + idx;
+      input.value = bk.value;
+      var box = document.createElement('span');
+      box.className = 'choice-box';
+      box.textContent = bk.label;
+      wrap.appendChild(input);
+      wrap.appendChild(box);
+      input.addEventListener('change', function () { checkBtn.disabled = answers().indexOf(null) !== -1; });
+      choices.appendChild(wrap);
+    });
+    fs.appendChild(choices);
+    card.appendChild(fs);
+    cardsEl.appendChild(card);
+  });
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function renderSecondPass() {
+    var mode = document.querySelector('input[name="mode"]:checked').value;
+    spBody.innerHTML = '';
+    var closed = 0;
+    CARDS.forEach(function (c) {
+      var isMessage = (c.bucket === 'awareness');
+      var result;
+      if (mode === 'matched') {
+        result = 'Closes it: ' + c.response;
+        closed += 1;
+      } else if (isMessage) {
+        result = 'Closes it: ' + c.response;
+        closed += 1;
+      } else {
+        result = 'Still open. The finding stands.';
+      }
+      var tr = document.createElement('tr');
+      if (mode === 'message' && !isMessage) { tr.className = 'changed'; }
+      var a = document.createElement('td'); a.className = 'lead-cell'; a.textContent = c.short;
+      var b = document.createElement('td'); b.textContent = c.finding;
+      var d = document.createElement('td'); d.textContent = result;
+      tr.appendChild(a); tr.appendChild(b); tr.appendChild(d);
+      spBody.appendChild(tr);
+    });
+    var open = CARDS.length - closed;
+    if (mode === 'matched') {
+      spNote.textContent = 'Each objection gets the response its finding calls for: one explanation, and four things to decide, build, or practice. All five findings came from people whose standing rests on how the work runs today.';
+    } else {
+      spNote.textContent = 'One message closes ' + word(closed) + ' of five. The other ' + word(open) + ' defects stay exactly where they were. A campaign can persuade people to tolerate a broken step, but it can\u2019t fix the step.';
+    }
+    srStatus.textContent = (mode === 'matched' ? 'Matched responses: ' : 'One message: ') + word(closed) + ' of five objections closed.';
+  }
+  var modeRadios = document.querySelectorAll('input[name="mode"]');
+  for (var m = 0; m < modeRadios.length; m++) { modeRadios[m].addEventListener('change', renderSecondPass); }
+
+  checkBtn.addEventListener('click', function () {
+    var given = answers();
+    var diff = [];
+    CARDS.forEach(function (c, i) { if (given[i] !== c.bucket) { diff.push(i); } });
+
+    if (diff.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. Only one of the five is closed by telling people something. The other four identify a rule nobody wrote, a count nobody keeps, a step nobody built, and a skill nobody has practiced. Every one of them came from the middle of the organization, which is why each is so specific about where the work will break.'
+      ]);
+      sp.hidden = false;
+      renderSecondPass();
+    } else if (diff.length === 1) {
+      var c = CARDS[diff[0]];
+      showFeedback('fb-near', 'Close.', ['Look again at the ' + c.who.toLowerCase() + '\u2019s objection: \u201C' + c.objection + '\u201D', c.why]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+  });
+})();
+</script>
+</body>
+</html>

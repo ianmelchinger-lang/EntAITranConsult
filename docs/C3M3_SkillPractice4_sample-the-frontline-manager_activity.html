@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample the frontline manager</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  .sub { margin: 16px 0 0; }
+  .sub:first-of-type { margin-top: 0; }
+  .sub-q { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink-soft); padding: 0; margin: 0 0 4px; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-title { display: block; width: 100%; font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .facts { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 14px; padding: 0; }
+  .facts .fact { display: grid; grid-template-columns: 5.5rem 1fr; gap: 10px; margin: 0 0 6px; }
+  .facts dt { font-weight: 600; color: var(--ink); margin: 0; }
+  .facts dd { margin: 0; }
+  .quote-row { font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); margin: 0 0 8px; }
+  .quote-row b { font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink-soft); display: block; margin-bottom: 1px; }
+
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .choice-input:disabled + .choice-box { opacity: 0.85; cursor: default; }
+  .choice:has(.choice-input:disabled) { cursor: default; }
+
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .note { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 10px; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.grid { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.grid caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); padding: 0 0 8px; }
+  table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.grid th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.grid td.lead-cell { color: var(--ink); font-weight: 600; }
+  table.grid tr.changed td { background: var(--highlight-bg); }
+  table.grid .by { font-weight: 600; color: var(--ink); }
+  table.grid .small { display: block; font-weight: 400; font-size: 0.84rem; color: var(--ink-soft); margin-top: 2px; }
+  .tag-ok { color: var(--ok); font-weight: 700; }
+  .tag-hope { color: var(--warn); font-weight: 700; }
+
+  .toggle-row { display: flex; gap: 10px; align-items: flex-start; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; margin: 0 0 10px; }
+  .toggle-row input { margin: 3px 0 0; accent-color: var(--accent-deep); flex: 0 0 auto; width: 18px; height: 18px; }
+  .toggle-row input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .toggle-row label { cursor: pointer; }
+  .toggle-row b { color: var(--ink); font-weight: 600; display: block; margin-bottom: 2px; }
+  .mode-group { border: none; margin: 0 0 16px; padding: 0; }
+  .mode-group legend { font-family: var(--font-sans); font-weight: 600; font-size: 0.92rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; color: var(--ink-soft); }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; color: var(--ink); }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .facts .fact { grid-template-columns: 1fr; gap: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Sample the frontline manager</h1>
+
+  <p class="lead-line">Adoption sounds better the higher you collect the evidence, because access, training, and encouragement to automate all concentrate with seniority. A frontline manager, the first-line supervisor of the people who do the work, sits where you can check it honestly: whatever leadership intends either passes through that manager or stops there. Three behaviors show which.</p>
+
+  <p class="context">The sponsoring executive says all three plants use the assistant as the expected way to draft supplier-nonconformance write-ups, the records of parts a supplier delivered outside specification, and each plant lead says adoption is going well. You asked one documentation team lead at each plant three questions. Their answers are below.</p>
+
+  <div class="instruction">
+    <p>For each answer, mark whether it shows the behavior. An answer shows it only when it describes something the manager did and the team could see. Intentions, permissions, and private habits don&rsquo;t count.</p>
+    <p>Team meetings aren&rsquo;t performance conversations. Reviews, goal-setting, and one-to-ones are.</p>
+  </div>
+
+  <div id="plants"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my marks</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="readout" aria-labelledby="ro-h" tabindex="-1" hidden>
+    <h2 id="ro-h">What the sample shows</h2>
+    <p id="ro-intro"></p>
+    <div class="table-wrap">
+      <table class="grid" id="ro-table">
+        <caption>Each plant, from the plant lead and from the sample</caption>
+        <thead><tr><th scope="col">Plant</th><th class="num" scope="col">Behaviors seen</th><th scope="col">What you can write</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h2 id="sp-h" style="margin-top:32px;">Second pass: change who you ask</h2>
+    <p>The same three plants, with the evidence collected at a different level. Nothing here is checked.</p>
+    <fieldset class="mode-group">
+      <legend>Collect the evidence from</legend>
+      <div class="item-choices">
+        <label class="choice"><input class="choice-input" type="radio" name="level" value="exec" checked><span class="choice-box">The sponsoring executive</span></label>
+        <label class="choice"><input class="choice-input" type="radio" name="level" value="lead"><span class="choice-box">The plant leads</span></label>
+        <label class="choice"><input class="choice-input" type="radio" name="level" value="frontline"><span class="choice-box">The frontline managers</span></label>
+      </div>
+    </fieldset>
+    <div class="table-wrap">
+      <table class="grid" id="sp-table">
+        <caption id="sp-caption">What you can write at the chosen level</caption>
+        <thead><tr><th scope="col">Plant</th><th scope="col">What you can write</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="note" id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  var QUESTIONS = [
+    { label: 'Does the manager expect use, and reward it?', gap: 'the team hasn\u2019t been told to expect use or seen it rewarded' },
+    { label: 'Has the manager shown their own use recently?', gap: 'the team hasn\u2019t seen the manager use it' },
+    { label: 'Does the change come up where performance is discussed?', gap: 'the change hasn\u2019t reached performance conversations' }
+  ];
+
+  var PLANTS = [
+    { name: 'Bavaria', lead: 'Adoption is going well here.',
+      answers: [
+        { text: 'Since launch I\u2019ve told every writer to start from the assistant\u2019s draft, and I named two writers in the plant update for doing it well.', shows: true,
+          why: 'This describes something the team saw: an instruction to start from the draft, and public recognition for doing it.' },
+        { text: 'Last week I drafted one live in the team meeting and talked through what I changed.', shows: true,
+          why: 'This is visible use: a live draft in front of the team, with the edits explained.' },
+        { text: 'It\u2019s a fixed item in each writer\u2019s monthly review: what they drafted with it and what they had to correct.', shows: true,
+          why: 'This is a fixed part of the performance conversation, with what was drafted and what was corrected.' }
+      ] },
+    { name: 'Lombardy', lead: 'Adoption is going well here.',
+      answers: [
+        { text: 'I told the team at kickoff that I expect first drafts to come from it, and each week I name the writers who used it well in the team update.', shows: true,
+          why: 'This states an expectation to the team and rewards use in public each week.' },
+        { text: 'I drafted one in the team meeting last month and again this week.', shows: true,
+          why: 'This is visible use, recent and repeated.' },
+        { text: 'It hasn\u2019t come up in anyone\u2019s review. We talk about it in team meetings.', shows: false,
+          why: 'Team meetings aren\u2019t where performance is discussed. If the change is absent from the reviews, it reads as optional when it counts.' }
+      ] },
+    { name: 'Silesia', lead: 'Adoption is going well here.',
+      answers: [
+        { text: 'Of course I expect them to use it. It\u2019s in the rollout plan.', shows: false,
+          why: 'This states an intention and cites a document. Nothing shows the team was told or that anyone was recognized, and silence reads as permission to wait.' },
+        { text: 'I tried it once when it launched, on my own. My writers know these records better than any tool does.', shows: false,
+          why: 'One private attempt at launch isn\u2019t recent, and the team didn\u2019t see it. People rarely adopt a practice nobody around them demonstrates.' },
+        { text: 'No. Their reviews are about accuracy and turnaround, as they always were.', shows: false,
+          why: 'The change isn\u2019t in the reviews. Performance conversations that leave it out tell the team it doesn\u2019t count.' }
+      ] }
+  ];
+
+  var CRITERION_TEXT = 'An answer shows a behavior only when it describes something the manager did that the team could see: an instruction given, a draft made in front of them, a line in a review. An intention, a permission, a document, or a private habit doesn\u2019t show it.';
+  var FIRST_MOVE_TEXT = 'Take one answer and ask what the team could have seen. If the answer only says what the manager intends or allows, it doesn\u2019t show the behavior.';
+
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  function word(n) { return ['no', 'one', 'two', 'three'][n] || fmt(n); }
+
+  var plantsEl = document.getElementById('plants');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var readout = document.getElementById('readout');
+  var roIntro = document.getElementById('ro-intro');
+  var roBody = document.querySelector('#ro-table tbody');
+  var spBody = document.querySelector('#sp-table tbody');
+  var spNote = document.getElementById('sp-note');
+  var srStatus = document.getElementById('sr-status');
+
+  function nameFor(p, q) { return 'a' + p + '_' + q; }
+
+  function allAnswered() {
+    for (var p = 0; p < PLANTS.length; p++) {
+      for (var q = 0; q < QUESTIONS.length; q++) {
+        if (!document.querySelector('input[name="' + nameFor(p, q) + '"]:checked')) { return false; }
+      }
+    }
+    return true;
+  }
+
+  PLANTS.forEach(function (plant, p) {
+    var card = document.createElement('div');
+    card.className = 'item';
+    var h = document.createElement('p');
+    h.className = 'item-title';
+    h.textContent = 'Documentation team lead, plant in ' + plant.name;
+    card.appendChild(h);
+
+    plant.answers.forEach(function (a, q) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'sub';
+      var legend = document.createElement('legend');
+      legend.className = 'sub-q';
+      legend.textContent = QUESTIONS[q].label;
+      fs.appendChild(legend);
+      var ans = document.createElement('p');
+      ans.className = 'quote-row';
+      ans.textContent = a.text;
+      fs.appendChild(ans);
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      [['yes', 'Shows it'], ['no', 'Doesn\u2019t show it']].forEach(function (opt) {
+        var wrap = document.createElement('label');
+        wrap.className = 'choice';
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.className = 'choice-input';
+        input.name = nameFor(p, q);
+        input.value = opt[0];
+        var box = document.createElement('span');
+        box.className = 'choice-box';
+        box.textContent = opt[1];
+        wrap.appendChild(input);
+        wrap.appendChild(box);
+        input.addEventListener('change', function () { checkBtn.disabled = !allAnswered(); });
+        choices.appendChild(wrap);
+      });
+      fs.appendChild(choices);
+      card.appendChild(fs);
+    });
+    plantsEl.appendChild(card);
+  });
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var pe = document.createElement('p');
+      pe.className = 'fb-detail';
+      pe.textContent = t;
+      fbDetail.appendChild(pe);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function seenCount(plant) { return plant.answers.filter(function (a) { return a.shows; }).length; }
+
+  function writeUp(plant) {
+    var n = seenCount(plant);
+    if (n === 3) { return 'A finding: the change is transmitted at the level where the work happens.'; }
+    if (n === 0) { return 'A finding that contradicts the sponsor: no behavior reaches the team, so the strong account from above is a hypothesis this sample does not support.'; }
+    var gaps = [];
+    plant.answers.forEach(function (a, q) { if (!a.shows) { gaps.push(QUESTIONS[q].gap); } });
+    return 'A finding with a gap: ' + gaps.join('; ') + '.';
+  }
+
+  function renderReadout() {
+    roBody.innerHTML = '';
+    PLANTS.forEach(function (plant) {
+      var tr = document.createElement('tr');
+      var c0 = document.createElement('td');
+      c0.className = 'lead-cell';
+      c0.appendChild(document.createTextNode(plant.name));
+      var said = document.createElement('span');
+      said.className = 'small';
+      said.textContent = 'Plant lead: \u201C' + plant.lead + '\u201D';
+      c0.appendChild(said);
+      var c1 = document.createElement('td');
+      c1.className = 'num';
+      c1.textContent = fmt(seenCount(plant)) + ' of ' + fmt(QUESTIONS.length);
+      var c2 = document.createElement('td');
+      c2.textContent = writeUp(plant);
+      tr.appendChild(c0);
+      tr.appendChild(c1);
+      tr.appendChild(c2);
+      roBody.appendChild(tr);
+    });
+  }
+
+  function renderLevel() {
+    var level = document.querySelector('input[name="level"]:checked').value;
+    spBody.innerHTML = '';
+    PLANTS.forEach(function (plant) {
+      var text;
+      if (level === 'exec') { text = 'Strong at all three plants. A report from above the work, so a hypothesis to test.'; }
+      else if (level === 'lead') { text = '\u201C' + plant.lead + '\u201D A report from above the frontline, so a hypothesis to test.'; }
+      else {
+        var n = seenCount(plant);
+        text = fmt(n) + ' of ' + fmt(QUESTIONS.length) + ' behaviors seen. ' + (n === 3 ? 'The change is transmitted.' : (n === 0 ? 'The change is not transmitted.' : 'The change is transmitted with a gap.'));
+      }
+      var tr = document.createElement('tr');
+      var a = document.createElement('td'); a.className = 'lead-cell'; a.textContent = plant.name;
+      var b = document.createElement('td'); b.textContent = text;
+      tr.appendChild(a); tr.appendChild(b);
+      spBody.appendChild(tr);
+    });
+    if (level === 'exec') {
+      spNote.textContent = 'From here all three plants look the same. The account can be accurate from where it is given, and it still can\u2019t tell the plants apart.';
+    } else if (level === 'lead') {
+      spNote.textContent = 'Still alike. Each plant lead reports what is visible from the plant office.';
+    } else {
+      spNote.textContent = 'Here the plants separate. Only this level can tell them apart, because it is the level where the leadership\u2019s intention either reaches the team or doesn\u2019t.';
+    }
+    srStatus.textContent = 'Evidence collected from ' + (level === 'exec' ? 'the sponsoring executive' : (level === 'lead' ? 'the plant leads' : 'the frontline managers')) + '.';
+  }
+  var levelRadios = document.querySelectorAll('input[name="level"]');
+  for (var i = 0; i < levelRadios.length; i++) { levelRadios[i].addEventListener('change', renderLevel); }
+
+  checkBtn.addEventListener('click', function () {
+    var wrong = [];
+    PLANTS.forEach(function (plant, p) {
+      plant.answers.forEach(function (a, q) {
+        var el = document.querySelector('input[name="' + nameFor(p, q) + '"]:checked');
+        var given = (el.value === 'yes');
+        if (given !== a.shows) { wrong.push({ p: p, q: q }); }
+      });
+    });
+
+    if (wrong.length === 0) {
+      var inputs = plantsEl.querySelectorAll('input');
+      for (var k = 0; k < inputs.length; k++) { inputs[k].disabled = true; }
+      checkBtn.disabled = true;
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. From above, the three plants sound alike: the sponsor and each plant lead report that adoption is going well. At the level where the work happens they differ.'
+      ]);
+      roIntro.textContent = 'Each account from above can be accurate from where it is given. Only the sample separates the plants, and at one plant it contradicts the sponsor. That is what a real finding does: it can disagree with the person who commissioned it.';
+      renderReadout();
+      renderLevel();
+      readout.hidden = false;
+    } else if (wrong.length === 1) {
+      var w = wrong[0];
+      var a2 = PLANTS[w.p].answers[w.q];
+      showFeedback('fb-near', 'Close.', [
+        'Look again at the answer from the plant in ' + PLANTS[w.p].name + ' to \u201C' + QUESTIONS[w.q].label + '\u201D: \u201C' + a2.text + '\u201D',
+        a2.why
+      ]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+  });
+})();
+</script>
+</body>
+</html>

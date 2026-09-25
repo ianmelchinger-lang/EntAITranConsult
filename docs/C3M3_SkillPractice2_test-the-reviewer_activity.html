@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test the reviewer</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  .sub { margin: 16px 0 0; }
+  .sub:first-of-type { margin-top: 0; }
+  .sub-q { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink-soft); padding: 0; margin: 0 0 4px; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-title { display: block; width: 100%; font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .facts { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 14px; padding: 0; }
+  .facts .fact { display: grid; grid-template-columns: 5.5rem 1fr; gap: 10px; margin: 0 0 6px; }
+  .facts dt { font-weight: 600; color: var(--ink); margin: 0; }
+  .facts dd { margin: 0; }
+  .quote-row { font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); margin: 0 0 8px; }
+  .quote-row b { font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink-soft); display: block; margin-bottom: 1px; }
+
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .choice-input:disabled + .choice-box { opacity: 0.85; cursor: default; }
+  .choice:has(.choice-input:disabled) { cursor: default; }
+
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .note { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 10px; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.grid { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.grid caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); padding: 0 0 8px; }
+  table.grid th, table.grid td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.grid th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.grid td.lead-cell { color: var(--ink); font-weight: 600; }
+  table.grid tr.changed td { background: var(--highlight-bg); }
+  table.grid .by { font-weight: 600; color: var(--ink); }
+  table.grid .small { display: block; font-weight: 400; font-size: 0.84rem; color: var(--ink-soft); margin-top: 2px; }
+  .tag-ok { color: var(--ok); font-weight: 700; }
+  .tag-hope { color: var(--warn); font-weight: 700; }
+
+  .toggle-row { display: flex; gap: 10px; align-items: flex-start; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; margin: 0 0 10px; }
+  .toggle-row input { margin: 3px 0 0; accent-color: var(--accent-deep); flex: 0 0 auto; width: 18px; height: 18px; }
+  .toggle-row input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .toggle-row label { cursor: pointer; }
+  .toggle-row b { color: var(--ink); font-weight: 600; display: block; margin-bottom: 2px; }
+  .mode-group { border: none; margin: 0 0 16px; padding: 0; }
+  .mode-group legend { font-family: var(--font-sans); font-weight: 600; font-size: 0.92rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; color: var(--ink-soft); }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; color: var(--ink); }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .facts .fact { grid-template-columns: 1fr; gap: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Test the reviewer</h1>
+
+  <p class="lead-line">Oversight is a design property, not a job title. It exists when one specific person has the information to recognize a problem, the authority to intervene, and the time to do it, before the output is filed, shipped, or relied on downstream. Underneath all three sits competence: the reviewer has to be able to judge whether the output is fit for use. Your job is to find what each reviewer lacks.</p>
+
+  <p class="context">A manufacturer&rsquo;s proposal says a person reviews each supplier-nonconformance write-up, the record of parts a supplier delivered outside specification, before it reaches the quality file, the controlled record. Below are five ways to staff that one review step. A careful review of one write-up takes about ten minutes.</p>
+
+  <div class="instruction">
+    <p>For each reviewer, tick every condition the description shows they lack. If they lack none, choose <b>Nothing missing</b>.</p>
+    <p><b>Information:</b> sees what is needed to recognize a problem, before the write-up moves on.</p>
+    <p><b>Authority:</b> can stop or send back a write-up on their own say.</p>
+    <p><b>Time:</b> has protected hours for the volume they face.</p>
+    <p><b>Competence:</b> can judge whether a write-up is fit for use.</p>
+  </div>
+
+  <div id="cards"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my ticks</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: move the volume</h2>
+    <p>The documentation team lead performs oversight at 60 write-ups a week. Move the volume and watch which condition fails first. Nothing here is checked.</p>
+    <div class="slider-row">
+      <label for="volume">Write-ups a week</label>
+      <input type="range" id="volume" min="20" max="200" step="10" value="60">
+      <span class="slider-value" id="volume-value" aria-hidden="true"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="grid" id="sp-table">
+        <caption id="sp-caption">The documentation team lead at the chosen volume</caption>
+        <thead><tr><th scope="col">Condition</th><th scope="col">Status</th><th scope="col">What the description shows</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="note" id="sp-verdict"></p>
+    <p class="note">For scale, the three plants together write 9,600 supplier-nonconformance records a year, about 185 a week.</p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  var MIN_PER_REVIEW = 10;
+
+  var CONDITIONS = [
+    { key: 'information', label: 'Lacks information' },
+    { key: 'authority', label: 'Lacks authority' },
+    { key: 'time', label: 'Lacks time' },
+    { key: 'competence', label: 'Lacks competence' }
+  ];
+
+  function fmt1(n) { return n.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+  function fmt(n) { return n.toLocaleString('en-US'); }
+
+  // Each card carries the figures the key is computed from. seesShare is the share of write-ups
+  // the reviewer sees before they move; volume is the number of write-ups a week the reviewer
+  // actually has to review; hours is the protected review time.
+  var CARDS = [
+    { title: 'Plant lead',
+      sees: 'Every write-up, beside the supplier record it was drafted from, before it moves to the quality file.', seesShare: 1,
+      can: 'Hold any write-up and send it back to the writer without asking anyone.', canStop: true,
+      time: '4 hours a week are protected for review. About 60 write-ups reach this reviewer each week.', hours: 4, volume: 60,
+      knows: 'Has signed off nonconformance records for years and can tell when one is unsound.', competent: true,
+      why: function (c) {
+        return 'This reviewer sees everything, can stop it, and knows the work. But ' + fmt(c.volume) + ' write-ups at ten minutes each is ' + fmt1(need(c)) + ' hours of careful review a week, and only ' + fmt1(c.hours) + ' are protected. The time runs out first.';
+      } },
+    { title: 'Documentation team lead',
+      sees: 'Every write-up, beside the supplier record it was drafted from, before it moves to the quality file.', seesShare: 1,
+      can: 'Hold any write-up and send it back to the writer without asking anyone.', canStop: true,
+      time: '12 hours a week are protected for review. About 60 write-ups reach this reviewer each week.', hours: 12, volume: 60,
+      knows: 'Has written corrective-action commitments (what a supplier has promised to fix) for years and can tell when a draft misstates one.', competent: true,
+      why: function (c) {
+        return 'Nothing is missing here. This reviewer sees everything before it moves, can stop it on their own say, has ' + fmt1(c.hours) + ' protected hours against ' + fmt1(need(c)) + ' hours of review, and knows the work.';
+      } },
+    { title: 'Plant supervisor',
+      sees: 'One write-up in every ten, before it moves to the quality file.', seesShare: 0.1,
+      can: 'Write a comment on a write-up. Whether it goes ahead is not this reviewer\u2019s decision.', canStop: false,
+      time: 'No hours are set aside. Review is one of eleven duties in the job description.', hours: 0, volume: 6,
+      knows: 'Has reviewed nonconformance records at this plant for years and can tell when one is unsound.', competent: true,
+      why: function () {
+        return 'This reviewer holds the title and none of the three: one write-up in ten, no say over whether one ships, and no hours set aside. The design hands them blame exposure instead of control. If something goes wrong, they will be asked why they missed it, though nothing in the design gave them a real chance.';
+      } },
+    { title: 'Quality engineer, newly assigned',
+      sees: 'Every write-up, beside the supplier record it was drafted from, before it moves to the quality file.', seesShare: 1,
+      can: 'Hold any write-up and send it back to the writer without asking anyone.', canStop: true,
+      time: '12 hours a week are protected for review. About 60 write-ups reach this reviewer each week.', hours: 12, volume: 60,
+      knows: 'Was assigned to this step last week and has not written or checked a nonconformance record before.', competent: false,
+      why: function () {
+        return 'Every other condition holds. But a reviewer who can\u2019t judge whether a write-up is fit for use isn\u2019t performing a review. They are signing whatever arrives.';
+      } },
+    { title: 'Quality engineer',
+      sees: 'Every write-up, beside the supplier record it was drafted from, before it moves to the quality file.', seesShare: 1,
+      can: 'Add a note to a write-up. It moves to the quality file on schedule unless the plant lead steps in.', canStop: false,
+      time: '12 hours a week are protected for review. About 60 write-ups reach this reviewer each week.', hours: 12, volume: 60,
+      knows: 'Has checked nonconformance records for years and can tell when one is unsound.', competent: true,
+      why: function () {
+        return 'This reviewer sees everything, has the time, and knows the work. A note doesn\u2019t intervene: the write-up moves on schedule unless someone else acts.';
+      } }
+  ];
+
+  function need(c) { return c.volume * MIN_PER_REVIEW / 60; }
+
+  function keyFor(c) {
+    var missing = [];
+    if (c.seesShare < 1) { missing.push('information'); }
+    if (!c.canStop) { missing.push('authority'); }
+    if (need(c) - c.hours > 0.05) { missing.push('time'); }
+    if (!c.competent) { missing.push('competence'); }
+    return missing;
+  }
+
+  var CRITERION_TEXT = 'Oversight exists only when one specific person has, at once, the information to recognize a problem, the authority to intervene, and the time to do it, before the output moves on. Competence sits underneath all three, and no strength in one condition makes up for a gap in another.';
+  var FIRST_MOVE_TEXT = 'Take one card and one condition at a time. Ask what the description says about it. Where the description gives figures, do the arithmetic: write-ups a week times ten minutes, against the protected hours.';
+
+  var cardsEl = document.getElementById('cards');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+  var srStatus = document.getElementById('sr-status');
+
+  function makeTick(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', function () { onChange(input); });
+    return wrap;
+  }
+
+  function ticksFor(idx) {
+    var out = [];
+    var boxes = document.querySelectorAll('input[name="card' + idx + '"]:checked');
+    for (var i = 0; i < boxes.length; i++) { out.push(boxes[i].value); }
+    return out;
+  }
+
+  function allAnswered() {
+    for (var i = 0; i < CARDS.length; i++) { if (ticksFor(i).length === 0) { return false; } }
+    return true;
+  }
+
+  CARDS.forEach(function (c, idx) {
+    var card = document.createElement('div');
+    card.className = 'item';
+    var fs = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.className = 'item-title';
+    legend.textContent = c.title;
+    fs.appendChild(legend);
+
+    var dl = document.createElement('dl');
+    dl.className = 'facts';
+    [['Sees', c.sees], ['Can', c.can], ['Time', c.time], ['Knows', c.knows]].forEach(function (pair) {
+      var row = document.createElement('div');
+      row.className = 'fact';
+      var dt = document.createElement('dt');
+      dt.textContent = pair[0];
+      var dd = document.createElement('dd');
+      dd.textContent = pair[1];
+      row.appendChild(dt);
+      row.appendChild(dd);
+      dl.appendChild(row);
+    });
+    fs.appendChild(dl);
+
+    var choices = document.createElement('div');
+    choices.className = 'item-choices';
+    var name = 'card' + idx;
+    function onTick(input) {
+      var group = document.querySelectorAll('input[name="' + name + '"]');
+      var i;
+      if (input.checked) {
+        if (input.value === 'none') {
+          for (i = 0; i < group.length; i++) { if (group[i].value !== 'none') { group[i].checked = false; } }
+        } else {
+          for (i = 0; i < group.length; i++) { if (group[i].value === 'none') { group[i].checked = false; } }
+        }
+      }
+      checkBtn.disabled = !allAnswered();
+    }
+    CONDITIONS.forEach(function (cond) { choices.appendChild(makeTick(name, cond.key, cond.label, onTick)); });
+    choices.appendChild(makeTick(name, 'none', 'Nothing missing', onTick));
+    fs.appendChild(choices);
+    card.appendChild(fs);
+    cardsEl.appendChild(card);
+  });
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function sameSet(a, b) {
+    if (a.length !== b.length) { return false; }
+    for (var i = 0; i < a.length; i++) { if (b.indexOf(a[i]) === -1) { return false; } }
+    return true;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var wrong = [];
+    CARDS.forEach(function (c, idx) {
+      var given = ticksFor(idx).filter(function (v) { return v !== 'none'; });
+      if (!sameSet(given, keyFor(c))) { wrong.push(idx); }
+    });
+
+    if (wrong.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. Five reviewers hold a similar job and only one performs oversight. The other four each fail somewhere different, and no strength in the other conditions makes up for it. For each of them the design hands the reviewer blame exposure instead of control: when something goes wrong they will be asked why they missed it, though nothing in the design gave them a real chance.'
+      ]);
+      sp.hidden = false;
+      renderVolume();
+    } else if (wrong.length === 1) {
+      var c = CARDS[wrong[0]];
+      showFeedback('fb-near', 'Close.', ['Look again at the ' + c.title.toLowerCase() + '.', c.why(c)]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+  });
+
+  // Second pass: the documentation team lead (the card that passed), with volume moved.
+  var BASE = CARDS.filter(function (c) { return keyFor(c).length === 0; })[0];
+  var slider = document.getElementById('volume');
+  var sliderValue = document.getElementById('volume-value');
+  var spBody = document.querySelector('#sp-table tbody');
+  var spVerdict = document.getElementById('sp-verdict');
+  var CAPACITY = BASE.hours * 60 / MIN_PER_REVIEW;
+
+  function renderVolume() {
+    var v = parseInt(slider.value, 10);
+    var needed = v * MIN_PER_REVIEW / 60;
+    var timeOk = needed - BASE.hours <= 0.05;
+    var label = fmt(v) + ' write-ups a week';
+    sliderValue.textContent = label;
+    slider.setAttribute('aria-valuetext', label);
+
+    var rows = [
+      ['Information', true, 'Sees every write-up before it moves, beside the supplier record.'],
+      ['Authority', true, 'Can hold any write-up and send it back without asking anyone.'],
+      ['Time', timeOk, 'Needs ' + fmt1(needed) + ' hours of review a week, and ' + fmt1(BASE.hours) + ' are protected.'],
+      ['Competence', true, 'Has written corrective-action commitments for years.']
+    ];
+    spBody.innerHTML = '';
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      if (r[0] === 'Time' && !timeOk) { tr.className = 'changed'; }
+      var a = document.createElement('td'); a.className = 'lead-cell'; a.textContent = r[0];
+      var b = document.createElement('td');
+      var s = document.createElement('span'); s.className = r[1] ? 'tag-ok' : 'tag-hope'; s.textContent = r[1] ? 'Holds' : 'Fails';
+      b.appendChild(s);
+      var d = document.createElement('td'); d.textContent = r[2];
+      tr.appendChild(a); tr.appendChild(b); tr.appendChild(d);
+      spBody.appendChild(tr);
+    });
+
+    if (timeOk) {
+      spVerdict.textContent = 'Oversight exists at this volume. This reviewer can cover up to ' + fmt(Math.floor(CAPACITY)) + ' write-ups a week.';
+    } else {
+      spVerdict.textContent = 'The title hasn\u2019t changed, and neither have the reviewer\u2019s information, authority, or skill. At this volume the review can\u2019t be done in the protected hours, so the reviewer now holds blame exposure instead of control. This reviewer can cover up to ' + fmt(Math.floor(CAPACITY)) + ' write-ups a week.';
+    }
+    srStatus.textContent = label + '. Time ' + (timeOk ? 'holds' : 'fails') + ': needs ' + fmt1(needed) + ' hours, ' + fmt1(BASE.hours) + ' protected.';
+  }
+  slider.addEventListener('input', renderVolume);
+})();
+</script>
+</body>
+</html>
