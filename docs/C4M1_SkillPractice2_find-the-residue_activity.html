@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the residue</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-weight: 700; font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 4px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Find the residue</h1>
+
+  <p class="lead-line">Every initiative has a ledger: where its claimed benefit is recorded, and where the verification, rework, or new expectation it leaves behind actually lands. When those two lines name the same desk, nothing has been transferred. When they name different desks, a gain in one place has been booked against a cost paid somewhere else.</p>
+
+  <p class="context">Four initiatives, each with its benefit line and its residue line already filled in.</p>
+
+  <div class="instruction">
+    <p>Read both lines on each card, then sort the initiative as same ledger or a transfer.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sort</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: the same tool, one permission changed</h2>
+    <p>The warranty-and-service drafting assistant above only ever produced a draft a service agent reviewed. Its permissions are widened: for routine questions, it now sends its reply without anyone reading it first.</p>
+    <div id="sp-item"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  var BUCKETS = [{ value: 'same', label: 'Same ledger' }, { value: 'transfer', label: 'Transfer' }];
+
+  var ITEMS = [
+    {
+      id: 'INSPECT',
+      text: 'Visual-inspection assistant, one plant',
+      facts: [
+        ['Benefit lands', 'with plant and quality leadership, as the reported drop in escapes reaching customers'],
+        ['Residue lands', 'with the plant\u2019s quality engineer, who resolves every flagged unit the assistant could not decide']
+      ],
+      bucket: 'transfer',
+      why: 'The reported metric is booked one level up from the bench doing the extra deciding. Different names on the two lines, even inside one function, is a transfer.'
+    },
+    {
+      id: 'NONCONF',
+      text: 'Supplier-nonconformance drafting assistant, three plants',
+      facts: [
+        ['Benefit lands', 'with the plants\u2019 quality engineers, as a faster first draft of each write-up'],
+        ['Residue lands', 'with the same quality engineers, whose revision loop returns about one draft in six']
+      ],
+      bucket: 'same',
+      why: 'The same desk both banks the time saved and absorbs the rework. The rework is real, but nobody\u2019s plan is fooled about who carries it.'
+    },
+    {
+      id: 'EXCEPTION',
+      text: 'Customer-exception workflow, enterprise-wide',
+      facts: [
+        ['Benefit lands', 'with the service function, as a shorter queue and faster handling per request'],
+        ['Residue lands', 'with the customers who receive it, who come to expect that same immediate turnaround on every exception from now on']
+      ],
+      bucket: 'transfer',
+      why: 'The service function books the speed. The expectation that speed creates lands on the customers who now hold the function to it \u2014 a different name on the residue line.'
+    },
+    {
+      id: 'CLOSE',
+      text: 'Finance close-support automations',
+      facts: [
+        ['Benefit lands', 'with finance analysts, as faster reconciliation drafts each close'],
+        ['Residue lands', 'with the same finance analysts, who review and post everything the tool prepares']
+      ],
+      bucket: 'same',
+      why: 'One desk drafts faster and the same desk checks and posts. Both lines name the same team, so this is not a transfer.'
+    }
+  ];
+
+  var CRITERION_TEXT = 'A transfer is any initiative whose benefit line and residue line name different owners \u2014 including a different role inside the same function, if the person banking the number isn\u2019t the person doing the added work. The same person or team on both lines is not a transfer, even though the residue is still real.';
+  var FIRST_MOVE_TEXT = 'Read the two lines on the card and ask only one question: is the name on the residue line the same as the name on the benefit line? If yes, same ledger. If no, transfer.';
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ['Right. Two of these book their gain and land their residue on the same desk. The other two book a gain in one place while the cost of catching it, redoing it, or living up to it lands somewhere else \u2014 that\u2019s what makes them transfers, not their size.']);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: \u201C' + it.text + '\u201D', it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+  });
+
+  var spItem = {
+    id: 'SERVICE2',
+    text: 'Warranty-and-service drafting assistant, widened permissions',
+    facts: [
+      ['Benefit lands', 'with the service function, as replies sent without waiting for a reviewer'],
+      ['Residue lands', '?']
+    ],
+    bucket: 'transfer',
+    why: ''
+  };
+  renderSortItems(document.getElementById('sp-item'), [spItem], BUCKETS, 'sp', function () {
+    var v = answersFor([spItem], 'sp')[0];
+    var panel = document.getElementById('sp-panel');
+    panel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = (v === 'transfer' ? 'Right: a transfer, now. ' : 'A transfer, now \u2014 look again. ') + 'Once nothing reviews the draft before it sends, the residue doesn\u2019t disappear. It moves to whoever receives the reply and has to notice, on their own, that something in it is wrong.';
+    var p2 = document.createElement('p');
+    p2.textContent = 'Nothing about the tool changed. One permission did, and the ledger\u2019s second line now names a different owner \u2014 the same shift that turned the exception workflow above into a transfer.';
+    panel.appendChild(p1);
+    panel.appendChild(p2);
+    panel.hidden = false;
+    document.getElementById('sr-status').textContent = 'Second pass answered.';
+  });
+
+})();
+</script>
+</body>
+</html>

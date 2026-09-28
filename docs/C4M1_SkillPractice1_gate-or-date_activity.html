@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gate or date?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Gate or date?</h1>
+
+  <p class="lead-line">A phase gate is the boundary between two phases, written as a condition that has to be true before the next one begins. A gate names a fact a second person could check and answer yes or no. A date can only be waited for.</p>
+
+  <p class="context">A transformation team has drafted the boundary for six initiatives. Some name a fact someone could go verify. Others name only a date, or a feeling.</p>
+
+  <div class="instruction">
+    <p>Sort each boundary into a gate or not a gate.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sort</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: a date joins a gate</h2>
+    <p>One of the gates above gets a target date added to it. Sort it again.</p>
+    <div id="sp-item"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  var BUCKETS = [{ value: 'gate', label: 'A gate' }, { value: 'notgate', label: 'Not a gate' }];
+
+  var ITEMS = [
+    {
+      id: 'FORECAST',
+      text: 'The enterprise demand-forecasting model moves into the next phase once the consolidated data platform\u2019s records agree with each other for the product lines the model needs, and a data owner has signed off on the corrected extract.',
+      bucket: 'gate',
+      why: 'This is a gate. Whether the records agree and whether the data owner signed off are each a fact a second person could check today, without waiting for a date.'
+    },
+    {
+      id: 'INSPECT',
+      text: 'The visual-inspection assistant extends to three more plants starting next quarter.',
+      bucket: 'notgate',
+      why: 'This is a date. The calendar decides it, and nothing about the three plants\u2019 readiness has to be true first.'
+    },
+    {
+      id: 'NONCONF',
+      text: 'The supplier-nonconformance assistant extends to a fourth plant once that plant\u2019s quality engineer has been assigned ownership of the revision queue and its corrective-action fields match the format the other three plants use.',
+      bucket: 'gate',
+      why: 'This is a gate. An assigned owner and matching field formats are both facts someone other than the author could go verify.'
+    },
+    {
+      id: 'TRIAGE',
+      text: 'The vendor service-triage assistant moves into the funded phase once the sales organization feels ready to commit.',
+      bucket: 'notgate',
+      why: '\u201CFeels ready\u201D names a feeling, not a fact. Nothing here says what would have to be true \u2014 only how someone would have to feel.'
+    },
+    {
+      id: 'EXCEPTION',
+      text: 'The customer-exception workflow gains authority to act without review once the document store\u2019s coverage terms have been reconciled and a named owner confirms no superseded rule remains retrievable.',
+      bucket: 'gate',
+      why: 'This is a gate. Reconciled terms and a named owner\u2019s confirmation are both facts a second person could check before the workflow\u2019s authority changes.'
+    },
+    {
+      id: 'MAINT',
+      text: 'The maintenance-scheduling automation extends to five more plants once the platform is stable.',
+      bucket: 'notgate',
+      why: '\u201CStable\u201D isn\u2019t defined here as anything checkable. Until stability is written as a specific, inspectable fact, this is an impression wearing the shape of a condition.'
+    }
+  ];
+
+  var CRITERION_TEXT = 'A gate names a fact \u2014 or two \u2014 that a second person could check and answer yes or no, without waiting for a date and without relying on how anyone feels. If the boundary is a date, or its condition can\u2019t be checked by someone other than the person who wrote it, it isn\u2019t a gate yet.';
+  var FIRST_MOVE_TEXT = 'Read the boundary and ask one question: could someone else, today, tell you whether it\u2019s true? If the answer depends on the calendar or on a feeling, it\u2019s not a gate. If it depends on a fact you could go verify, it is.';
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ['Right. Three of these name a fact a second person could check \u2014 an assigned owner, matching fields, a reconciled record. The other three don\u2019t: two are dates, and one is a feeling dressed as a condition.']);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: \u201C' + it.text + '\u201D', it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+  });
+
+  var spItem = {
+    id: 'NONCONF2',
+    text: 'The supplier-nonconformance assistant extends to a fourth plant in the second quarter, once that plant\u2019s quality engineer has been assigned ownership of the revision queue and its corrective-action fields match the format the other three plants use.',
+    bucket: 'gate',
+    why: ''
+  };
+  renderSortItems(document.getElementById('sp-item'), [spItem], BUCKETS, 'sp', function () {
+    var v = answersFor([spItem], 'sp')[0];
+    var panel = document.getElementById('sp-panel');
+    panel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = (v === 'gate' ? 'Right: still a gate. ' : 'Still a gate, even with the date attached. ') + 'The second quarter is when the team expects the condition to be met, not what makes the initiative advance. The ownership assignment and the matching fields are still separate facts someone could check.';
+    var p2 = document.createElement('p');
+    p2.textContent = 'Take those two facts away and the date alone would tell you nothing about whether the plant is ready. A gate can carry a target date without stopping being a gate. What would disqualify it is a boundary where the date is the only thing that has to happen.';
+    panel.appendChild(p1);
+    panel.appendChild(p2);
+    panel.hidden = false;
+    document.getElementById('sr-status').textContent = 'Second pass answered.';
+  });
+
+})();
+</script>
+</body>
+</html>

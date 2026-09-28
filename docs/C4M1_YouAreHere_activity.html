@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read this first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 24px;
+    color: var(--ink);
+  }
+
+  .scenario {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin: 0 0 28px;
+  }
+
+  .scenario p {
+    margin: 0 0 16px;
+  }
+
+  .scenario p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prompt-lead {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 16px;
+  }
+
+  .option {
+    display: block;
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .option-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .option-box {
+    display: block;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 18px;
+    background: var(--white);
+  }
+
+  .option-lead {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .option-detail {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .option-input:checked + .option-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .option-input:focus-visible + .option-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  fieldset.locked .option {
+    cursor: default;
+  }
+
+  fieldset.locked .option-box {
+    opacity: 0.9;
+  }
+
+  .reveal-btn {
+    display: block;
+    margin: 22px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .reveal-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .reveal-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .reveal-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .reveal {
+    margin-top: 32px;
+    padding: 22px 24px;
+    background: var(--highlight-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .reveal[hidden] {
+    display: none;
+  }
+
+  .reveal:focus {
+    outline: none;
+  }
+
+  .reveal-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--accent-deep);
+    margin: 0 0 4px;
+  }
+
+  .reveal-chosen {
+    font-family: var(--font-sans);
+    font-style: italic;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p {
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read this first</h1>
+
+  <div class="scenario">
+    <p>A multinational manufacturer&rsquo;s transformation lead is eight weeks from a funding review, holding a ranked list of AI candidates gathered from across the plants and the corporate functions, and a readiness picture of where the data actually sits.</p>
+    <p>The list includes a visual-inspection assistant that has already run a full quarter at one plant, a demand-forecasting model the supply-chain function has wanted for two years, a service assistant a platform vendor demonstrated to the sales organization last month, and a cluster of finance and HR automations nobody has argued about.</p>
+    <p>The executive committee expects a phased plan with milestones and dependencies. Whatever order the next eight weeks produce becomes the plan the committee funds.</p>
+  </div>
+
+  <p class="prompt-lead">Before reading on, choose the reading that comes closest to your own first instinct.</p>
+
+  <fieldset id="reading-fieldset">
+    <legend>How should this list become the first phase?</legend>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="momentum">
+      <span class="option-box">
+        <span class="option-lead">Start with whatever has momentum.</span>
+        <span class="option-detail">Put the piloted inspection tool, the freshly demonstrated vendor assistant, and anything with an engaged sponsor into phase one. Those are the ones that can start now.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="proven">
+      <span class="option-box">
+        <span class="option-lead">Start with what already proved itself.</span>
+        <span class="option-detail">The inspection assistant ran a full quarter and measurably cut defects that reached customers. A result like that earns the next step: extend it to more plants.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="value">
+      <span class="option-box">
+        <span class="option-lead">Rank everything by expected value.</span>
+        <span class="option-detail">Line up every candidate by the benefit it claims, largest first, and commit the budget to whichever clears the bar.</span>
+      </span>
+    </label>
+  </fieldset>
+
+  <button type="button" class="reveal-btn" id="reveal-btn" disabled>See what this misses</button>
+
+  <div class="reveal" id="reveal" role="region" aria-label="What this reading misses" tabindex="-1" hidden>
+    <span class="reveal-tag">You read this as:</span>
+    <p class="reveal-chosen" id="reveal-chosen"></p>
+    <div class="reveal-body" id="reveal-body"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var READINGS = {
+    momentum: {
+      lead: "Start with whatever has momentum.",
+      rebuttal: "Momentum describes who is ready to start, not what an initiative needs to survive the constraints that decide whether it lasts. A vivid demonstration and an engaged sponsor are not the same facts as a named data owner, a completed risk classification, or a review slot that actually exists this quarter. The vendor\u2019s own trial ran eleven days on an untuned setup against a difficult month, then stopped \u2014 evidence about that configuration, not about the volume a funded phase would put through it. Sequencing by appetite front-loads exactly the initiatives least likely to survive contact with those constraints, and the mismatch won\u2019t show up until the money has already moved."
+    },
+    proven: {
+      lead: "Start with what already proved itself.",
+      rebuttal: "A quarter at one plant is evidence for that plant\u2019s data, that plant\u2019s workflow, and the exception volume one team chose to handle. It says nothing about whether the other plants\u2019 records agree with each other in a form the assistant can use, whether review capacity exists to onboard an extension, or who has been assigned to own the exceptions it will keep producing. Scale asks for things a pilot never had to produce. \u201CIt worked\u201D answers a question about one set of conditions; \u201Cit should scale\u201D is a different question, and treating the first as proof of the second answers it at the most expensive possible moment."
+    },
+    value: {
+      lead: "Rank everything by expected value.",
+      rebuttal: "A number that ranks value says nothing about whether the organization can actually clear what it approves. The central function that reviews every use case can only finish so many reviews before the quarter ends, and a plan built purely on value can promise that queue four initiatives when it can absorb two. The shortfall doesn\u2019t show up on the page that ranks the candidates. It shows up the quarter the queue backs up and nothing behind the top few actually starts."
+    }
+  };
+
+  var CLOSING = "All three readings order the list by something real: enthusiasm, a proof point, or a number. None of them asks the one question a roadmap has to answer, for every item on it: what has to be true before this can advance, and is that true yet? That question, asked before any date is set, is sequencing to the precondition. Until every phase boundary is written that way, the plan is a guess dressed as a schedule.";
+
+  var radios = document.querySelectorAll('input[name="reading"]');
+  var revealBtn = document.getElementById('reveal-btn');
+  var revealPanel = document.getElementById('reveal');
+  var revealChosen = document.getElementById('reveal-chosen');
+  var revealBody = document.getElementById('reveal-body');
+  var fieldset = document.getElementById('reading-fieldset');
+
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function () {
+      revealBtn.disabled = false;
+    });
+  }
+
+  revealBtn.addEventListener('click', function () {
+    var chosen = null;
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { chosen = radios[i].value; }
+    }
+    if (!chosen) { return; }
+
+    for (var j = 0; j < radios.length; j++) {
+      radios[j].disabled = true;
+    }
+    fieldset.classList.add('locked');
+    revealBtn.disabled = true;
+
+    var data = READINGS[chosen];
+    revealChosen.textContent = '\u201C' + data.lead + '\u201D';
+
+    revealBody.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = data.rebuttal;
+    var p2 = document.createElement('p');
+    p2.textContent = CLOSING;
+    revealBody.appendChild(p1);
+    revealBody.appendChild(p2);
+
+    revealPanel.hidden = false;
+    revealPanel.focus();
+  });
+})();
+</script>
+</body>
+</html>
