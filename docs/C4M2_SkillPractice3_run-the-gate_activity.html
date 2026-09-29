@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run the gate before anything scales</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  .row { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .row legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; color: var(--ink); padding: 0; margin: 0 0 4px; }
+  .row .q { font-family: var(--font-serif); font-size: 1rem; color: var(--ink); margin: 0 0 8px; }
+  .row .onfile-h { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.02em; color: var(--steel); margin: 0 0 4px; }
+  .row ul.onfile { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding-left: 20px; }
+  .row ul.onfile li { margin: 0 0 4px; }
+  .verdict { margin: 0 0 8px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .verdict legend { font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; color: var(--ink); padding: 0 6px; margin-left: -6px; }
+  .figure { font-variant-numeric: tabular-nums; }
+  .assume { display: block; position: relative; margin: 0 0 8px; cursor: pointer; }
+  .assume-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .assume-box { display: block; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 10px 14px; }
+  .assume-input:checked + .assume-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); color: var(--ink); }
+  .assume-input:focus-visible + .assume-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  td.st-ok { color: var(--ok); font-weight: 600; }
+  td.st-open { color: var(--warn); font-weight: 600; }
+  .gate-line { font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
+  @media (max-width: 480px) { .row, .verdict { padding: 14px 14px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Run the gate before anything scales</h1>
+
+  <p class="lead-line">The pilot-to-scale gate is the set of checks an initiative clears before it moves from pilot status to funded, scaled standing. Four checkpoints and a fixed baseline are used here: a stated link to strategic goals, an interoperable technical foundation, a trained and available team, a compliant and transparent operating practice, and a fixed measurement baseline. They are the checks used here, not a complete list of everything a scale decision could need.</p>
+
+  <p class="context">A service team built a drafting tool on its own, and it spread. <span id="teams" class="figure"></span> teams and <span id="users" class="figure"></span> users now use it, at about <span id="rate" class="figure"></span> sessions per user per week. Its sponsor asks for scaled funding. The lines under each checkpoint are everything on file.</p>
+
+  <div class="instruction">
+    <p>For each checkpoint, decide whether the evidence on file answers its question with a yes. <b>Cleared</b> means it does. <b>Not cleared</b> means it does not, or the evidence does not speak to the question. Then give a verdict.</p>
+  </div>
+
+  <div id="rows"></div>
+
+  <fieldset class="verdict" id="verdict-fs">
+    <legend>Your verdict on the request for scaled funding</legend>
+    <div class="item-choices" id="verdict-choices"></div>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check the gate</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change the facts</h2>
+    <p>Switch on any assumption and watch the gate. Nothing here is checked.</p>
+    <div id="assumptions"></div>
+    <div class="table-wrap">
+      <table class="scores" id="sp-table">
+        <caption>The gate under the assumptions you have switched on</caption>
+        <thead><tr><th scope="col">Checkpoint</th><th scope="col">Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="gate-line" id="gate-line"></p>
+    <p id="usage-line"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  var ROWS = [
+ {
+  "name": "Stated link to strategic goals",
+  "q": "Does the request name the goal it serves and the result that would show it served?",
+  "lines": [
+   "The request names the service function\u2019s objective, shorter time to reply on warranty and coverage questions, and says the tool will be measured in minutes to reply.",
+   "The tool is in use in seven teams."
+  ],
+  "key": "cleared",
+  "why": "The request names a goal and a measure. That line answers the checkpoint\u2019s question directly, and the answer is yes."
+ },
+ {
+  "name": "Interoperable technical foundation",
+  "q": "Can the tool share data with the systems around it?",
+  "lines": [
+   "The tool works from reference documents the building team keeps locally. It has no connection to the four regional warranty claims systems.",
+   "Users say it has not stopped working since it was built."
+  ],
+  "key": "not",
+  "why": "Working reliably for the people who built it is not the same as sharing data with other systems. The line about the missing connection answers the question, and the answer is no."
+ },
+ {
+  "name": "Trained and available team",
+  "q": "Is the team that must run the tool trained and available for this work, rather than trained once and reassigned?",
+  "lines": [
+   "Its two builders keep it running alongside their own jobs. No one else has been trained to support or change it.",
+   "{SESS}"
+  ],
+  "key": "not",
+  "why": "Sessions measure how much the tool is used, not who is prepared to run it. The line about the two builders answers the question, and the answer is no."
+ },
+ {
+  "name": "Compliant and transparent operating practice",
+  "q": "Is there a written rule of use, and a record of what the tool does?",
+  "lines": [
+   "No rule of use covers the tool, and the one-page pre-production form has not been completed for it.",
+   "The tool has been in use for four months."
+  ],
+  "key": "not",
+  "why": "Four months of use does not create a rule of use. The first line answers the question, and the answer is no."
+ },
+ {
+  "name": "Fixed measurement baseline",
+  "q": "Was a starting measurement fixed before the tool spread?",
+  "lines": [
+   "The workforce management system holds reply-time figures for the two quarters before the tool spread, and the service function has named them as its baseline.",
+   "Users say the tool saves them time."
+  ],
+  "key": "cleared",
+  "why": "A baseline from before the rollout exists, and the measure is named. Users\u2019 own reports of time saved would not have counted."
+ }
+];
+  var USERS = 96, TEAMS = 7, PER_USER = 3.4;
+  function sessions(u) { return Math.round(u * PER_USER); }
+  document.getElementById('teams').textContent = Word(TEAMS);
+  document.getElementById('users').textContent = USERS.toLocaleString('en-US');
+  document.getElementById('rate').textContent = PER_USER.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1});
+
+  ROWS.forEach(function (r) {
+    r.lines = r.lines.map(function (l) {
+      return l.replace('{SESS}', 'Users average ' + PER_USER.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + ' sessions a week, about ' + sessions(USERS).toLocaleString('en-US') + ' sessions across the tool each week.');
+    });
+  });
+
+  var CRITERION_TEXT = "A checkpoint is cleared only when the evidence on file answers its question with a yes. Counts of users, sessions, teams, and months in use show that the tool is used. They answer none of the checkpoint questions. Any checkpoint you cannot answer with confidence is the reason the initiative is not ready.";
+  var FIRST_MOVE_TEXT = "Take one row at a time. Read its question, then ask which line on file answers it. If no line answers it with a yes, the row is not cleared.";
+  var BUCKETS = [{value: 'cleared', label: 'Cleared'}, {value: 'not', label: 'Not cleared'}];
+  var VERDICTS = [{value: 'scale', label: 'Move to scaled funding'}, {value: 'notyet', label: 'Not yet'}];
+  var KEY_VERDICT = ROWS.some(function (r) { return r.key !== 'cleared'; }) ? 'notyet' : 'scale';
+
+  var rowsEl = document.getElementById('rows');
+  var checkBtn = document.getElementById('check-btn');
+  function ready() {
+    var ok = document.querySelector('input[name="verdict"]:checked') !== null;
+    ROWS.forEach(function (r, i) { if (!document.querySelector('input[name="row' + i + '"]:checked')) { ok = false; } });
+    checkBtn.disabled = !ok;
+  }
+  ROWS.forEach(function (r, i) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'row';
+    var lg = document.createElement('legend');
+    lg.textContent = r.name;
+    fs.appendChild(lg);
+    var q = document.createElement('p');
+    q.className = 'q';
+    q.textContent = r.q;
+    fs.appendChild(q);
+    var h = document.createElement('p');
+    h.className = 'onfile-h';
+    h.textContent = 'ON FILE';
+    fs.appendChild(h);
+    var ul = document.createElement('ul');
+    ul.className = 'onfile';
+    r.lines.forEach(function (l) { var li = document.createElement('li'); li.textContent = l; ul.appendChild(li); });
+    fs.appendChild(ul);
+    var ch = document.createElement('div');
+    ch.className = 'item-choices';
+    BUCKETS.forEach(function (b) { ch.appendChild(makeChoice('row' + i, b.value, b.label, ready)); });
+    fs.appendChild(ch);
+    rowsEl.appendChild(fs);
+  });
+  var vc = document.getElementById('verdict-choices');
+  VERDICTS.forEach(function (v) { vc.appendChild(makeChoice('verdict', v.value, v.label, ready)); });
+
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  checkBtn.addEventListener('click', function () {
+    var bad = [];
+    ROWS.forEach(function (r, i) {
+      var c = document.querySelector('input[name="row' + i + '"]:checked');
+      if (!c || c.value !== r.key) { bad.push({row: r}); }
+    });
+    var v = document.querySelector('input[name="verdict"]:checked');
+    var verdictBad = !v || v.value !== KEY_VERDICT;
+    var errors = bad.length + (verdictBad ? 1 : 0);
+    if (errors === 0) {
+      var cleared = ROWS.filter(function (r) { return r.key === 'cleared'; }).length;
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [
+        'Right. ' + Word(cleared) + ' rows clear, ' + word(ROWS.length - cleared) + ' do not, and the verdict is not yet. The usage figures, ' + USERS.toLocaleString('en-US') + ' users and about ' + sessions(USERS).toLocaleString('en-US') + ' sessions a week, did not move a single row.',
+        'Any checkpoint you cannot answer with a yes is the reason the initiative is not ready. The verdict follows from the rows, and the request stays open until each open row has a condition someone can observe.'
+      ]);
+      sp.hidden = false;
+      buildSecond();
+    } else if (errors === 1) {
+      if (bad.length === 1) {
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Every mark is right except one. Look again at: ' + bad[0].row.name + '.', bad[0].row.why]);
+      } else {
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Every checkpoint is marked correctly, but the verdict contradicts your own marks.', 'When any checkpoint is not cleared, the verdict is not yet. The verdict follows from the rows.']);
+      }
+      sp.hidden = true;
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+      sp.hidden = true;
+    }
+  });
+
+  // second pass
+  var ASSUME = [
+    {id: 'users', text: 'Users double, from ' + USERS.toLocaleString('en-US') + ' to ' + (USERS * 2).toLocaleString('en-US') + '.', row: null},
+    {id: 'rule', text: 'The owner writes a rule of use and completes the pre-production form.', row: 3},
+    {id: 'connect', text: 'The tool connects to the four regional claims systems.', row: 1},
+    {id: 'team', text: 'Two people are trained and assigned to support the tool as their main work.', row: 2}
+  ];
+  var assumeEl = document.getElementById('assumptions');
+  var spBody = document.querySelector('#sp-table tbody');
+  var gateLine = document.getElementById('gate-line');
+  var usageLine = document.getElementById('usage-line');
+  var srStatus = document.getElementById('sr-status');
+  var built = false;
+
+  function buildSecond() {
+    if (built) { return; }
+    built = true;
+    ASSUME.forEach(function (a) {
+      var wrap = document.createElement('label');
+      wrap.className = 'assume';
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.className = 'assume-input';
+      input.value = a.id;
+      input.addEventListener('change', renderSecond);
+      var box = document.createElement('span');
+      box.className = 'assume-box';
+      box.textContent = a.text;
+      wrap.appendChild(input);
+      wrap.appendChild(box);
+      assumeEl.appendChild(wrap);
+    });
+    renderSecond();
+  }
+
+  function renderSecond() {
+    var on = {};
+    ASSUME.forEach(function (a) { var c = document.querySelector('.assume-input[value="' + a.id + '"]'); on[a.id] = c && c.checked; });
+    var status = ROWS.map(function (r) { return r.key === 'cleared'; });
+    ASSUME.forEach(function (a) { if (a.row !== null && on[a.id]) { status[a.row] = true; } });
+    spBody.innerHTML = '';
+    var open = [];
+    ROWS.forEach(function (r, i) {
+      var tr = document.createElement('tr');
+      var c1 = document.createElement('td'); c1.textContent = r.name;
+      var c2 = document.createElement('td'); c2.textContent = status[i] ? 'Cleared' : 'Not cleared'; c2.className = status[i] ? 'st-ok' : 'st-open';
+      tr.appendChild(c1); tr.appendChild(c2); spBody.appendChild(tr);
+      if (!status[i]) { open.push(r.name.toLowerCase()); }
+    });
+    var users = on.users ? USERS * 2 : USERS;
+    if (open.length === 0) {
+      gateLine.textContent = 'Every checkpoint and the baseline are cleared. The initiative can move to scaled funding on this evidence.';
+    } else {
+      gateLine.textContent = 'Not yet. ' + Word(open.length) + ' still open: ' + open.join('; ') + '.';
+    }
+    usageLine.textContent = 'Usage now stands at ' + users.toLocaleString('en-US') + ' users and about ' + sessions(users).toLocaleString('en-US') + ' sessions a week. Usage changes with every assumption about users, and it never changes a row.';
+    srStatus.textContent = gateLine.textContent;
+  }
+
+})();
+</script>
+</body>
+</html>

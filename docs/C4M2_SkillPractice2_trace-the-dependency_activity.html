@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trace what stands on the early layer</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  .note { margin: 0 0 16px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 18px 8px; }
+  .note legend { font-family: var(--font-sans); font-weight: 700; font-size: 0.92rem; color: var(--ink); padding: 0 6px; margin-left: -6px; }
+  .span { display: block; position: relative; margin: 0 0 8px; cursor: pointer; }
+  .span-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .span-box { display: block; font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 10px 14px; }
+  .span-input:checked + .span-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); }
+  .span-input:focus-visible + .span-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .record { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border-left: 4px solid var(--accent); border-radius: 4px; padding: 12px 16px; margin: 0 0 16px; }
+  .record b { color: var(--ink); }
+  fieldset.plain { border: none; margin: 0 0 12px; padding: 0; }
+  fieldset.plain legend { font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .view-toggle { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; }
+  .figure { font-variant-numeric: tabular-nums; }
+  @media (max-width: 480px) { .note { padding: 12px 12px 6px; } .view-toggle { flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Trace what stands on the early layer</h1>
+
+  <p class="lead-line">An acceptance dependency is a relationship in which a later initiative cannot be adopted until the familiarity built by an earlier, usually broader, one exists. No calendar and no architecture diagram shows it, and because the earlier initiative&rsquo;s own return is soft, it is the dependency most easily deleted.</p>
+
+  <p class="context">A manufacturer&rsquo;s funding review votes next week on ending the company-wide assistant: <span id="seats" class="figure"></span> seats at $<span id="rate" class="figure"></span> per seat per month, or <span id="run-cost" class="figure"></span> a year, with no stated return. Four later initiatives have planning notes. Each note holds a few sentences.</p>
+
+  <div class="instruction">
+    <p>Select every sentence that assumes people will accept something new because they already work with the company-wide assistant. Leave the others unselected.</p>
+    <p>A sentence about data, budget, technical access, or familiarity from some other source is a real dependency of a different kind, and it stays unselected here.</p>
+  </div>
+
+  <div id="notes"></div>
+  <button type="button" class="check-btn" id="check-btn">Check my selection</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change what the record says</h2>
+    <p>The review reads the funding record, not the planning notes. Choose which version of the record it reads, then see what a cut does. Nothing here is checked.</p>
+    <fieldset class="plain">
+      <legend>The record the review reads</legend>
+      <div class="view-toggle" id="record-toggle"></div>
+    </fieldset>
+    <div class="record" id="record-view"></div>
+    <button type="button" class="check-btn" id="cut-btn">Show what a cut does</button>
+    <div class="panel" id="cut-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  var NOTES = [
+ {
+  "title": "Case-management system, planned for next year",
+  "short": "the case-management system",
+  "sentences": [
+   {
+    "id": "1a",
+    "t": "Routing moves from a queue that supervisors sort by hand to a system that recommends a route for each case.",
+    "kind": "describe"
+   },
+   {
+    "id": "1b",
+    "t": "Supervisors will accept the recommended routes because they already work with the company-wide assistant every day.",
+    "kind": "target"
+   },
+   {
+    "id": "1c",
+    "t": "The system reads warranty records from four regional claims systems that use different field conventions.",
+    "kind": "data"
+   },
+   {
+    "id": "1d",
+    "t": "Training is budgeted at a half day per user, on the assumption that they already use the company-wide assistant.",
+    "kind": "target"
+   }
+  ]
+ },
+ {
+  "title": "Supplier-invoice triage in finance",
+  "short": "supplier-invoice triage",
+  "sentences": [
+   {
+    "id": "2a",
+    "t": "Analysts will review each triage suggestion before payment, as they review month-end entries today.",
+    "kind": "process"
+   },
+   {
+    "id": "2b",
+    "t": "The build needs read access to the finance and procurement system of record.",
+    "kind": "tech"
+   },
+   {
+    "id": "2c",
+    "t": "Finance staff already trust drafts from the company-wide assistant, so they will trust drafted triage suggestions.",
+    "kind": "target"
+   }
+  ]
+ },
+ {
+  "title": "Finance close support",
+  "short": "finance close support",
+  "sentences": [
+   {
+    "id": "3a",
+    "t": "The build draws on the same discretionary pool as the other finance lines.",
+    "kind": "capacity"
+   },
+   {
+    "id": "3b",
+    "t": "No change effort is planned, since analysts already edit drafts from the company-wide assistant every week.",
+    "kind": "target"
+   },
+   {
+    "id": "3c",
+    "t": "Analysts will edit drafted variance commentary rather than write it from scratch.",
+    "kind": "describe"
+   }
+  ]
+ },
+ {
+  "title": "Visual inspection, extension to three more plants",
+  "short": "the inspection extension",
+  "sentences": [
+   {
+    "id": "4a",
+    "t": "The extension waits until the first plant\u2019s escape-rate result has been reviewed.",
+    "kind": "sequence"
+   },
+   {
+    "id": "4b",
+    "t": "Supervisors at the three added plants have watched the first plant run the tool for a quarter.",
+    "kind": "othersource"
+   },
+   {
+    "id": "4c",
+    "t": "Operators need no AI experience, because the tool flags units and a person decides.",
+    "kind": "neutral"
+   }
+  ]
+ }
+];
+  var KIND_WHY = {
+ "target": "This assumes people will adopt the new system because they already work with the company-wide assistant. That is the dependency.",
+ "describe": "This describes what the system does. It assumes nothing about who has to accept it.",
+ "data": "This is a real dependency, but on data, not on acceptance. It belongs in the record against the data, not against the assistant.",
+ "process": "This relies on familiarity with an existing process, not with AI. The assistant is not building it.",
+ "tech": "This is a technical dependency on a system. It concerns access, not whether people accept the tool.",
+ "capacity": "This is a dependency on budget capacity. It is real and belongs elsewhere in the record, but it does not rest on the assistant.",
+ "othersource": "This is real acceptance, but it comes from the first plant\u2019s pilot, not from the assistant. It belongs in the record against that pilot.",
+ "sequence": "This orders the work on evidence. It says nothing about the assistant.",
+ "neutral": "This says the tool needs no prior AI experience, so it leans on nothing the assistant builds."
+};
+  var SEATS = 3400, RATE = 34;
+  var RUN_COST = SEATS * RATE * 12;
+  document.getElementById('seats').textContent = SEATS.toLocaleString('en-US');
+  document.getElementById('rate').textContent = RATE.toLocaleString('en-US');
+  document.getElementById('run-cost').textContent = '$' + RUN_COST.toLocaleString('en-US');
+
+  var CRITERION_TEXT = "A sentence counts only if it assumes people will accept something new because they already work with the company-wide assistant. Data, budget, technical access, and familiarity from other sources are real dependencies of other kinds, and they do not count here.";
+  var FIRST_MOVE_TEXT = "Read each sentence and ask two questions: what does it assume people already have, and where did they get it? Select the sentence only when the answer is the assistant.";
+
+  var all = [];
+  NOTES.forEach(function (n) { n.sentences.forEach(function (s) { s.note = n.title; all.push(s); }); });
+  var targets = all.filter(function (s) { return s.kind === 'target'; });
+  var depNotes = NOTES.filter(function (n) { return n.sentences.some(function (s) { return s.kind === 'target'; }); }).map(function (n) { return n.short; });
+
+  function joinList(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ', and ' + a[a.length - 1]; }
+
+  var notesEl = document.getElementById('notes');
+  NOTES.forEach(function (n, ni) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'note';
+    var lg = document.createElement('legend');
+    lg.textContent = n.title;
+    fs.appendChild(lg);
+    n.sentences.forEach(function (s) {
+      var wrap = document.createElement('label');
+      wrap.className = 'span';
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.className = 'span-input';
+      input.name = 'sent';
+      input.value = s.id;
+      var box = document.createElement('span');
+      box.className = 'span-box';
+      box.textContent = s.t;
+      wrap.appendChild(input);
+      wrap.appendChild(box);
+      fs.appendChild(wrap);
+    });
+    notesEl.appendChild(fs);
+  });
+
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  function selected() {
+    var out = {};
+    var boxes = document.querySelectorAll('input[name="sent"]');
+    for (var i = 0; i < boxes.length; i++) { if (boxes[i].checked) { out[boxes[i].value] = true; } }
+    return out;
+  }
+
+  document.getElementById('check-btn').addEventListener('click', function () {
+    var sel = selected();
+    var errors = [];
+    all.forEach(function (s) {
+      var isT = s.kind === 'target';
+      if (isT && !sel[s.id]) { errors.push({s: s, type: 'missed'}); }
+      if (!isT && sel[s.id]) { errors.push({s: s, type: 'extra'}); }
+    });
+    if (errors.length === 0) {
+      var others = all.length - targets.length;
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [
+        'Right. ' + Word(targets.length) + ' sentences in ' + word(depNotes.length) + ' notes rest on the acceptance the assistant is building. The other ' + word(others) + ' describe the work or depend on something else.',
+        'The record line to write before anyone votes: the company-wide assistant, ' + RUN_COST.toLocaleString('en-US', {style: 'currency', currency: 'USD', maximumFractionDigits: 0}) + ' a year, carries an acceptance dependency for ' + joinList(depNotes) + '.'
+      ]);
+      sp.hidden = false;
+      buildSecond();
+    } else if (errors.length === 1) {
+      var e = errors[0];
+      if (e.type === 'missed') {
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['You found ' + word(targets.length - 1) + ' of the ' + word(targets.length) + '. One sentence still relies on what the assistant builds: \u201C' + e.s.t + '\u201D', 'Read what it assumes people already have.']);
+      } else {
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['You found every dependency, and you selected one sentence that does not belong: \u201C' + e.s.t + '\u201D', KIND_WHY[e.s.kind]]);
+      }
+      sp.hidden = true;
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+      sp.hidden = true;
+    }
+  });
+
+  // second pass
+  var VERSIONS = [
+    {value: 'asis', label: 'The record as it stands'},
+    {value: 'traced', label: 'The record with the dependency line written in'}
+  ];
+  var toggleEl = document.getElementById('record-toggle');
+  var recordEl = document.getElementById('record-view');
+  var cutBtn = document.getElementById('cut-btn');
+  var cutPanel = document.getElementById('cut-panel');
+  var srStatus = document.getElementById('sr-status');
+  var built = false;
+
+  function version() { return document.querySelector('input[name="rec"]:checked').value; }
+  function money(n) { return n.toLocaleString('en-US', {style: 'currency', currency: 'USD', maximumFractionDigits: 0}); }
+
+  function renderRecord() {
+    var v = version();
+    recordEl.innerHTML = '';
+    var lines = [
+      ['Line', 'Company-wide assistant'],
+      ['Annual run cost', money(RUN_COST)],
+      ['Stated return', 'None']
+    ];
+    lines.push(['Initiatives that stand on it', v === 'asis' ? 'None recorded' : joinList(depNotes)]);
+    lines.forEach(function (pair) {
+      var d = document.createElement('div');
+      var b = document.createElement('b');
+      b.textContent = pair[0] + ': ';
+      d.appendChild(b);
+      d.appendChild(document.createTextNode(pair[1]));
+      recordEl.appendChild(d);
+    });
+    cutPanel.hidden = true;
+  }
+
+  function buildSecond() {
+    if (built) { return; }
+    built = true;
+    VERSIONS.forEach(function (v, i) {
+      var wrap = makeChoice('rec', v.value, v.label, renderRecord);
+      if (i === 0) { wrap.querySelector('input').checked = true; }
+      toggleEl.appendChild(wrap);
+    });
+    renderRecord();
+  }
+
+  cutBtn.addEventListener('click', function () {
+    var v = version();
+    cutPanel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = 'The saving on the page is ' + money(RUN_COST) + ' a year.';
+    var p2 = document.createElement('p');
+    if (v === 'asis') {
+      p2.textContent = 'Nothing on the page argues against the cut. ' + Word(depNotes.length) + ' later initiatives now assume an acceptance that no one is building, and no one at the review can see which ones. The connection between the cut and any later failure will be hard to trace.';
+    } else {
+      p2.textContent = Word(depNotes.length) + ' named initiatives stand on the assistant, and the review can see them. It can still cut. The cut now costs an argument, and whoever proposes it has to say what will replace the acceptance those initiatives assume.';
+    }
+    cutPanel.appendChild(p1);
+    cutPanel.appendChild(p2);
+    cutPanel.hidden = false;
+    cutPanel.focus();
+    srStatus.textContent = 'Cut shown for ' + (v === 'asis' ? 'the record as it stands' : 'the record with the dependency line') + '.';
+  });
+
+})();
+</script>
+</body>
+</html>

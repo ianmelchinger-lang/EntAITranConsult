@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check the mix, then write the adjustment</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  .opts { margin: 0; }
+  .opt { display: block; position: relative; margin: 0 0 8px; cursor: pointer; }
+  .opt-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .opt-box { display: block; font-family: var(--font-sans); font-size: 0.93rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 10px 14px; }
+  .opt-input:checked + .opt-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); color: var(--ink); }
+  .opt-input:focus-visible + .opt-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .q { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px 10px; }
+  .q legend { font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; color: var(--ink); padding: 0 6px; margin-left: -6px; }
+  .facts { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border-left: 4px solid var(--accent); border-radius: 4px; padding: 12px 16px; margin: 0 0 18px; }
+  .facts p { margin: 0 0 6px; }
+  .facts p:last-child { margin-bottom: 0; }
+  .facts b { color: var(--ink); }
+  .figure { font-variant-numeric: tabular-nums; }
+  table.scores tr.sub td { font-weight: 700; background: var(--paper); }
+  .note { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 16px; }
+  @media (max-width: 480px) { .q { padding: 14px 12px 8px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Check the mix, then write the adjustment</h1>
+
+  <p class="lead-line">A default allocation split is a commonly cited starting reference for how much investment weight sits in the near, mid, and longer lanes. It is a reference point, not a validated target. The right balance shifts with how mature the industry is and how fast disruption is moving through it, and a mix judged against an unadjusted default is judged against somebody else&rsquo;s industry.</p>
+
+  <p class="context">A manufacturer&rsquo;s transformation lead has placed its AI initiatives in lanes. The table shows each line&rsquo;s annual discretionary funding. The assistant&rsquo;s run cost is the case figure. Every other amount is illustrative.</p>
+
+  <div class="table-wrap">
+    <table class="scores" id="lines-table">
+      <caption>Annual discretionary funding by line, in US dollars</caption>
+      <thead><tr><th scope="col">Lane</th><th scope="col">Line</th><th class="num" scope="col">Funding</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="table-wrap">
+    <table class="scores" id="mix-table">
+      <caption>The mix, computed from the lines above, against an illustrative reference</caption>
+      <thead><tr><th scope="col">Lane</th><th class="num" scope="col">Total</th><th class="num" scope="col">Share</th><th class="num" scope="col">Reference</th><th class="num" scope="col">Gap, in points</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <p class="note">The reference of 60, 25, and 15 percent is illustrative and comes from no study. What it carries is a shape: near heaviest, longer lightest.</p>
+
+  <div class="facts">
+    <p><b>Facts about the manufacturer, supplied for this exercise.</b></p>
+    <p id="fact-maturity"></p>
+    <p id="fact-pace"></p>
+  </div>
+
+  <div class="instruction">
+    <p>Read the gap, then write the adjustment: answer the four questions below. Nothing on this page asks you to close the gap.</p>
+  </div>
+
+  <div id="questions"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my adjustment</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change one fact about the industry</h2>
+    <p>The watch list now shows something new: a software-first entrant with no plants has begun selling directly to the after-sales customers of two product lines. Disruption is moving faster in that part of the business, and the barrier to entry is low. Move funding out of the near lane and watch the mix. There is no single right amount. Nothing here is checked.</p>
+    <div class="slider-row">
+      <label for="moved">Funding moved out of the near lane, split evenly between mid and longer</label>
+      <input type="range" id="moved" min="0" max="1500000" step="100000" value="0">
+      <span class="slider-value" id="moved-value" aria-hidden="true"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="scores" id="sp-table">
+        <caption id="sp-caption">The mix after the move</caption>
+        <thead><tr><th scope="col">Lane</th><th class="num" scope="col">Total</th><th class="num" scope="col">Share</th><th class="num" scope="col">Gap, in points</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  var LINES = [
+ {
+  "lane": "near",
+  "name": "Company-wide assistant",
+  "amt": 1387200,
+  "anchor": true
+ },
+ {
+  "lane": "near",
+  "name": "Visual inspection at the plants",
+  "amt": 2600000
+ },
+ {
+  "lane": "near",
+  "name": "Supplier write-up drafting",
+  "amt": 1600000
+ },
+ {
+  "lane": "mid",
+  "name": "Warranty and service response drafting",
+  "amt": 500000
+ },
+ {
+  "lane": "mid",
+  "name": "Finance close support",
+  "amt": 350000
+ },
+ {
+  "lane": "mid",
+  "name": "Case-management system",
+  "amt": 250000
+ },
+ {
+  "lane": "longer",
+  "name": "Research idea: material behavior",
+  "amt": 300000
+ }
+];
+  var REF = {"near": 60, "mid": 25, "longer": 15};
+  var QUESTIONS = [
+ {
+  "id": "mature",
+  "legend": "How mature is the manufacturer\u2019s industry?",
+  "opts": [
+   [
+    "mature",
+    "Mature and stable"
+   ],
+   [
+    "young",
+    "Young and shifting"
+   ]
+  ],
+  "key": "mature",
+  "why": "The facts describe established dealer networks and plants and engineering reputation that take years to build. That is a mature industry."
+ },
+ {
+  "id": "pace",
+  "legend": "How fast is disruption moving through it?",
+  "opts": [
+   [
+    "slow",
+    "Slowly: nothing threatens the core soon"
+   ],
+   [
+    "fast",
+    "Quickly: standing still is the greater risk"
+   ]
+  ],
+  "key": "slow",
+  "why": "The watch list shows no entrant taking share and none announced. On these facts, disruption is moving slowly."
+ },
+ {
+  "id": "adjust",
+  "legend": "What adjustment do those two answers justify?",
+  "opts": [
+   [
+    "hold",
+    "Hold the near-heavy mix, and record the reason in terms of maturity and pace of disruption"
+   ],
+   [
+    "match",
+    "Move money out of the near lane until the mix matches the reference"
+   ],
+   [
+    "longer",
+    "Move money toward the longer lane, because a mix this heavy near is a risk in itself"
+   ]
+  ],
+  "key": "hold",
+  "why": "Both answers say the core is not under near-term threat, so concentrating investment near is defensible. The reference was calibrated to somebody else\u2019s industry, so the gap is a prompt to explain, not a target to close."
+ },
+ {
+  "id": "review",
+  "legend": "When will the adjustment be revisited?",
+  "opts": [
+   [
+    "schedule",
+    "On a stated schedule, written into the record"
+   ],
+   [
+    "notice",
+    "Whenever someone notices the industry has changed"
+   ],
+   [
+    "never",
+    "It is not revisited: the split stays fixed once set"
+   ]
+  ],
+  "key": "schedule",
+  "why": "An adjustment with no stated schedule stops being useful, because the industry it was set for keeps changing while the adjustment stays put."
+ }
+];
+  var LANES = [['near', 'Near'], ['mid', 'Mid'], ['longer', 'Longer']];
+  var CRITERION_TEXT = "The reference is a starting point calibrated to somebody else\u2019s industry. Whether a gap needs correcting depends on two answers about this manufacturer: how mature its industry is, and how fast disruption is moving through it. The adjustment also needs a stated schedule for revisiting it.";
+  var FIRST_MOVE_TEXT = "Before you touch the mix, read the facts about the manufacturer and answer the two questions about its industry. Let those answers, not the size of the gap, decide the adjustment.";
+
+  function money(n) { return '$' + n.toLocaleString('en-US'); }
+  function pct(n) { return n.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1}); }
+  function gapText(n) { return n.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1, signDisplay: 'exceptZero'}); }
+  function totals(list) { var t = {near: 0, mid: 0, longer: 0}; list.forEach(function (l) { t[l.lane] += l.amt; }); return t; }
+  function sum(t) { return t.near + t.mid + t.longer; }
+  function shares(t) { var s = sum(t), o = {}; LANES.forEach(function (l) { o[l[0]] = Math.round(t[l[0]] / s * 1000) / 10; }); return o; }
+  function gaps(sh) { var o = {}; LANES.forEach(function (l) { o[l[0]] = Math.round((sh[l[0]] - REF[l[0]]) * 10) / 10; }); return o; }
+
+  var BASE_T = totals(LINES);
+  var TOTAL = sum(BASE_T);
+  var BASE_S = shares(BASE_T);
+  var BASE_G = gaps(BASE_S);
+
+  var facts = {
+    maturity: 'Its four product lines sell through established dealer networks. Plants and engineering reputation take years to build.',
+    pace: 'The steering group\u2019s watch list shows no new entrant taking share in any of the four lines, and no announced entry.'
+  };
+  document.getElementById('fact-maturity').textContent = facts.maturity;
+  document.getElementById('fact-pace').textContent = facts.pace;
+
+  // lines table
+  var lb = document.querySelector('#lines-table tbody');
+  LANES.forEach(function (ln) {
+    LINES.filter(function (l) { return l.lane === ln[0]; }).forEach(function (l) {
+      var tr = document.createElement('tr');
+      var a = document.createElement('td'); a.textContent = ln[1];
+      var b = document.createElement('td'); b.textContent = l.name + (l.anchor ? ' (case figure)' : '');
+      var c = document.createElement('td'); c.className = 'num'; c.textContent = money(l.amt);
+      tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); lb.appendChild(tr);
+    });
+  });
+  var trT = document.createElement('tr'); trT.className = 'sub';
+  var tA = document.createElement('td'); tA.textContent = 'All lanes';
+  var tB = document.createElement('td'); tB.textContent = 'Total';
+  var tC = document.createElement('td'); tC.className = 'num'; tC.textContent = money(TOTAL);
+  trT.appendChild(tA); trT.appendChild(tB); trT.appendChild(tC); lb.appendChild(trT);
+
+  // mix table
+  var mb = document.querySelector('#mix-table tbody');
+  LANES.forEach(function (ln) {
+    var tr = document.createElement('tr');
+    var cells = [ln[1], money(BASE_T[ln[0]]), pct(BASE_S[ln[0]]) + '%', REF[ln[0]].toLocaleString('en-US') + '%', gapText(BASE_G[ln[0]])];
+    cells.forEach(function (v, i) { var td = document.createElement('td'); td.textContent = v; if (i > 0) { td.className = 'num'; } tr.appendChild(td); });
+    mb.appendChild(tr);
+  });
+
+  // questions
+  var qEl = document.getElementById('questions');
+  var checkBtn = document.getElementById('check-btn');
+  function ready() {
+    var ok = true;
+    QUESTIONS.forEach(function (q) { if (!document.querySelector('input[name="q_' + q.id + '"]:checked')) { ok = false; } });
+    checkBtn.disabled = !ok;
+  }
+  QUESTIONS.forEach(function (q) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'q';
+    var lg = document.createElement('legend'); lg.textContent = q.legend; fs.appendChild(lg);
+    var box = document.createElement('div'); box.className = 'opts';
+    q.opts.forEach(function (o) {
+      var wrap = document.createElement('label'); wrap.className = 'opt';
+      var input = document.createElement('input'); input.type = 'radio'; input.className = 'opt-input'; input.name = 'q_' + q.id; input.value = o[0];
+      input.addEventListener('change', ready);
+      var span = document.createElement('span'); span.className = 'opt-box'; span.textContent = o[1];
+      wrap.appendChild(input); wrap.appendChild(span); box.appendChild(wrap);
+    });
+    fs.appendChild(box);
+    qEl.appendChild(fs);
+  });
+
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  checkBtn.addEventListener('click', function () {
+    var bad = [];
+    QUESTIONS.forEach(function (q) {
+      var c = document.querySelector('input[name="q_' + q.id + '"]:checked');
+      if (!c || c.value !== q.key) { bad.push(q); }
+    });
+    if (bad.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [
+        'Right. The adjustment, in a form that can go into the record: against the illustrative reference of ' + REF.near + ', ' + REF.mid + ', and ' + REF.longer + ' percent, the mix runs ' + pct(BASE_S.near) + ', ' + pct(BASE_S.mid) + ', and ' + pct(BASE_S.longer) + ' percent. The manufacturer\u2019s industry is mature and disruption is moving slowly, so the near-heavy mix is held. The adjustment will be revisited on a stated schedule, written into the record.',
+        'The gap of ' + gapText(BASE_G.near) + ' points in the near lane was never the finding. The finding is the reason the gap is acceptable, and the date on which it will be read again.'
+      ]);
+      sp.hidden = false;
+    } else if (bad.length === 1) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Three of the four are right. Look again at: ' + bad[0].legend, bad[0].why]);
+      sp.hidden = true;
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+      sp.hidden = true;
+    }
+  });
+
+  // second pass
+  var slider = document.getElementById('moved');
+  var sv = document.getElementById('moved-value');
+  var sb = document.querySelector('#sp-table tbody');
+  var spNote = document.getElementById('sp-note');
+  var srStatus = document.getElementById('sr-status');
+  function renderSecond() {
+    var x = parseInt(slider.value, 10);
+    var t = {near: BASE_T.near - x, mid: BASE_T.mid + x / 2, longer: BASE_T.longer + x / 2};
+    var s = shares(t), g = gaps(s);
+    sv.textContent = money(x);
+    slider.setAttribute('aria-valuetext', money(x) + ' moved');
+    sb.innerHTML = '';
+    LANES.forEach(function (ln) {
+      var tr = document.createElement('tr');
+      [ln[1], money(t[ln[0]]), pct(s[ln[0]]) + '%', gapText(g[ln[0]])].forEach(function (v, i) { var td = document.createElement('td'); td.textContent = v; if (i > 0) { td.className = 'num'; } tr.appendChild(td); });
+      sb.appendChild(tr);
+    });
+    spNote.textContent = 'Total funding stays at ' + money(sum(t)) + '. ' + (x === 0 ? 'At zero, this is the mix from the first pass.' : 'The mix moves toward the reference as money moves, but matching the reference is not the aim. A written reason and a date to revisit it are.');
+    srStatus.textContent = money(x) + ' moved. Near ' + pct(s.near) + ' percent, mid ' + pct(s.mid) + ' percent, longer ' + pct(s.longer) + ' percent.';
+  }
+  slider.addEventListener('input', renderSecond);
+  renderSecond();
+
+})();
+</script>
+</body>
+</html>

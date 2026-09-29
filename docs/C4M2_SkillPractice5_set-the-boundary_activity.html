@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set the boundary between two funding disciplines</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  .crit { margin: 0 0 16px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px 10px; }
+  .crit legend { font-family: var(--font-sans); font-weight: 700; font-size: 0.98rem; color: var(--ink); padding: 0 6px; margin-left: -6px; }
+  .opt { display: block; position: relative; margin: 0 0 8px; cursor: pointer; }
+  .opt-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .opt-box { display: block; font-family: var(--font-sans); font-size: 0.93rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 10px 14px; }
+  .opt-input:checked + .opt-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); color: var(--ink); }
+  .opt-input:focus-visible + .opt-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .positions { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border-left: 4px solid var(--accent); border-radius: 4px; padding: 12px 16px; margin: 0 0 22px; }
+  .positions p { margin: 0 0 8px; }
+  .positions p:last-child { margin-bottom: 0; }
+  .positions b { color: var(--ink); }
+  table.scores td.lane-exp { color: var(--ok); font-weight: 600; }
+  table.scores td.lane-case { color: var(--accent-deep); font-weight: 600; }
+  table.scores td.lane-tie { color: var(--warn); font-weight: 600; }
+  table.scores.wide { min-width: 640px; }
+  .toggle-row { margin: 0 0 16px; }
+  @media (max-width: 480px) { .crit { padding: 14px 12px 8px; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Set the boundary between two funding disciplines</h1>
+
+  <p class="lead-line">Two funding disciplines govern different lanes of an AI portfolio. <b>Experiment discipline</b> funds cheap, short-cycle attempts, each tied to a named business objective, and lets fast results prune the portfolio. <b>Case discipline</b> requires a business case before money is spent. Funding a cheap experiment like a permanent commitment wastes time, and funding a permanent commitment like a cheap experiment wastes money.</p>
+
+  <div class="positions">
+    <p><b>Practitioners divide on where the line falls.</b></p>
+    <p>Some who chair AI-enablement firms argue that every expenditure should connect to a business case now. Today&rsquo;s low cost of experimentation is a temporary, subsidized condition, they say, and discipline installed late arrives as retrenchment rather than planning.</p>
+    <p>Some chief AI officers in professional-services firms argue the opposite. When building the real thing takes days, proving a concept first is the wrong activity, and a return case for each experiment is the wrong unit. They would run many cheap, short experiments, each tied to a named business objective, and let fast feedback prune the portfolio.</p>
+    <p>Each side states its position on conditions. Those conditions mark the boundary.</p>
+  </div>
+
+  <div class="instruction">
+    <p>Tick each criterion that should decide whether a proposal runs on experiment discipline. A proposal qualifies only if it meets every criterion you tick. Then apply your rule to six proposals from the manufacturer.</p>
+  </div>
+
+  <fieldset class="crit">
+    <legend>The criteria for experiment discipline</legend>
+    <div id="criteria"></div>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn">Apply my rule to the six proposals</button>
+
+  <div class="table-wrap" id="props-wrap" hidden>
+    <table class="scores wide" id="props-table">
+      <caption id="props-caption">Where the six proposals land under your rule</caption>
+      <thead><tr><th scope="col">Proposal</th><th scope="col">Cycle</th><th scope="col">If stopped</th><th scope="col">Objective</th><th scope="col">Sponsor</th><th scope="col">First users</th><th scope="col">Lands in</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: end the cheap phase</h2>
+    <p>Keep the rule as it stands and change one fact. Nothing here is checked.</p>
+    <div class="toggle-row" id="toggle-row"></div>
+    <div class="table-wrap">
+      <table class="scores wide" id="sp-table">
+        <caption id="sp-caption"></caption>
+        <thead><tr><th scope="col">Proposal</th><th scope="col">Cycle</th><th scope="col">Lands in</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  var CRITERIA = [
+ {
+  "id": "cycle",
+  "t": "The cycle is short and cheap: a result in weeks, at low cost.",
+  "key": true,
+  "role": "cycle cost"
+ },
+ {
+  "id": "rev",
+  "t": "The result is reversible: stopping leaves no recurring cost, obligation, or dependency.",
+  "key": true,
+  "role": "reversibility"
+ },
+ {
+  "id": "obj",
+  "t": "The proposal names the business objective it serves.",
+  "key": true,
+  "role": "a named business objective"
+ },
+ {
+  "id": "senior",
+  "t": "The sponsor is an executive.",
+  "key": false,
+  "role": "sponsor seniority"
+ },
+ {
+  "id": "few",
+  "t": "Few people use it in the first stage.",
+  "key": false,
+  "role": "the number of first users"
+ }
+];
+  var PROPS = [
+ {
+  "name": "Trial the drafting assistant on one team\u2019s supplier write-ups",
+  "cycle": "Two weeks, low cost",
+  "stop": "Switch off; nothing recurring",
+  "obj": "Cut minutes per write-up",
+  "sponsor": "Function lead",
+  "users": "One team",
+  "a": {
+   "cycle": true,
+   "rev": true,
+   "obj": true,
+   "senior": false,
+   "few": true
+  }
+ },
+ {
+  "name": "Explore what an assistant could do for the executive committee\u2019s monthly pack",
+  "cycle": "Two weeks, low cost",
+  "stop": "Switch off; nothing recurring",
+  "obj": "None named",
+  "sponsor": "Executive",
+  "users": "Three executives",
+  "a": {
+   "cycle": true,
+   "rev": true,
+   "obj": false,
+   "senior": true,
+   "few": true
+  }
+ },
+ {
+  "name": "Choose the shared platform that every later initiative will build on",
+  "cycle": "Six weeks, low cost",
+  "stop": "Every later build depends on it",
+  "obj": "One platform for all functions",
+  "sponsor": "Executive",
+  "users": "Two teams at first",
+  "a": {
+   "cycle": true,
+   "rev": false,
+   "obj": true,
+   "senior": true,
+   "few": true
+  }
+ },
+ {
+  "name": "Build a custom claims tool over nine months",
+  "cycle": "Nine months, a build team",
+  "stop": "Can be shelved at any point; nothing owed",
+  "obj": "Cut handling time per claim",
+  "sponsor": "Function lead",
+  "users": "One claims desk",
+  "a": {
+   "cycle": false,
+   "rev": true,
+   "obj": true,
+   "senior": false,
+   "few": true
+  }
+ },
+ {
+  "name": "Move the inspection pilots to permanent operation",
+  "cycle": "Six months, a standing team",
+  "stop": "Recurring staffing and support",
+  "obj": "Cut escapes per million units",
+  "sponsor": "Function lead",
+  "users": "Every inspection line at the plants where they run",
+  "a": {
+   "cycle": false,
+   "rev": false,
+   "obj": true,
+   "senior": false,
+   "few": false
+  }
+ },
+ {
+  "name": "Trial the drafting tool with all its users for four weeks",
+  "cycle": "Four weeks, low cost",
+  "stop": "Switch off at the end; nothing recurring",
+  "obj": "Cut time to reply",
+  "sponsor": "Function lead",
+  "users": "All 96 current users",
+  "a": {
+   "cycle": true,
+   "rev": true,
+   "obj": true,
+   "senior": false,
+   "few": false
+  }
+ }
+];
+  var LANE_LABEL = {exp: 'Experiment discipline', case: 'Case discipline', tie: 'Tie to an objective first'};
+  var KEYSET = CRITERIA.filter(function (c) { return c.key; }).map(function (c) { return c.id; });
+
+  function lane(p, ticked, override) {
+    var failed = ticked.filter(function (c) {
+      var met = p.a[c];
+      if (override && override[c] !== undefined) { met = override[c]; }
+      return !met;
+    });
+    if (failed.length === 0) { return 'exp'; }
+    if (failed.length === 1 && failed[0] === 'obj') { return 'tie'; }
+    return 'case';
+  }
+
+  var CRITERION_TEXT = "The boundary is set by cycle cost and reversibility, and both must sit behind a real business objective. It is not set by who sponsors an idea or by how many people touch it at first. A rule that lets sponsor level or first-user count decide will fund some permanent commitments as cheap experiments, and hold some cheap experiments to a business case.";
+  var FIRST_MOVE_TEXT = "Take the proposal your rule handles worst and ask two questions: how long and how costly is its cycle, and what does stopping leave behind? Then ask whether the proposal names the objective it serves.";
+
+  var critEl = document.getElementById('criteria');
+  CRITERIA.forEach(function (c) {
+    var wrap = document.createElement('label'); wrap.className = 'opt';
+    var input = document.createElement('input'); input.type = 'checkbox'; input.className = 'opt-input'; input.name = 'crit'; input.value = c.id;
+    var span = document.createElement('span'); span.className = 'opt-box'; span.textContent = c.t;
+    wrap.appendChild(input); wrap.appendChild(span); critEl.appendChild(wrap);
+  });
+  function ticked() {
+    var out = [];
+    var boxes = document.querySelectorAll('input[name="crit"]');
+    for (var i = 0; i < boxes.length; i++) { if (boxes[i].checked) { out.push(boxes[i].value); } }
+    return out;
+  }
+
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+  var propsWrap = document.getElementById('props-wrap');
+  var propsBody = document.querySelector('#props-table tbody');
+
+  function cell(text, cls) { var td = document.createElement('td'); td.textContent = text; if (cls) { td.className = cls; } return td; }
+
+  function renderProps(t) {
+    propsBody.innerHTML = '';
+    PROPS.forEach(function (p) {
+      var tr = document.createElement('tr');
+      var l = lane(p, t);
+      tr.appendChild(cell(p.name));
+      tr.appendChild(cell(p.cycle));
+      tr.appendChild(cell(p.stop));
+      tr.appendChild(cell(p.obj));
+      tr.appendChild(cell(p.sponsor));
+      tr.appendChild(cell(p.users));
+      tr.appendChild(cell(LANE_LABEL[l], 'lane-' + l));
+      propsBody.appendChild(tr);
+    });
+    propsWrap.hidden = false;
+  }
+
+  function listNames(idx) { return idx.map(function (i) { return '\u201C' + PROPS[i].name + '\u201D'; }); }
+
+  document.getElementById('check-btn').addEventListener('click', function () {
+    var t = ticked();
+    renderProps(t);
+    var missing = KEYSET.filter(function (c) { return t.indexOf(c) === -1; });
+    var extra = t.filter(function (c) { return KEYSET.indexOf(c) === -1; });
+    var errors = missing.length + extra.length;
+    var keyLanes = PROPS.map(function (p) { return lane(p, KEYSET); });
+    var yourLanes = PROPS.map(function (p) { return lane(p, t); });
+    var moved = [];
+    keyLanes.forEach(function (k, i) { if (k !== yourLanes[i]) { moved.push(i); } });
+    if (t.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', ['With no criteria ticked, every proposal qualifies for experiment discipline, including a permanent commitment.', FIRST_MOVE_TEXT]);
+      sp.hidden = true;
+      return;
+    }
+    if (errors === 0) {
+      var nExp = keyLanes.filter(function (x) { return x === 'exp'; }).length;
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [
+        'Right. A proposal runs on experiment discipline when its cycle is short and cheap, stopping it leaves nothing behind, and it names the business objective it serves. Where a proposal is cheap and reversible but names no objective, it waits until it does. Everything else needs a business case before it spends.',
+        'Sponsor level and first-user count decided none of the six. Under this rule, ' + word(nExp) + ' proposals run on experiment discipline. Written into a portfolio plan, the boundary is one line for each lane.'
+      ]);
+      sp.hidden = false;
+      buildSecond();
+    } else if (errors === 1) {
+      var c, msg;
+      if (missing.length === 1) {
+        c = CRITERIA.filter(function (x) { return x.id === missing[0]; })[0];
+        msg = 'You have ticked the right criteria except that one is missing: \u201C' + c.t + '\u201D';
+        var lifted = moved.length ? ' Under your rule, ' + listNames(moved).join(' and ') + (moved.length === 1 ? ' lands' : ' land') + ' on experiment discipline when ' + (moved.length === 1 ? 'it' : 'they') + ' should not.' : '';
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', [msg, 'This criterion decides the boundary through ' + c.role + '.' + lifted]);
+      } else {
+        c = CRITERIA.filter(function (x) { return x.id === extra[0]; })[0];
+        msg = 'You have ticked every right criterion, and one that does not belong: \u201C' + c.t + '\u201D';
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', [msg, 'The boundary does not turn on ' + c.role + '. Under your rule, ' + word(moved.length) + ' of the six proposals ' + (moved.length === 1 ? 'lands' : 'land') + ' somewhere it should not.']);
+      }
+      sp.hidden = true;
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', ['Under your rule, ' + word(moved.length) + ' of the six proposals ' + (moved.length === 1 ? 'lands' : 'land') + ' somewhere it should not. ' + CRITERION_TEXT, FIRST_MOVE_TEXT]);
+      sp.hidden = true;
+    }
+  });
+
+  // second pass
+  var toggleRow = document.getElementById('toggle-row');
+  var spBody = document.querySelector('#sp-table tbody');
+  var spCaption = document.getElementById('sp-caption');
+  var spNote = document.getElementById('sp-note');
+  var srStatus = document.getElementById('sr-status');
+  var built = false;
+  function buildSecond() {
+    if (built) { return; }
+    built = true;
+    var wrap = document.createElement('label'); wrap.className = 'opt';
+    var input = document.createElement('input'); input.type = 'checkbox'; input.className = 'opt-input'; input.id = 'phase-end';
+    input.addEventListener('change', renderSecond);
+    var span = document.createElement('span'); span.className = 'opt-box'; span.textContent = 'The cheap phase ends: every trial now takes a quarter or more and costs real budget.';
+    wrap.appendChild(input); wrap.appendChild(span); toggleRow.appendChild(wrap);
+    renderSecond();
+  }
+  function renderSecond() {
+    var ended = document.getElementById('phase-end').checked;
+    spBody.innerHTML = '';
+    var nExp = 0;
+    PROPS.forEach(function (p) {
+      var l = lane(p, KEYSET, ended ? {cycle: false} : null);
+      if (l === 'exp') { nExp += 1; }
+      var tr = document.createElement('tr');
+      tr.appendChild(cell(p.name));
+      tr.appendChild(cell(ended ? 'A quarter or more, real budget' : p.cycle));
+      tr.appendChild(cell(LANE_LABEL[l], 'lane-' + l));
+      spBody.appendChild(tr);
+    });
+    spCaption.textContent = ended ? 'Where the six proposals land once trials stop being cheap' : 'Where the six proposals land under the boundary you set';
+    if (ended) {
+      spNote.textContent = 'Nothing about the proposals changed except the cost of a trial. ' + (nExp === 0 ? 'None of the six' : Word(nExp)) + ' now qualify for experiment discipline. The boundary moved because cycle cost sets it, and neither enthusiasm nor habit does. A plan that keeps funding as if trials were cheap will run commitments as experiments.';
+    } else {
+      spNote.textContent = word(nExp).charAt(0).toUpperCase() + word(nExp).slice(1) + ' proposals qualify for experiment discipline while trials stay cheap. Switch the assumption on to see the boundary move.';
+    }
+    srStatus.textContent = nExp + ' proposals qualify for experiment discipline.';
+  }
+
+})();
+</script>
+</body>
+</html>

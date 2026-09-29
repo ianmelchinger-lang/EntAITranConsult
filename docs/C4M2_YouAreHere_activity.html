@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read this first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 24px;
+    color: var(--ink);
+  }
+
+  .scenario {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin: 0 0 28px;
+  }
+
+  .scenario p {
+    margin: 0 0 16px;
+  }
+
+  .figure {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .scenario p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prompt-lead {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 16px;
+  }
+
+  .option {
+    display: block;
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .option-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .option-box {
+    display: block;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 18px;
+    background: var(--white);
+  }
+
+  .option-lead {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .option-detail {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .option-input:checked + .option-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .option-input:focus-visible + .option-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  fieldset.locked .option {
+    cursor: default;
+  }
+
+  fieldset.locked .option-box {
+    opacity: 0.9;
+  }
+
+  .reveal-btn {
+    display: block;
+    margin: 22px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .reveal-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .reveal-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .reveal-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .reveal {
+    margin-top: 32px;
+    padding: 22px 24px;
+    background: var(--highlight-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .reveal[hidden] {
+    display: none;
+  }
+
+  .reveal:focus {
+    outline: none;
+  }
+
+  .reveal-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--accent-deep);
+    margin: 0 0 4px;
+  }
+
+  .reveal-chosen {
+    font-family: var(--font-sans);
+    font-style: italic;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p {
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read this first</h1>
+
+  <div class="scenario">
+    <p>A multinational manufacturer holds its quarterly funding review. Five AI lines are on the table, listed in the delivery plan by start date. The discretionary pool, the part of the budget not already committed, covers three of them, because most of the technology budget is already spoken for by keeping existing systems running.</p>
+    <p>Two lines have results. Visual inspection has run as a pilot at one plant and produced a measured result. Drafting supplier nonconformance write-ups has run for ninety days at three plants, and the time per write-up fell from 38 minutes to 22. Two lines have not started. The demand-forecasting model for all plants has been requested for two years, and its sponsor projects fewer days of inventory. The case-management system planned for next year has no users yet, and its planning notes assume the people who will use it are already comfortable working with AI.</p>
+    <p>The fifth line is the company-wide assistant, in its first year: 3,400 seats at $34 per seat per month, or <span id="run-cost" class="figure"></span> a year, with no stated return. The sponsor has stopped asking which of the five are worth having. All five are. The question is which three get money this quarter.</p>
+  </div>
+
+  <p class="prompt-lead">Before reading on, choose the rule that comes closest to your own first instinct.</p>
+
+  <fieldset id="reading-fieldset">
+    <legend>How should the review choose its three?</legend>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="a">
+      <span class="option-box">
+        <span class="option-lead">Fund the three with the strongest stated return.</span>
+        <span class="option-detail">Rank the five on the return each one states and fund the top three. A return is something the finance lead can defend.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="b">
+      <span class="option-box">
+        <span class="option-lead">Fund in the order the delivery plan already sets.</span>
+        <span class="option-detail">The plan reflects months of scheduling by people who know the constraints. Take the first three on its calendar.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="c">
+      <span class="option-box">
+        <span class="option-lead">Fund what has proof, and hold the rest until it earns some.</span>
+        <span class="option-detail">Two lines have measured results. Fund them, add the best-evidenced of the rest, and make the others wait for evidence.</span>
+      </span>
+    </label>
+
+  </fieldset>
+
+  <button type="button" class="reveal-btn" id="reveal-btn" disabled>See what this misses</button>
+
+  <div class="reveal" id="reveal" role="region" aria-label="What this reading misses" tabindex="-1" hidden>
+    <span class="reveal-tag">You read this as:</span>
+    <p class="reveal-chosen" id="reveal-chosen"></p>
+    <div class="reveal-body" id="reveal-body"></div>
+  </div>
+
+</div>
+<script>
+(function () {
+  var SEATS = 3400, PER_SEAT_MONTH = 34;
+  var RUN_COST = SEATS * PER_SEAT_MONTH * 12;
+  document.getElementById('run-cost').textContent = '$' + RUN_COST.toLocaleString('en-US');
+
+  var READINGS = {
+    "a": {
+        "lead": "Fund the three with the strongest stated return.",
+        "rebuttal": "Ranking on stated return treats each line as if it stood alone. The assistant states no return, so it drops out. Its return is soft because what it buys shows up later, in whether the people who use the case-management system accept it. Cutting the assistant removes that without a vote on it, because no line on the page records it. A ranking on stated return also carries whatever proof stands behind each figure: a measured result and a projection look identical in a column of numbers."
+    },
+    "b": {
+        "lead": "Fund in the order the delivery plan already sets.",
+        "rebuttal": "A calendar tells you when work is scheduled to begin. It says nothing about which line has earned money. Suppose the plan starts a measured pilot, the forecasting model, and the case-management system in the same quarter. A date order funds all three on the same terms, or holds all three on the same terms, and the pilot with a result waits beside lines that have none. It gives the review a schedule, not a reason for any line\u2019s place in it."
+    },
+    "c": {
+        "lead": "Fund what has proof, and hold the rest until it earns some.",
+        "rebuttal": "This is the most disciplined of the three readings, and it still cuts the assistant, because the assistant has no result to show. Nothing in the rule notices that the case-management system stands on it. The rule also leaves two questions open: where the money for the lines it holds back will come from, when most of the budget is already spoken for, and what would have to become true before a held line gets funded."
+    }
+};
+
+  var CLOSING = "All three readings judge each line by what it earns on its own, and the five lines are not independent. One line\u2019s soft return is another line\u2019s adoption, and every line beyond the first spends capacity that something earlier has to free. What the review lacks is the capability to place each initiative on stated grounds: the proof it already has, what it depends on, and what depends on it. Those grounds belong in the funding record before any line is judged.";
+
+  var radios = document.querySelectorAll('input[name="reading"]');
+  var revealBtn = document.getElementById('reveal-btn');
+  var revealPanel = document.getElementById('reveal');
+  var revealChosen = document.getElementById('reveal-chosen');
+  var revealBody = document.getElementById('reveal-body');
+  var fieldset = document.getElementById('reading-fieldset');
+
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function () {
+      revealBtn.disabled = false;
+    });
+  }
+
+  revealBtn.addEventListener('click', function () {
+    var chosen = null;
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { chosen = radios[i].value; }
+    }
+    if (!chosen) { return; }
+
+    for (var j = 0; j < radios.length; j++) {
+      radios[j].disabled = true;
+    }
+    fieldset.classList.add('locked');
+    revealBtn.disabled = true;
+
+    var data = READINGS[chosen];
+    revealChosen.textContent = '\u201C' + data.lead + '\u201D';
+
+    revealBody.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = data.rebuttal;
+    var p2 = document.createElement('p');
+    p2.textContent = CLOSING;
+    revealBody.appendChild(p1);
+    revealBody.appendChild(p2);
+
+    revealPanel.hidden = false;
+    revealPanel.focus();
+  });
+})();
+</script>
+</body>
+</html>
