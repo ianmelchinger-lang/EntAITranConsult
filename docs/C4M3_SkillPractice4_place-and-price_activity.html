@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Place it and price it</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item.is-ok { border-left: 4px solid var(--ok); }
+  .item.is-near { border-left: 4px solid var(--accent); }
+  .item.is-warn { border-left: 4px solid var(--warn); }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-verdict { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); }
+  .item-verdict[hidden] { display: none; }
+  .item-verdict b { color: var(--ink); }
+  .field { margin: 0 0 10px; font-family: var(--font-sans); font-size: 0.9rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+  select { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.95rem; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; border-color: var(--accent); }
+  .roster { margin: 0 0 22px; }
+  .roster h2 { font-size: 1rem; font-family: var(--font-sans); margin: 0 0 8px; }
+  .roster dl { margin: 0; padding: 0; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .roster dt { font-family: var(--font-sans); font-weight: 600; font-size: 0.92rem; color: var(--ink); padding: 10px 16px 0; }
+  .roster dd { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0; padding: 2px 16px 10px; border-bottom: 1px solid var(--line); }
+  .roster dd:last-child { border-bottom: none; }
+  .choices { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p b { color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .num { font-variant-numeric: tabular-nums; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Place it and price it</h1>
+
+  <p class="lead-line">Where a candidate sits is part of what the candidate is. Its deployment layer is the level of the enterprise where the agent lives, and its permission tier is the amount of build authority and control that placement demands. Together they set its cost and its speed, so two candidates of equal value can differ sharply in price. An opportunity framed without them has not been priced.</p>
+
+  <p class="context">An advisor holds three candidates. Each card says what the agent does, how far its actions reach, how easily its worst mistake is undone, and what data it uses. Assume all three would return the same value.</p>
+
+  <div class="instruction">
+    <p>Place each candidate in a layer, and name who builds it. Two questions settle a placement, and they are asked separately.</p>
+    <p><b>The data and the stakes set the lowest layer.</b> Personal assistance fits a draft that one person reads before anything happens. The governed layer, where business-based builders assemble workflows inside a platform whose controls are already built in, fits an agent that reads work systems and runs by itself. The production layer, for agentic flows on core governed data with full observability, is required by anything that runs on core governed data or takes consequential action beyond its owner&rsquo;s own work. Full observability means the organization can see what each flow reads, decides, and does. A candidate may sit above its lowest layer, at a higher price.</p>
+    <p><b>Reach and reversibility set who may build it.</b> Reach is how far the agent&rsquo;s actions extend. Reversibility is how easily someone can undo its mistakes. The owner may build alone when the agent&rsquo;s reach ends with the owner and any mistake is undone by ignoring it. Otherwise the owner needs a build specialist.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my placements</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="price-panel" tabindex="-1" hidden></div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change what the briefing agent reads</h2>
+    <p>Suppose the planner also connects the briefing agent to the ERP so that it can report open purchase orders. It still only reads, and it still posts only to her. Nothing here is checked.</p>
+    <button type="button" class="check-btn" id="sp-btn">Add the ERP connection</button>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var LAYERS = [
+    { value: '0', label: 'Personal assistance' },
+    { value: '1', label: 'Governed layer' },
+    { value: '2', label: 'Production layer' }
+  ];
+  var BUILDERS = [
+    { value: '0', label: 'The owner, alone' },
+    { value: '1', label: 'The owner, with a build specialist' }
+  ];
+
+  // The key is derived from these properties by the two rules stated in the instructions.
+  function layerFloor(p) {
+    if (p.coreData || p.changesOutside) { return 2; }
+    if (p.readsWorkSystems || p.runsAlone) { return 1; }
+    return 0;
+  }
+  function builderFloor(p) {
+    return (p.reachEndsWithOwner && p.undoByIgnoring) ? 0 : 1;
+  }
+
+  var CANDS = [
+    { name: 'Meeting summary assistant',
+      does: 'Turns the notes from a weekly planning meeting into a first draft of decisions and actions. The organizer edits the draft before anyone else sees it.',
+      reach: 'None beyond the draft. It touches no system.',
+      undo: 'Nothing to undo. The organizer reads the draft first.',
+      data: 'The meeting notes the organizer pastes in.',
+      p: { coreData: false, changesOutside: false, readsWorkSystems: false, runsAlone: false, reachEndsWithOwner: true, undoByIgnoring: true } },
+    { name: 'Morning briefing agent',
+      does: 'Each morning, before the planner\u2019s first meeting, reads her mail, her calendar, and two work systems she already uses, then posts the day\u2019s commitments to her alone. It runs on a schedule without asking her first.',
+      reach: 'It reads four systems and changes nothing in any of them. It posts only to its owner.',
+      undo: 'A wrong briefing is read by one person, who can ignore it.',
+      data: 'Her own mail and calendar, and two work systems she already has access to.',
+      p: { coreData: false, changesOutside: false, readsWorkSystems: true, runsAlone: true, reachEndsWithOwner: true, undoByIgnoring: true } },
+    { name: 'Purchase-order agent',
+      does: 'Watches spare-parts stock at all nine plants. When stock runs low, it places a purchase order with the usual supplier in the ERP, the company\u2019s system of record for finance and procurement. It runs unattended.',
+      reach: 'It reads the nine plants\u2019 manufacturing systems and writes purchase orders in the ERP, which reach suppliers outside the company.',
+      undo: 'Once a purchase order reaches a supplier, cancelling it takes a conversation and may carry a cost.',
+      data: 'The ERP, and nine plant manufacturing systems, each with its own conventions.',
+      p: { coreData: true, changesOutside: true, readsWorkSystems: true, runsAlone: true, reachEndsWithOwner: false, undoByIgnoring: false } }
+  ];
+  CANDS.forEach(function (c) { c.layerKey = layerFloor(c.p); c.builderKey = builderFloor(c.p); });
+
+  function price(layer, builder) {
+    if (layer === 0 && builder === 0) { return 'Buildable now by the person who owns the problem, inside controls that already exist.'; }
+    if (layer === 0 && builder === 1) { return 'Needs a build specialist for a job the owner could do alone.'; }
+    if (layer === 1 && builder === 0) { return 'Buildable by the person who owns the problem, inside a platform whose controls are already built in.'; }
+    if (layer === 1 && builder === 1) { return 'Needs a build specialist beside the owner, on a platform whose controls are already built in.'; }
+    if (layer === 2 && builder === 0) { return 'The owner could build it, but the production layer adds controls and cost that this case does not require.'; }
+    return 'Needs build specialists beside the owner and a production layer with full observability. It costs the most and moves the slowest of the placements here, because the failures that set such a program back show up in production, not in a demonstration.';
+  }
+
+  // status: 'fit', 'costly', or 'fail'
+  function judge(c, layer, builder) {
+    var lowLayer = layer < c.layerKey;
+    var lowBuilder = builder < c.builderKey;
+    if (lowLayer || lowBuilder) {
+      var parts = [];
+      if (lowLayer) { parts.push('layer'); }
+      if (lowBuilder) { parts.push('builder'); }
+      return { status: 'fail', parts: parts };
+    }
+    var over = [];
+    if (layer > c.layerKey) { over.push('layer'); }
+    if (builder > c.builderKey) { over.push('builder'); }
+    if (over.length) { return { status: 'costly', parts: over }; }
+    return { status: 'fit', parts: [] };
+  }
+
+  var CRITERION_TEXT = 'A placement fails in one of two ways. The layer can sit below what the candidate\u2019s data and stakes require, or the owner can be asked to build alone where reach or reversibility say otherwise.';
+  var FIRST_MOVE_TEXT = 'Take one candidate. Ask how far its actions reach, then how easily its worst mistake is undone. Read what data it touches. Those three answers settle the two questions separately.';
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+
+  function addSelect(parent, id, labelText, options) {
+    var field = document.createElement('div'); field.className = 'field';
+    var lab = document.createElement('label'); lab.setAttribute('for', id); lab.textContent = labelText;
+    var sel = document.createElement('select'); sel.id = id;
+    var ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Choose one'; sel.appendChild(ph);
+    options.forEach(function (o) { var op = document.createElement('option'); op.value = o.value; op.textContent = o.label; sel.appendChild(op); });
+    sel.addEventListener('change', function () { checkBtn.disabled = !allChosen(); });
+    field.appendChild(lab); field.appendChild(sel); parent.appendChild(field);
+  }
+  function allChosen() {
+    return CANDS.every(function (c, i) {
+      return document.getElementById('layer' + i).value !== '' && document.getElementById('builder' + i).value !== '';
+    });
+  }
+
+  CANDS.forEach(function (c, i) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    fs.id = 'cand' + i;
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = 'Candidate ' + (i + 1).toLocaleString('en-US') + '. ' + c.name;
+    fs.appendChild(legend);
+    var facts = document.createElement('div');
+    facts.className = 'item-facts';
+    [['What it does', c.does], ['Reach', c.reach], ['If it goes wrong', c.undo], ['Data', c.data]].forEach(function (pair) {
+      var row = document.createElement('div');
+      var b = document.createElement('b'); b.textContent = pair[0] + ': ';
+      row.appendChild(b); row.appendChild(document.createTextNode(pair[1]));
+      facts.appendChild(row);
+    });
+    fs.appendChild(facts);
+    addSelect(fs, 'layer' + i, 'Layer for candidate ' + (i + 1).toLocaleString('en-US'), LAYERS);
+    addSelect(fs, 'builder' + i, 'Builder for candidate ' + (i + 1).toLocaleString('en-US'), BUILDERS);
+    var verdict = document.createElement('p');
+    verdict.className = 'item-verdict';
+    verdict.id = 'verdict' + i;
+    verdict.hidden = true;
+    fs.appendChild(verdict);
+    itemsEl.appendChild(fs);
+  });
+
+  function choice(i) {
+    return { layer: parseInt(document.getElementById('layer' + i).value, 10), builder: parseInt(document.getElementById('builder' + i).value, 10) };
+  }
+
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var pricePanel = document.getElementById('price-panel');
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p'); p.className = 'fb-detail'; p.textContent = t; fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function setVerdict(i, j, ch) {
+    var el = document.getElementById('verdict' + i);
+    var box = document.getElementById('cand' + i);
+    box.classList.remove('is-ok', 'is-near', 'is-warn');
+    el.innerHTML = '';
+    var b = document.createElement('b');
+    var t;
+    if (j.status === 'fit') {
+      box.classList.add('is-ok');
+      b.textContent = 'Fits. ';
+      t = price(ch.layer, ch.builder);
+    } else if (j.status === 'costly') {
+      box.classList.add('is-near');
+      b.textContent = 'Holds, and costs more than it needs. ';
+      t = (j.parts.length === 2 ? 'Both the layer and the builder sit above what this case requires. ' : (j.parts[0] === 'layer' ? 'The layer sits above the lowest one this case requires. ' : 'A build specialist adds cost this case does not require. ')) + price(ch.layer, ch.builder);
+    } else {
+      box.classList.add('is-warn');
+      b.textContent = 'Falls short. ';
+      t = (j.parts.length === 2 ? 'Both the layer and the builder fall short of what this case requires.' : (j.parts[0] === 'layer' ? 'The layer sits below what this candidate\u2019s data and stakes require.' : 'The owner cannot build this alone: its reach or the reversibility of its mistakes rules that out.'));
+    }
+    el.appendChild(b); el.appendChild(document.createTextNode(t));
+    el.hidden = false;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var results = CANDS.map(function (c, i) { var ch = choice(i); var j = judge(c, ch.layer, ch.builder); setVerdict(i, j, ch); return j; });
+    var fails = results.filter(function (j) { return j.status === 'fail'; }).length;
+    var costly = results.filter(function (j) { return j.status === 'costly'; }).length;
+    pricePanel.hidden = true;
+    if (fails === 0 && costly === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. Each candidate sits in the lowest layer its data and stakes allow, with the builder its reach and reversibility permit.',
+        'The three would return the same value, and the prices still differ. That is why a candidate framed without its layer and builder has not been priced.'
+      ]);
+      pricePanel.innerHTML = '';
+      CANDS.forEach(function (c, i) {
+        var p = document.createElement('p');
+        var b = document.createElement('b'); b.textContent = c.name + '. ';
+        p.appendChild(b); p.appendChild(document.createTextNode(price(c.layerKey, c.builderKey)));
+        pricePanel.appendChild(p);
+      });
+      pricePanel.hidden = false;
+    } else if (fails === 0) {
+      showFeedback('fb-near', 'Close.', [
+        'Every placement holds, but at least one costs more than the case requires. The card marked in amber says which part, and the lowest fit is worth a second look.'
+      ]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: the briefing agent now reads the ERP. Only the data moves.
+  var BRIEF = CANDS[1];
+  var spBtn = document.getElementById('sp-btn');
+  var spPanel = document.getElementById('sp-panel');
+  spBtn.addEventListener('click', function () {
+    var moved = {};
+    for (var k in BRIEF.p) { moved[k] = BRIEF.p[k]; }
+    moved.coreData = true;
+    var newLayer = layerFloor(moved);
+    var newBuilder = builderFloor(moved);
+    var was = BRIEF.layerKey;
+    var mine = choice(1);
+    spPanel.innerHTML = '';
+    var p1 = document.createElement('p');
+    var b1 = document.createElement('b'); b1.textContent = 'Lowest layer: ';
+    p1.appendChild(b1);
+    p1.appendChild(document.createTextNode(LAYERS[was].label + ' before, ' + LAYERS[newLayer].label + ' now. '));
+    var b2 = document.createElement('b'); b2.textContent = 'Builder: ';
+    p1.appendChild(b2);
+    if (newBuilder === BRIEF.builderKey) {
+      p1.appendChild(document.createTextNode('unchanged. ' + (newBuilder === 0 ? 'The owner can still build alone.' : 'The owner still needs a build specialist.')));
+    } else {
+      p1.appendChild(document.createTextNode(BUILDERS[BRIEF.builderKey].label + ' before, ' + BUILDERS[newBuilder].label.toLowerCase() + ' now.'));
+    }
+    var p2 = document.createElement('p');
+    var PHRASE = ['personal assistance', 'the governed layer', 'the production layer'];
+    if (!isNaN(mine.layer) && mine.layer < newLayer) {
+      p2.textContent = 'You placed the briefing agent in ' + PHRASE[mine.layer] + '. With the ERP connected, that placement falls below the lowest layer its data requires.';
+    } else if (!isNaN(mine.layer)) {
+      p2.textContent = 'You placed the briefing agent in ' + PHRASE[mine.layer] + '. With the ERP connected, that placement still holds.';
+    }
+    var p3 = document.createElement('p');
+    p3.textContent = 'The agent\u2019s reach did not grow, and neither did the damage a wrong briefing can do. The data changed, and the data sets the layer. The price moved because of what the agent reads, not because the agent became more powerful. The builder answer stayed put because reach and reversibility stayed put. In practice the answer is usually a pairing of domain expertise and build expertise, so on the production layer she would likely want a specialist beside her.';
+    spPanel.appendChild(p1); spPanel.appendChild(p2); spPanel.appendChild(p3);
+    spPanel.hidden = false;
+    spPanel.focus();
+  });
+
+})();
+</script>
+</body>
+</html>

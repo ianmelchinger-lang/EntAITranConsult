@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the blank</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item.is-ok { border-left: 4px solid var(--ok); }
+  .item.is-near { border-left: 4px solid var(--accent); }
+  .item.is-warn { border-left: 4px solid var(--warn); }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-verdict { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); }
+  .item-verdict[hidden] { display: none; }
+  .item-verdict b { color: var(--ink); }
+  .field { margin: 0 0 10px; font-family: var(--font-sans); font-size: 0.9rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+  select { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.95rem; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; border-color: var(--accent); }
+  .roster { margin: 0 0 22px; }
+  .roster h2 { font-size: 1rem; font-family: var(--font-sans); margin: 0 0 8px; }
+  .roster dl { margin: 0; padding: 0; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .roster dt { font-family: var(--font-sans); font-weight: 600; font-size: 0.92rem; color: var(--ink); padding: 10px 16px 0; }
+  .roster dd { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0; padding: 2px 16px 10px; border-bottom: 1px solid var(--line); }
+  .roster dd:last-child { border-bottom: none; }
+  .choices { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p b { color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .num { font-variant-numeric: tabular-nums; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Find the blank</h1>
+
+  <p class="lead-line">An agent pursues a goal across several steps and decides what to do next at each one. Each decision takes effect as it is made, so each needs a person who can answer for it. Where the process never named that person, the agent inherits the gap and carries it into every action.</p>
+
+  <p class="context">A plant is considering an agent to run its shift handover. Its goal is to prepare the note for the incoming shift and act on what it finds. The roster below lists what each role answers for today. Under it are the five decisions the agent would make, in order.</p>
+
+  <div class="roster">
+    <h2 id="roster-h">The roster today</h2>
+    <dl id="roster" aria-labelledby="roster-h"></dl>
+  </div>
+
+  <div class="instruction">
+    <p>For each decision, choose who answers for it.</p>
+    <p>Use only the roster. A role answers for a decision only if a sentence in the roster covers it. If no sentence does, choose <b>No one is named</b>.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my owners</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: the agent drafts and a person acts</h2>
+    <p>Suppose the agent no longer acts on its own. It drafts the note and its recommendations, and a person reads them and acts. Nothing here is checked.</p>
+    <button type="button" class="check-btn" id="sp-btn">Show the drafting-only version</button>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var NONE = 'none';
+
+  var ROLES = [
+    { id: 'out', label: 'Plant supervisor, outgoing shift', scope: 'Signs the shift log and answers for every entry in it being accurate.' },
+    { id: 'in',  label: 'Plant supervisor, incoming shift', scope: 'Sets the order in which the new shift takes open jobs.' },
+    { id: 'mp',  label: 'Maintenance planner', scope: 'Owns the maintenance schedule and answers for any work order that is raised, moved, or deferred.' },
+    { id: 'pl',  label: 'Plant lead', scope: 'Owns the site\u2019s promises to customers and answers for any change to a promised delivery date.' }
+  ];
+
+  var DECISIONS = [
+    { text: 'Put the shift\u2019s open jobs in order for the incoming shift, most urgent first.',
+      effect: 'The new shift starts work in that order.',
+      owner: 'in',
+      why: 'The incoming supervisor sets the order in which the new shift takes open jobs. That sentence covers this decision.',
+      looks: 'The incoming plant supervisor reads the draft order and decides what to take first.' },
+    { text: 'Move a work order ahead of the schedule after a fault comes back.',
+      effect: 'The maintenance schedule changes.',
+      owner: 'mp',
+      why: 'The maintenance planner answers for any work order that is moved, and this decision moves one.',
+      looks: 'The maintenance planner reads the recommendation and decides whether to move the order.' },
+    { text: 'Move a customer\u2019s promised delivery date because a line will be down.',
+      effect: 'The customer receives a new date.',
+      owner: 'pl',
+      why: 'The plant lead answers for any change to a promised delivery date, and this decision makes one.',
+      looks: 'The plant lead reads the recommendation and decides whether to change the date.' },
+    { text: 'Leave a recurring alarm out of the note because it looks routine.',
+      effect: 'The incoming shift never sees the alarm.',
+      owner: null,
+      why: 'The outgoing supervisor answers for the log being accurate, and the log still holds the alarm. No sentence in the roster covers what the note leaves out, so no one is named.',
+      looks: 'No one. A reader sees what the note says, not what it leaves out.' },
+    { text: 'Tell the procurement contact that a supplier\u2019s delivery is late.',
+      effect: 'Procurement acts on what it hears, or does not.',
+      owner: null,
+      why: 'No sentence in the roster covers supplier deliveries or procurement. The plant lead\u2019s sentence is about promises to customers. No one is named.',
+      looks: 'No one. No role is named to act on a draft about a late supplier delivery.' }
+  ];
+
+  var CRITERION_TEXT = 'A role answers for a decision only when a sentence in the roster covers it. Seniority does not count. Neither does the chance that someone will probably end up dealing with it.';
+  var FIRST_MOVE_TEXT = 'Take one decision and read the four roster sentences against it. If one sentence covers the decision, that role owns it. If none does, no one is named.';
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+  function roleLabel(id) {
+    for (var i = 0; i < ROLES.length; i++) { if (ROLES[i].id === id) { return ROLES[i].label; } }
+    return 'No one is named';
+  }
+  function keyFor(d) { return d.owner ? d.owner : NONE; }
+
+  // Roster
+  var rosterEl = document.getElementById('roster');
+  ROLES.forEach(function (r) {
+    var dt = document.createElement('dt'); dt.textContent = r.label;
+    var dd = document.createElement('dd'); dd.textContent = r.scope;
+    rosterEl.appendChild(dt); rosterEl.appendChild(dd);
+  });
+
+  // Decisions
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  DECISIONS.forEach(function (d, i) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = 'Decision ' + (i + 1) + '. ' + d.text;
+    fs.appendChild(legend);
+    var eff = document.createElement('p');
+    eff.className = 'item-effect';
+    eff.textContent = 'Takes effect: ' + d.effect;
+    fs.appendChild(eff);
+    var field = document.createElement('div');
+    field.className = 'field';
+    var lab = document.createElement('label');
+    lab.setAttribute('for', 'own' + i);
+    lab.textContent = 'Who answers for decision ' + (i + 1) + '?';
+    var sel = document.createElement('select');
+    sel.id = 'own' + i;
+    var ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Choose one'; sel.appendChild(ph);
+    ROLES.forEach(function (r) {
+      var o = document.createElement('option'); o.value = r.id; o.textContent = r.label; sel.appendChild(o);
+    });
+    var none = document.createElement('option'); none.value = NONE; none.textContent = 'No one is named'; sel.appendChild(none);
+    sel.addEventListener('change', function () {
+      checkBtn.disabled = answers().indexOf('') !== -1;
+    });
+    field.appendChild(lab); field.appendChild(sel);
+    fs.appendChild(field);
+    itemsEl.appendChild(fs);
+  });
+
+  function answers() {
+    return DECISIONS.map(function (d, i) { return document.getElementById('own' + i).value; });
+  }
+
+  function gradeOwners(ans) {
+    var diff = [];
+    DECISIONS.forEach(function (d, i) { if (ans[i] !== keyFor(d)) { diff.push(i); } });
+    return diff;
+  }
+
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeOwners(answers());
+    var owned = DECISIONS.filter(function (d) { return !!d.owner; }).length;
+    var open = DECISIONS.length - owned;
+    if (diff.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. ' + Word(owned) + ' of the ' + word(DECISIONS.length) + ' decisions have an owner in the roster, and ' + word(open) + ' do not: what the note leaves out, and who outside the shift hears about a late delivery.',
+        'The agent will make both of those decisions, they will take effect, and no one is in place to answer for them. Those are ownership gaps, and closing them comes before adding autonomy.'
+      ]);
+    } else if (diff.length === 1) {
+      var d = DECISIONS[diff[0]];
+      showFeedback('fb-near', 'Close.', [
+        'Look again at decision ' + (diff[0] + 1) + ': \u201C' + d.text + '\u201D',
+        d.why
+      ]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: the agent drafts, a person acts.
+  var spBtn = document.getElementById('sp-btn');
+  var spPanel = document.getElementById('sp-panel');
+  spBtn.addEventListener('click', function () {
+    var owned = DECISIONS.filter(function (d) { return !!d.owner; }).length;
+    var unowned = DECISIONS.length - owned;
+    var autonomous = DECISIONS.length;
+    var drafting = unowned;
+
+    spPanel.innerHTML = '';
+    var p1 = document.createElement('p');
+    var b1 = document.createElement('b');
+    b1.textContent = 'Decisions that take effect before a person who answers for them has looked: ';
+    p1.appendChild(b1);
+    p1.appendChild(document.createTextNode('acting on its own, ' + autonomous.toLocaleString('en-US') + '. Drafting only, ' + drafting.toLocaleString('en-US') + '.'));
+    spPanel.appendChild(p1);
+
+    var wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    var tbl = document.createElement('table');
+    tbl.className = 'scores';
+    var cap = document.createElement('caption');
+    cap.textContent = 'Who looks first, when the agent only drafts';
+    tbl.appendChild(cap);
+    var thead = document.createElement('thead');
+    var hr = document.createElement('tr');
+    ['Decision', 'Who looks first'].forEach(function (h) {
+      var th = document.createElement('th'); th.scope = 'col'; th.textContent = h; hr.appendChild(th);
+    });
+    thead.appendChild(hr); tbl.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    DECISIONS.forEach(function (d, i) {
+      var tr = document.createElement('tr');
+      if (!d.owner) { tr.className = 'moved'; }
+      var td1 = document.createElement('td'); td1.textContent = (i + 1) + '. ' + d.text;
+      var td2 = document.createElement('td'); td2.textContent = d.looks;
+      tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody); wrap.appendChild(tbl); spPanel.appendChild(wrap);
+
+    var p2 = document.createElement('p');
+    p2.textContent = 'Drafting only sends ' + word(owned) + ' decisions through a person who answers for them. The other ' + word(unowned) + ' stay open, because the roster never named anyone for them. Autonomy did not create those gaps. It made them take effect before anyone could catch them, and it carries them into every action that follows.';
+    spPanel.appendChild(p2);
+    spPanel.hidden = false;
+    spPanel.focus();
+  });
+
+})();
+</script>
+</body>
+</html>

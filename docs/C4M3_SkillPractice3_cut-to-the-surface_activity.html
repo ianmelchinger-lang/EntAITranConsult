@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cut to the surface</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item.is-ok { border-left: 4px solid var(--ok); }
+  .item.is-near { border-left: 4px solid var(--accent); }
+  .item.is-warn { border-left: 4px solid var(--warn); }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-verdict { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); }
+  .item-verdict[hidden] { display: none; }
+  .item-verdict b { color: var(--ink); }
+  .field { margin: 0 0 10px; font-family: var(--font-sans); font-size: 0.9rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+  select { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.95rem; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; border-color: var(--accent); }
+  .roster { margin: 0 0 22px; }
+  .roster h2 { font-size: 1rem; font-family: var(--font-sans); margin: 0 0 8px; }
+  .roster dl { margin: 0; padding: 0; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .roster dt { font-family: var(--font-sans); font-weight: 600; font-size: 0.92rem; color: var(--ink); padding: 10px 16px 0; }
+  .roster dd { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0; padding: 2px 16px 10px; border-bottom: 1px solid var(--line); }
+  .roster dd:last-child { border-bottom: none; }
+  .choices { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p b { color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .num { font-variant-numeric: tabular-nums; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Cut to the surface</h1>
+
+  <p class="lead-line">The agentic surface is the set of steps inside a workflow that need interpretation or judgment. It is always smaller than the process around it, and the opportunity&rsquo;s size, risk, and build path follow from it. The cut runs in a fixed order: remove what should not exist, leave rule-following work on ordinary automation, place agents only at the steps that need judgment, and keep a person alongside wherever a recommendation turns into an action.</p>
+
+  <p class="context">A plant quality team handles supplier nonconformance, meaning a delivery that fails its specification, in eleven steps from a rejected lot to a closed file. Each card says who does the step, what depends on it, and whether it decides by one rule every time or by reading and weighing.</p>
+
+  <div class="instruction">
+    <p>Give each step one label.</p>
+    <p><b>Remove</b> means the step should not exist. <b>Ordinary automation</b> means one rule, run reliably. <b>Agent</b> means the step needs interpretation. <b>Agent with a person alongside</b> means the agent&rsquo;s result turns into an action someone must answer for.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my cut</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="why-panel" tabindex="-1" hidden></div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: draw the agent boundary</h2>
+    <p>Suppose the plant now asks how many agents to build for the cognitive work. Choose a design and read what it puts under one agent&rsquo;s control. Nothing here is checked.</p>
+    <fieldset style="border:none;margin:0;padding:0;min-width:0;">
+      <legend class="sr-only">How to draw the agent boundary</legend>
+      <div class="choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var LABELS = {
+    remove: 'Remove',
+    auto: 'Ordinary automation',
+    agent: 'Agent',
+    person: 'Agent with a person alongside'
+  };
+  var ORDER = ['remove', 'auto', 'agent', 'person'];
+
+  // Fixtures from the case: write-ups per year at three plants, and the share carrying a clause or commitment.
+  var PLANT_WRITEUPS = [3800, 3200, 2600];
+  var CLAUSE_SHARE_PERCENT = 14;
+
+  var STEPS = [
+    { text: 'Pull the lot, part, and supplier details into the write-up from the plant\u2019s manufacturing system and the ERP, the company\u2019s system of record for finance and procurement.',
+      who: 'Quality engineer', dep: 'Every later step uses these fields.', decides: 'One rule every time: field to field.',
+      key: 'auto', why: 'Ordinary automation. One rule, field to field.' },
+    { text: 'Check the inspector\u2019s defect code against the plant\u2019s code list.',
+      who: 'Quality engineer', dep: 'The write-up cannot be filed with an invalid code.', decides: 'One rule every time.',
+      key: 'auto', why: 'Ordinary automation. One rule against a list.' },
+    { text: 'Route the write-up to the quality engineer for that plant and product line.',
+      who: 'Plant quality office', dep: 'The right engineer sees the case.', decides: 'One rule every time: a routing table.',
+      key: 'auto', why: 'Ordinary automation. A routing table settles it.' },
+    { text: 'Print the write-up and put a paper copy in the plant office file.',
+      who: 'Plant quality office', dep: 'Nothing. No one reads the paper copy, and the quality system already holds the record.', decides: 'One rule every time: always print.',
+      key: 'remove', why: 'Remove. Nothing depends on it, so it should not exist. Automating it would only make the waste faster.' },
+    { text: 'Read the supplier agreement and any customer-specific clauses, written as free text in the quality system, and list the commitments that apply to this lot.',
+      who: 'Quality engineer', dep: 'The request to the supplier, and the judgment of its reply, both rest on this list.', decides: 'By reading and weighing.',
+      key: 'agent', why: 'Agent. It interprets free text, which no rule can do, so this is a genuine agent step. Its result is a list, not an action, and a person sits in front of anything that leaves the building at step 7.' },
+    { text: 'Forward the write-up to the site quality mailbox \u201Cfor information.\u201D',
+      who: 'Quality engineer', dep: 'Nothing. No one acts on it, and the same record is open in the quality system.', decides: 'One rule every time: always forward.',
+      key: 'remove', why: 'Remove. Nothing depends on it. It is a handoff that should not exist.' },
+    { text: 'Decide what corrective action to request from the supplier. Weigh the commitments against the supplier\u2019s history, which the plants keep in two sources with different field conventions.',
+      who: 'Quality engineer', dep: 'The supplier receives the request.', decides: 'By reading and weighing.',
+      key: 'person', why: 'Agent with a person alongside. It weighs commitments against a history that two sources may report differently, which is judgment. Its result becomes a request to a supplier, so a person belongs alongside the agent.' },
+    { text: 'Send the approved request to the supplier and log the date.',
+      who: 'Quality engineer', dep: 'The supplier\u2019s reply clock starts.', decides: 'One rule every time, once a person has approved the request.',
+      key: 'auto', why: 'Ordinary automation. Once a person has approved the request, sending it and logging the date is one fixed act.' },
+    { text: 'Remind the engineer when the supplier\u2019s reply is due.',
+      who: 'Plant quality office', dep: 'Late replies get noticed.', decides: 'One rule every time: the due date in the agreement.',
+      key: 'auto', why: 'Ordinary automation. The due date sits in the agreement, so one rule covers it.' },
+    { text: 'Judge whether the supplier\u2019s reply meets the commitments, and close the file.',
+      who: 'Quality engineer', dep: 'The quality file closes, and the supplier\u2019s standing rests on the outcome.', decides: 'By reading and weighing.',
+      key: 'person', why: 'Agent with a person alongside. It judges a reply against the commitments, and its result closes the file, an action someone must answer for.' },
+    { text: 'Update the supplier\u2019s quality score in the ERP.',
+      who: 'Quality engineer', dep: 'Sourcing decisions read the score.', decides: 'One rule every time: a fixed formula.',
+      key: 'auto', why: 'Ordinary automation. A fixed formula.' }
+  ];
+
+  var CRITERION_TEXT = 'The cut runs in a fixed order. First ask what depends on each step: a step nothing depends on should go. Then ask whether the step decides by one rule or by reading and weighing: a rule stays on ordinary automation. Only then place an agent on what is left, and ask whether its result turns into an action someone must answer for.';
+  var FIRST_MOVE_TEXT = 'Start with the \u201Cwhat depends on it\u201D line on each card. Mark every step where the answer is nothing. Then look only at the steps that remain.';
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+  function count(key) { return STEPS.filter(function (s) { return s.key === key; }).length; }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+
+  STEPS.forEach(function (s, i) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = 'Step ' + (i + 1) + '. ' + s.text;
+    fs.appendChild(legend);
+    var facts = document.createElement('div');
+    facts.className = 'item-facts';
+    [['Who does it', s.who], ['What depends on it', s.dep], ['It decides', s.decides]].forEach(function (pair) {
+      var row = document.createElement('div');
+      var b = document.createElement('b'); b.textContent = pair[0] + ': ';
+      row.appendChild(b); row.appendChild(document.createTextNode(pair[1]));
+      facts.appendChild(row);
+    });
+    fs.appendChild(facts);
+    var field = document.createElement('div');
+    field.className = 'field';
+    var lab = document.createElement('label');
+    lab.setAttribute('for', 'lab' + i);
+    lab.textContent = 'Label for step ' + (i + 1);
+    var sel = document.createElement('select');
+    sel.id = 'lab' + i;
+    var ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Choose one'; sel.appendChild(ph);
+    ORDER.forEach(function (k) {
+      var o = document.createElement('option'); o.value = k; o.textContent = LABELS[k]; sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () { checkBtn.disabled = answers().indexOf('') !== -1; });
+    field.appendChild(lab); field.appendChild(sel);
+    fs.appendChild(field);
+    itemsEl.appendChild(fs);
+  });
+
+  function answers() { return STEPS.map(function (s, i) { return document.getElementById('lab' + i).value; }); }
+
+  function gradeCut(ans) {
+    var diff = [];
+    STEPS.forEach(function (s, i) { if (ans[i] !== s.key) { diff.push(i); } });
+    return diff;
+  }
+
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var whyPanel = document.getElementById('why-panel');
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p'); p.className = 'fb-detail'; p.textContent = t; fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function surfaceSteps() {
+    var out = [];
+    STEPS.forEach(function (s, i) { if (s.key === 'agent' || s.key === 'person') { out.push(i + 1); } });
+    return out;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeCut(answers());
+    whyPanel.hidden = true;
+    if (diff.length === 0) {
+      var surf = surfaceSteps();
+      var total = PLANT_WRITEUPS.reduce(function (a, b) { return a + b; }, 0);
+      var withClause = total * CLAUSE_SHARE_PERCENT / 100;
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. ' + Word(STEPS.length) + ' steps come down to ' + word(surf.length) + ' that need an agent: steps ' + surf.slice(0, -1).join(', ') + ', and ' + surf[surf.length - 1] + '. ' + Word(count('remove')) + ' steps go, ' + word(count('auto')) + ' stay on ordinary automation, and the ' + word(count('person')) + ' whose results become an action carry a person alongside.',
+        'The surface is smaller in volume too. Across the three plants, ' + total.toLocaleString('en-US') + ' write-ups a year, and only ' + CLAUSE_SHARE_PERCENT + '% of them, ' + withClause.toLocaleString('en-US') + ', carry a corrective-action commitment or customer-specific clause for step 5 to find.'
+      ]);
+      whyPanel.innerHTML = '';
+      STEPS.forEach(function (s, i) {
+        var p = document.createElement('p');
+        var b = document.createElement('b'); b.textContent = 'Step ' + (i + 1) + '. ';
+        p.appendChild(b); p.appendChild(document.createTextNode(s.why));
+        whyPanel.appendChild(p);
+      });
+      whyPanel.hidden = false;
+    } else if (diff.length === 1) {
+      var s = STEPS[diff[0]];
+      showFeedback('fb-near', 'Close.', [
+        'Look again at step ' + (diff[0] + 1) + ': \u201C' + s.text + '\u201D',
+        s.why
+      ]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: one agent around what remains, or one narrow agent per cognitive job.
+  var remaining = STEPS.length - count('remove');
+  var jobs = count('agent') + count('person');
+  var DESIGNS = [
+    { value: 'whole', label: 'One agent around everything that remains', controls: remaining, agents: 1,
+      text: 'One agent around the ' + word(remaining) + ' steps that remain controls all ' + word(remaining) + ', including ' + word(count('auto')) + ' that ordinary automation runs reliably. A failure anywhere puts every one of them in question, and the agent can only be tested, changed, or rolled back as a whole.' },
+    { value: 'narrow', label: 'One narrow agent for each cognitive job', controls: 1, agents: jobs,
+      text: 'Each agent holds one step. It can be tested, versioned, and rolled back on its own, and a failure in the clause reader cannot touch how replies are judged. A narrow agent\u2019s wrong result still reaches the steps that read it, which is why steps 7 and 10 keep a person alongside.' }
+  ];
+  var spChoices = document.getElementById('sp-choices');
+  var spPanel = document.getElementById('sp-panel');
+  DESIGNS.forEach(function (d) {
+    var wrap = document.createElement('label'); wrap.className = 'choice';
+    var input = document.createElement('input'); input.type = 'radio'; input.className = 'choice-input'; input.name = 'sp-design'; input.value = d.value;
+    var box = document.createElement('span'); box.className = 'choice-box'; box.textContent = d.label;
+    wrap.appendChild(input); wrap.appendChild(box);
+    input.addEventListener('change', function () {
+      spPanel.innerHTML = '';
+      var p1 = document.createElement('p');
+      var b1 = document.createElement('b'); b1.textContent = 'Steps under one agent\u2019s control: ';
+      p1.appendChild(b1); p1.appendChild(document.createTextNode(d.controls.toLocaleString('en-US') + '. '));
+      var b2 = document.createElement('b'); b2.textContent = 'Agents to test, version, and release: ';
+      p1.appendChild(b2); p1.appendChild(document.createTextNode(d.agents.toLocaleString('en-US') + '.'));
+      var p2 = document.createElement('p'); p2.textContent = d.text;
+      var p3 = document.createElement('p'); p3.textContent = 'Blast radius is the amount of work one failure can disturb. The number of steps a single agent controls is the part of it that the design sets.';
+      spPanel.appendChild(p1); spPanel.appendChild(p2); spPanel.appendChild(p3);
+      spPanel.hidden = false;
+    });
+    spChoices.appendChild(wrap);
+  });
+
+})();
+</script>
+</body>
+</html>

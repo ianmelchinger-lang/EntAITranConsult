@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Match the step</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item.is-ok { border-left: 4px solid var(--ok); }
+  .item.is-near { border-left: 4px solid var(--accent); }
+  .item.is-warn { border-left: 4px solid var(--warn); }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-verdict { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); }
+  .item-verdict[hidden] { display: none; }
+  .item-verdict b { color: var(--ink); }
+  .field { margin: 0 0 10px; font-family: var(--font-sans); font-size: 0.9rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+  select { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.95rem; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; border-color: var(--accent); }
+  .roster { margin: 0 0 22px; }
+  .roster h2 { font-size: 1rem; font-family: var(--font-sans); margin: 0 0 8px; }
+  .roster dl { margin: 0; padding: 0; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .roster dt { font-family: var(--font-sans); font-weight: 600; font-size: 0.92rem; color: var(--ink); padding: 10px 16px 0; }
+  .roster dd { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0; padding: 2px 16px 10px; border-bottom: 1px solid var(--line); }
+  .roster dd:last-child { border-bottom: none; }
+  .choices { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p b { color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .num { font-variant-numeric: tabular-nums; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Match the step</h1>
+
+  <p class="lead-line">A step&rsquo;s own nature picks the intervention it needs, however capable the newest technology is. Two properties do most of the sorting. How often the step recurs decides whether a build ever pays back. How much judgment the step carries decides whether someone can catch an error before it spreads.</p>
+
+  <p class="context">An advisor holds seven steps taken from across a manufacturer. Each card says what the step is, how often it happens, and what a wrong result looks like when someone catches it.</p>
+
+  <div class="instruction">
+    <p>Choose the best fit for each step.</p>
+    <p><b>Ordinary automation</b> runs the same rules every time. An <b>analytical model</b> estimates something from history. <b>Generation</b> produces a draft for a person to review. An <b>agent</b> carries a goal across several steps and decides between them. <b>Leave with people</b> means no build would repay itself here.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my matches</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="why-panel" tabindex="-1" hidden></div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change how often the agent step happens</h2>
+    <p>The supplier-history step is the only agent on the list. Choose how often it comes up, and the fit is recomputed from the same two properties. Nothing here is checked.</p>
+    <fieldset class="choices-set" style="border:none;margin:0;padding:0;min-width:0;">
+      <legend class="sr-only">How often the supplier-history step happens</legend>
+      <div class="choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var LABELS = {
+    automation: 'Ordinary automation',
+    model: 'Analytical model',
+    generation: 'Generation',
+    agent: 'Agent',
+    people: 'Leave with people'
+  };
+  var ORDER = ['automation', 'model', 'generation', 'agent', 'people'];
+
+  // nature: what the step is. rec: how often it happens ('constant' repays a build; 'rare' may never).
+  function fit(nature, rec) {
+    if (rec === 'rare') { return 'people'; }
+    return { rules: 'automation', estimate: 'model', draft: 'generation', multistep: 'agent' }[nature];
+  }
+
+  var CARDS = [
+    { text: 'Send each warranty claim to the right regional queue. A published table maps claim type and country to a queue.',
+      often: 'About 186,000 claims a year.',
+      wrong: 'The claim lands in the wrong queue. Anyone can check it against the table.',
+      nature: 'rules', rec: 'constant',
+      why: 'One published rule, applied about 186,000 times a year. A reliable build repays itself quickly, and anyone can check an error against the table.' },
+    { text: 'Estimate next week\u2019s demand for each spare part from three years of order history.',
+      often: 'Every week, for every part.',
+      wrong: 'The estimate looks reasonable when it is made. Only the orders that arrive weeks later show whether it was right.',
+      nature: 'estimate', rec: 'constant',
+      why: 'Its core difficulty is estimating from history, which is the work a model does. It recurs every week, so the build repays itself.' },
+    { text: 'Reconcile the company\u2019s fixed-asset register with the finance ledger at year end. A fixed rule defines a match.',
+      often: 'Once a year.',
+      wrong: 'A mismatch shows against the ledger. Anyone can check it.',
+      nature: 'rules', rec: 'rare',
+      why: 'A fixed rule defines the match, so the step suits automation by its nature. It happens once a year, and a build that runs once a year may never repay itself.' },
+    { text: 'Write the first draft of a supplier-nonconformance write-up, the record of a delivery that failed its specification, from the inspection findings.',
+      often: 'About 9,600 write-ups a year across three plants.',
+      wrong: 'A draft misstates a finding. The reviewer checks it against the inspection record before it is filed.',
+      nature: 'draft', rec: 'constant',
+      why: 'The product is a draft, made about 9,600 times a year, and a reviewer catches a bad one against the record before it matters.' },
+    { text: 'When two plants\u2019 supplier histories disagree, read both, decide which to rely on, and draft the question for the plant that holds the other view.',
+      often: 'Several times a week, whenever a supplier issue crosses two plants.',
+      wrong: 'The answer reads as reasonable, and later steps build on it. A wrong choice of source shows only when a decision resting on it fails.',
+      nature: 'multistep', rec: 'constant',
+      why: 'It runs across several steps with judgment between them, over sources that disagree. A wrong choice looks reasonable while later steps build on it, so the step earns the governance an agent costs.' },
+    { text: 'Match each delivery at the receiving dock to its purchase order, and flag any that do not match.',
+      often: 'Every delivery, every working day, at all nine plants.',
+      wrong: 'A mismatch is flagged or missed. The purchase order and the delivery note settle which.',
+      nature: 'rules', rec: 'constant',
+      why: 'One rule, every delivery, every day. The documents settle whether the rule was applied correctly, so ordinary automation is enough.' },
+    { text: 'Estimate the working life of a new production line from the maker\u2019s test data.',
+      often: 'Once every few years, when a line is bought.',
+      wrong: 'The estimate looks reasonable, and decisions rest on it for years.',
+      nature: 'estimate', rec: 'rare',
+      why: 'It estimates from data, which sounds like model work. But a model built for one estimate every few years may never repay its build, and a wrong estimate can look reasonable for a long time.' }
+  ];
+  CARDS.forEach(function (c) { c.key = fit(c.nature, c.rec); });
+
+  var CRITERION_TEXT = 'Two properties do most of the sorting. Recurrence tells you whether a build ever pays back. Judgment tells you whether someone can catch an error before it spreads. A step that is rare suits none of the builds, however tedious it feels.';
+  var FIRST_MOVE_TEXT = 'Pick one step. Ask how often it happens, then ask what a wrong result looks like when someone finds it. Name the intervention those two answers point to.';
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+
+  CARDS.forEach(function (c, i) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = 'Step ' + (i + 1) + '. ' + c.text;
+    fs.appendChild(legend);
+    var facts = document.createElement('div');
+    facts.className = 'item-facts';
+    [['How often', c.often], ['If it goes wrong', c.wrong]].forEach(function (pair) {
+      var row = document.createElement('div');
+      var b = document.createElement('b'); b.textContent = pair[0] + ': ';
+      row.appendChild(b); row.appendChild(document.createTextNode(pair[1]));
+      facts.appendChild(row);
+    });
+    fs.appendChild(facts);
+    var field = document.createElement('div');
+    field.className = 'field';
+    var lab = document.createElement('label');
+    lab.setAttribute('for', 'fit' + i);
+    lab.textContent = 'Best fit for step ' + (i + 1);
+    var sel = document.createElement('select');
+    sel.id = 'fit' + i;
+    var ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Choose one'; sel.appendChild(ph);
+    ORDER.forEach(function (k) {
+      var o = document.createElement('option'); o.value = k; o.textContent = LABELS[k]; sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () { checkBtn.disabled = answers().indexOf('') !== -1; });
+    field.appendChild(lab); field.appendChild(sel);
+    fs.appendChild(field);
+    itemsEl.appendChild(fs);
+  });
+
+  function answers() { return CARDS.map(function (c, i) { return document.getElementById('fit' + i).value; }); }
+
+  function gradeMatches(ans) {
+    var diff = [];
+    CARDS.forEach(function (c, i) { if (ans[i] !== c.key) { diff.push(i); } });
+    return diff;
+  }
+
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var whyPanel = document.getElementById('why-panel');
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p'); p.className = 'fb-detail'; p.textContent = t; fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeMatches(answers());
+    whyPanel.hidden = true;
+    var notAgent = CARDS.filter(function (c) { return c.key !== 'agent'; }).length;
+    if (diff.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. ' + Word(notAgent) + ' of the ' + word(CARDS.length) + ' steps do not need an agent, and each is matched by what the step itself is. The one agent runs across several steps with judgment between them, over sources that disagree, and its errors can look reasonable while later steps build on them.'
+      ]);
+      whyPanel.innerHTML = '';
+      CARDS.forEach(function (c, i) {
+        var p = document.createElement('p');
+        var b = document.createElement('b'); b.textContent = 'Step ' + (i + 1) + ', ' + LABELS[c.key].toLowerCase() + '. ';
+        p.appendChild(b); p.appendChild(document.createTextNode(c.why));
+        whyPanel.appendChild(p);
+      });
+      whyPanel.hidden = false;
+    } else if (diff.length === 1) {
+      var c = CARDS[diff[0]];
+      showFeedback('fb-near', 'Close.', [
+        'Look again at step ' + (diff[0] + 1) + ': \u201C' + c.text + '\u201D',
+        c.why
+      ]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: the agent step's recurrence moves; the fit is recomputed by the same function.
+  var AGENT_CARD = CARDS.filter(function (c) { return c.nature === 'multistep'; })[0];
+  var SP_OPTIONS = [
+    { value: 'constant', label: 'Several times a week' },
+    { value: 'rare', label: 'About twice a year' }
+  ];
+  var spChoices = document.getElementById('sp-choices');
+  var spPanel = document.getElementById('sp-panel');
+  SP_OPTIONS.forEach(function (o) {
+    var wrap = document.createElement('label'); wrap.className = 'choice';
+    var input = document.createElement('input'); input.type = 'radio'; input.className = 'choice-input'; input.name = 'sp-rec'; input.value = o.value;
+    var box = document.createElement('span'); box.className = 'choice-box'; box.textContent = o.label;
+    wrap.appendChild(input); wrap.appendChild(box);
+    input.addEventListener('change', function () {
+      var result = fit(AGENT_CARD.nature, o.value);
+      spPanel.innerHTML = '';
+      var p1 = document.createElement('p');
+      var b = document.createElement('b'); b.textContent = 'Fit: ' + LABELS[result] + '. ';
+      p1.appendChild(b);
+      if (result === 'agent') {
+        p1.appendChild(document.createTextNode('The step runs across several steps with judgment between them, and it happens often enough to repay what an agent costs to build, connect, and govern.'));
+      } else {
+        p1.appendChild(document.createTextNode('The step has not changed, and neither has the judgment in it. Only the recurrence moved. An agent has to be built, connected, governed, and watched, and a step that happens twice a year may never repay that.'));
+      }
+      spPanel.appendChild(p1);
+      spPanel.hidden = false;
+    });
+    spChoices.appendChild(wrap);
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read the map first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item.is-ok { border-left: 4px solid var(--ok); }
+  .item.is-near { border-left: 4px solid var(--accent); }
+  .item.is-warn { border-left: 4px solid var(--warn); }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-verdict { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); }
+  .item-verdict[hidden] { display: none; }
+  .item-verdict b { color: var(--ink); }
+  .field { margin: 0 0 10px; font-family: var(--font-sans); font-size: 0.9rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+  select { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.95rem; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; border-color: var(--accent); }
+  .roster { margin: 0 0 22px; }
+  .roster h2 { font-size: 1rem; font-family: var(--font-sans); margin: 0 0 8px; }
+  .roster dl { margin: 0; padding: 0; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .roster dt { font-family: var(--font-sans); font-weight: 600; font-size: 0.92rem; color: var(--ink); padding: 10px 16px 0; }
+  .roster dd { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0; padding: 2px 16px 10px; border-bottom: 1px solid var(--line); }
+  .roster dd:last-child { border-bottom: none; }
+  .choices { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p b { color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .num { font-variant-numeric: tabular-nums; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+  ol.map { list-style: none; margin: 0 0 14px; padding: 0; }
+  .map-step { display: flex; gap: 12px; align-items: flex-start; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; margin: 0 0 8px; }
+  .map-n { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 0.82rem; color: var(--ink-soft); }
+  .map-body { flex: 1 1 auto; min-width: 0; }
+  .map-text { font-size: 0.98rem; color: var(--ink); margin: 0 0 6px; }
+  .map-facts { display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); }
+  .map-facts b { color: var(--ink); font-weight: 600; }
+  .map-note { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); background: var(--highlight-bg); border-left: 4px solid var(--accent); border-radius: 4px; padding: 10px 14px; margin: 0 0 16px; }
+  .ask { margin: 0 0 22px; padding: 0; border: none; min-width: 0; }
+  .ask legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .choices.stack { flex-direction: column; margin: 0; }
+  .choices.stack .choice-box { display: block; }
+  .choice-sub { display: block; font-weight: 400; font-size: 0.84rem; color: var(--steel); margin-top: 2px; }
+  .choice-input:checked + .choice-box .choice-sub { color: var(--ink-soft); }
+  .ghost-btn { font-family: var(--font-sans); font-weight: 600; font-size: 0.9rem; padding: 10px 18px; background: var(--white); color: var(--ink); border: 1px solid var(--ink); border-radius: 4px; cursor: pointer; margin: 0 0 16px; }
+  .ghost-btn:hover { background: var(--highlight-bg); border-color: var(--accent-deep); }
+  .ghost-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  @media (max-width: 480px) {
+    .map-step { padding: 10px 10px; gap: 8px; }
+  }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read the map first</h1>
+
+  <p class="lead-line">Before an advisor chooses any intervention, the workflow has to be drawn from trigger to outcome, with delay, rework, and handoffs marked. The map shows which kind of friction the work has, and each kind calls for a different first move. A choice made before the map fits the work to whatever the chosen tool does well.</p>
+
+  <p class="context">A plant flags a short shipment. The case passes through four roles and ends when the supply plan is updated. The times below come from the people who do the work, not from the procedure document. Each step shows its hands-on minutes and the hours the case waits before someone starts it.</p>
+
+  <ol class="map" id="map" aria-label="The workflow map, from trigger to outcome"></ol>
+  <p class="map-note" id="map-note"></p>
+
+  <div class="instruction">
+    <p>Read the map, then answer both questions. <b>Volume friction</b> comes from large amounts of repeated work. <b>Judgment friction</b> comes from steps that need interpretation. <b>Coordination friction</b> comes from work that waits or bounces between people.</p>
+  </div>
+
+  <button type="button" class="ghost-btn" id="add-btn">Add up the map</button>
+  <div class="panel" id="totals-panel" tabindex="-1" hidden></div>
+
+  <fieldset class="ask">
+    <legend>Which kind of friction does this map show?</legend>
+    <div class="choices" id="friction-choices"></div>
+  </fieldset>
+
+  <fieldset class="ask">
+    <legend>What should the first move be?</legend>
+    <div class="choices stack" id="move-choices"></div>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my reading</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: fix the handoffs and read the map again</h2>
+    <p>Suppose each handoff is removed or shortened so that no case waits more than 15 minutes for the next person. The hands-on work stays exactly as it is. Nothing here is checked.</p>
+    <button type="button" class="check-btn" id="sp-btn">Redraw the map with 15-minute handoffs</button>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  // kind: 'draft' (writes something up), 'weigh' (reads and weighs), 'move' (passes or enters information)
+  var STEPS = [
+    { text: 'Record the short shipment and what arrived.', who: 'Plant receiving', hands: 12, wait: 0, kind: 'draft' },
+    { text: 'Review the record and forward it to procurement.', who: 'Plant supervisor', hands: 8, wait: 4, kind: 'move' },
+    { text: 'Check the purchase order and contract terms against the shortage.', who: 'Procurement lead', hands: 30, wait: 8, kind: 'weigh' },
+    { text: 'Write to the supplier.', who: 'Procurement lead', hands: 10, wait: 0, kind: 'draft' },
+    { text: 'Enter the supplier\u2019s revised date and pass the case to planning.', who: 'Procurement lead', hands: 10, wait: 12, kind: 'move' },
+    { text: 'Weigh the revised date against open orders and update the supply plan.', who: 'Supply-chain planner', hands: 50, wait: 8, kind: 'weigh' }
+  ];
+  // One case in four is returned; a return sends the case back through steps 1 and 2.
+  var RETURN = { share: 0.25, repeat: [0, 1] };
+  var FAST_HANDOFF_H = 0.25;
+
+  var FRICTIONS = [
+    { value: 'volume', label: 'Volume', sub: 'Large amounts of repeated work.' },
+    { value: 'judgment', label: 'Judgment', sub: 'Steps that need interpretation.' },
+    { value: 'coordination', label: 'Coordination', sub: 'Work that waits or bounces between people.' }
+  ];
+  var MOVES = [
+    { value: 'volume', label: 'Automate the repeated work with rules.' },
+    { value: 'judgment', label: 'Put help at the steps that read and weigh.' },
+    { value: 'coordination', label: 'Remove or shorten the handoffs where cases wait.' },
+    { value: 'tool', label: 'Start with a tool that drafts and summarizes, and see what it improves.' }
+  ];
+
+  function waitOf(s, cap) { return cap === null ? s.wait : Math.min(s.wait, cap); }
+
+  // Totals for a map. cap: null, or the longest a case may wait between people, in hours.
+  function totals(cap) {
+    var hands = 0, waits = 0, draft = 0, weigh = 0;
+    STEPS.forEach(function (s, i) {
+      var reps = 1 + (RETURN.repeat.indexOf(i) !== -1 ? RETURN.share : 0);
+      hands += s.hands * reps;
+      waits += waitOf(s, cap) * 60 * reps;
+      if (s.kind === 'draft') { draft += s.hands * reps; }
+      if (s.kind === 'weigh') { weigh += s.hands * reps; }
+    });
+    var elapsed = waits + hands;
+    return {
+      handsMin: hands, waitMin: waits, elapsedMin: elapsed,
+      waitShare: waits / elapsed, handsShare: hands / elapsed,
+      draftMin: draft, draftShare: draft / elapsed,
+      weighMin: weigh, weighShareOfHands: weigh / hands, weighShareOfElapsed: weigh / elapsed
+    };
+  }
+  function classify(t) {
+    if (t.waitShare > 0.5) { return 'coordination'; }
+    if (t.weighShareOfHands > 0.5) { return 'judgment'; }
+    return 'unclear';
+  }
+
+  function n1(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+  function nm(x) { return x.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+  function hrs(min) { return n1(min / 60); }
+  function pct(x) { return (x * 100).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%'; }
+  function whole(x) { return Math.round(x).toLocaleString('en-US'); }
+
+  var BASE = totals(null);
+  var KEY_FRICTION = classify(BASE);            // 'coordination'
+  var KEY_MOVE = KEY_FRICTION;                  // each friction type points to its own first move
+
+  // Render the map
+  var mapEl = document.getElementById('map');
+  STEPS.forEach(function (s, i) {
+    var li = document.createElement('li'); li.className = 'map-step';
+    var n = document.createElement('span'); n.className = 'map-n'; n.setAttribute('aria-hidden', 'true'); n.textContent = String(i + 1);
+    var body = document.createElement('div'); body.className = 'map-body';
+    var t = document.createElement('div'); t.className = 'map-text';
+    var lead = document.createElement('span'); lead.className = 'sr-only'; lead.textContent = 'Step ' + (i + 1) + '. ';
+    t.appendChild(lead); t.appendChild(document.createTextNode(s.text));
+    var facts = document.createElement('div'); facts.className = 'map-facts';
+    [['Who', s.who], ['Hands-on', s.hands + ' min'], ['Waits before', s.wait + ' h']].forEach(function (pair) {
+      var span = document.createElement('span');
+      var b = document.createElement('b'); b.textContent = pair[0] + ': ';
+      var v = document.createElement('span'); v.className = 'num'; v.textContent = pair[1];
+      span.appendChild(b); span.appendChild(v); facts.appendChild(span);
+    });
+    body.appendChild(t); body.appendChild(facts);
+    li.appendChild(n); li.appendChild(body); mapEl.appendChild(li);
+  });
+  document.getElementById('map-note').textContent = 'Returned for missing information: 1 case in 4. A return sends the case back through steps 1 and 2 before procurement sees it again.';
+
+  // Totals table
+  function totalsTable(cols) {
+    var wrap = document.createElement('div'); wrap.className = 'table-wrap';
+    var tbl = document.createElement('table'); tbl.className = 'scores';
+    var cap = document.createElement('caption'); cap.textContent = 'Per case, averaged over returns';
+    tbl.appendChild(cap);
+    var thead = document.createElement('thead'); var hr = document.createElement('tr');
+    var th0 = document.createElement('th'); th0.scope = 'col'; th0.textContent = 'Measure'; hr.appendChild(th0);
+    cols.forEach(function (c) { var th = document.createElement('th'); th.scope = 'col'; th.className = 'num'; th.textContent = c.head; hr.appendChild(th); });
+    thead.appendChild(hr); tbl.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    [
+      ['Hands-on time (minutes)', function (t) { return nm(t.handsMin); }],
+      ['Waiting time (minutes)', function (t) { return nm(t.waitMin); }],
+      ['Elapsed time (minutes)', function (t) { return nm(t.elapsedMin); }],
+      ['Share of elapsed time spent waiting', function (t) { return pct(t.waitShare); }]
+    ].forEach(function (row) {
+      var tr = document.createElement('tr');
+      var td0 = document.createElement('td'); td0.textContent = row[0]; tr.appendChild(td0);
+      cols.forEach(function (c) { var td = document.createElement('td'); td.className = 'num'; td.textContent = row[1](c.t); tr.appendChild(td); });
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody); wrap.appendChild(tbl);
+    return wrap;
+  }
+
+  var totalsPanel = document.getElementById('totals-panel');
+  document.getElementById('add-btn').addEventListener('click', function () {
+    totalsPanel.innerHTML = '';
+    totalsPanel.appendChild(totalsTable([{ head: 'This map', t: BASE }]));
+    var p = document.createElement('p');
+    p.textContent = 'Hands-on time and waiting time are added separately. Elapsed time is the two together, from the first step to the plan update. In hours, that is ' + hrs(BASE.handsMin) + ' hands-on, ' + hrs(BASE.waitMin) + ' waiting, and ' + hrs(BASE.elapsedMin) + ' elapsed.';
+    totalsPanel.appendChild(p);
+    totalsPanel.hidden = false;
+  });
+
+  // Choices
+  function chip(container, name, o, onChange, withSub) {
+    var wrap = document.createElement('label'); wrap.className = 'choice';
+    var input = document.createElement('input'); input.type = 'radio'; input.className = 'choice-input'; input.name = name; input.value = o.value;
+    var box = document.createElement('span'); box.className = 'choice-box';
+    box.appendChild(document.createTextNode(o.label));
+    if (withSub && o.sub) { var sub = document.createElement('span'); sub.className = 'choice-sub'; sub.textContent = o.sub; box.appendChild(sub); }
+    wrap.appendChild(input); wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    container.appendChild(wrap);
+  }
+  var checkBtn = document.getElementById('check-btn');
+  function picked(name) { var c = document.querySelector('input[name="' + name + '"]:checked'); return c ? c.value : null; }
+  function refresh() { checkBtn.disabled = !(picked('friction') && picked('move')); }
+  FRICTIONS.forEach(function (o) { chip(document.getElementById('friction-choices'), 'friction', o, refresh, true); });
+  MOVES.forEach(function (o) { chip(document.getElementById('move-choices'), 'move', o, refresh, false); });
+
+  var CRITERION_TEXT = 'The friction type is whichever one the map shows concentrating: work that waits or bounces between people, large amounts of repeated work, or steps that need interpretation. The first move follows from that type, not from the steps that look easiest to hand to a tool.';
+  var FIRST_MOVE_TEXT = 'Add up the hours the case waits and the hours people spend hands-on, separately, then compare the two totals. The button above the questions does the adding.';
+
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p'); p.className = 'fb-detail'; p.textContent = t; fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  var FRICTION_WORD = { volume: 'volume', judgment: 'judgment', coordination: 'coordination' };
+  var MOVE_REASON = {
+    volume: 'The first move you chose answers volume friction, which is large amounts of repeated work. It does not follow from the friction you named.',
+    judgment: 'The first move you chose answers judgment friction, which is steps that need interpretation. It does not follow from the friction you named.',
+    tool: 'The first move you chose starts from a tool rather than from the friction. A tool fits the work to what the tool does well, and the map is what says where the friction is.'
+  };
+
+  checkBtn.addEventListener('click', function () {
+    var f = picked('friction'), m = picked('move');
+    var fOk = (f === KEY_FRICTION), mOk = (m === KEY_MOVE);
+    if (fOk && mOk) {
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. The case waits ' + nm(BASE.waitMin) + ' of its ' + nm(BASE.elapsedMin) + ' elapsed minutes, ' + pct(BASE.waitShare) + ' of the total, which is ' + hrs(BASE.waitMin) + ' hours in a ' + hrs(BASE.elapsedMin) + '-hour case. People work on it for the rest. That is coordination friction, and its first move is to remove or shorten a handoff, which needs no AI at all.',
+        'The two steps a tool that drafts and summarizes handles best, steps 1 and 4, hold ' + pct(BASE.draftShare) + ' of the case\u2019s elapsed time. A plan that began from the tool would have aimed at the wrong place.'
+      ]);
+    } else if (fOk && !mOk) {
+      showFeedback('fb-near', 'Close.', [
+        'Your reading of the map is right: the friction is coordination.',
+        MOVE_REASON[m] + ' Coordination friction calls for a different first move.'
+      ]);
+    } else if (!fOk && mOk) {
+      showFeedback('fb-near', 'Close.', [
+        'Removing or shortening handoffs is the right first move for this map. It answers coordination friction, though, and you named ' + FRICTION_WORD[f] + '.',
+        'Look again at where the case spends its time.'
+      ]);
+    } else if (m === f) {
+      showFeedback('fb-warn', 'Not yet.', [
+        'Your first move follows from your reading of the friction. The reading is what this map does not support.',
+        FIRST_MOVE_TEXT
+      ]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: every wait is capped at 15 minutes; the same functions read the new map.
+  var spPanel = document.getElementById('sp-panel');
+  document.getElementById('sp-btn').addEventListener('click', function () {
+    var fixed = totals(FAST_HANDOFF_H);
+    spPanel.innerHTML = '';
+    spPanel.appendChild(totalsTable([{ head: 'Before', t: BASE }, { head: 'Handoffs fixed', t: fixed }]));
+    var p1 = document.createElement('p');
+    p1.textContent = 'Waiting falls from ' + nm(BASE.waitMin) + ' minutes to ' + nm(fixed.waitMin) + '. Hands-on time stays at ' + nm(fixed.handsMin) + ' minutes and is now ' + pct(fixed.handsShare) + ' of a case that takes ' + nm(fixed.elapsedMin) + ' minutes.';
+    var p2 = document.createElement('p');
+    p2.textContent = 'Steps 3 and 6 read and weigh, and they hold ' + whole(fixed.weighMin) + ' of the ' + whole(fixed.handsMin) + ' hands-on minutes, ' + pct(fixed.weighShareOfHands) + '. The dominant friction is now ' + classify(fixed) + ', and a different first question opens: where help at those steps would earn its cost.';
+    var p3 = document.createElement('p');
+    p3.textContent = 'The order matters. Applied first, help at steps 3 and 6 could only ever have touched ' + nm(BASE.weighMin) + ' minutes of a ' + nm(BASE.elapsedMin) + '-minute case, ' + pct(BASE.weighShareOfElapsed) + ' of it.';
+    spPanel.appendChild(p1); spPanel.appendChild(p2); spPanel.appendChild(p3);
+    spPanel.hidden = false;
+    spPanel.focus();
+  });
+
+})();
+</script>
+</body>
+</html>
