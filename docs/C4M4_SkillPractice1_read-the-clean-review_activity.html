@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask what the review tried to find</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden] { display: none; }
+  .feedback:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 20px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel .count { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  fieldset.ticks { border: none; margin: 0 0 4px; padding: 0; }
+  fieldset.ticks legend { font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .tick { display: block; position: relative; margin: 0 0 8px; cursor: pointer; }
+  .tick-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .tick-box { display: block; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 10px 14px; }
+  .tick-input:checked + .tick-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); color: var(--ink); font-weight: 600; }
+  .tick-input:focus-visible + .tick-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Ask what the review tried to find</h1>
+
+  <p class="lead-line">A pressure test is a deliberate attempt to make a plan&rsquo;s hidden content visible before anyone commits resources to it. Hidden content takes three forms: an assumption nobody wrote down, a commitment that quietly waits on another, and a point where the plan would break outright and not merely slip. A plan nobody has checked this way is untested, which is different from unsound. A report that says nothing looked wrong is worth exactly as much as the answer to one question: what did the reviewer deliberately try to find?</p>
+
+  <p class="context">Four reviewers each reported on the same eighteen-month roadmap at a manufacturer. The transformation lead who wrote it needs to know what each report supports saying about the plan.</p>
+
+  <div class="instruction">
+    <p>For each report, choose the strongest conclusion its author can support. Base the choice on what the reviewer says they tried.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my conclusions</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change what the reviewer tried</h2>
+    <p>A fifth reviewer reports that nothing looked wrong. Tick the kinds of hidden content this reviewer says they deliberately tried to find, and watch the strongest supportable claim change. Nothing here is checked.</p>
+    <fieldset class="ticks" id="ticks">
+      <legend>The reviewer says they tried to find</legend>
+    </fieldset>
+    <div class="panel" id="sp-panel" aria-live="polite"></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  function joinList(arr) {
+    if (arr.length === 1) { return arr[0]; }
+    if (arr.length === 2) { return arr[0] + ' and ' + arr[1]; }
+    return arr.slice(0, -1).join(', ') + ', and ' + arr[arr.length - 1];
+  }
+
+  // The three kinds of hidden content a pressure test can reach.
+  var KINDS = [
+    { id: 'assumption', tick: 'An assumption nobody wrote down', phrase: 'an assumption nobody wrote down' },
+    { id: 'order', tick: 'A commitment that quietly waits on another', phrase: 'a commitment that quietly waits on another' },
+    { id: 'break', tick: 'A point where the plan would break outright, not merely slip', phrase: 'a point where the plan would break outright, not merely slip' }
+  ];
+
+  // Each report is described by what it states, not by a verdict. The verdict comes from claimFor().
+  var REPORTS = [
+    { text: 'I checked that the roadmap agrees with itself. Every initiative has a named owner and a start date, each date falls inside its horizon, and the three horizons add up to eighteen months. Everything agrees. I found nothing to change.',
+      statesAim: true, reaches: [], findings: [],
+      why: 'This reviewer stated an aim, and it is a fair one for a planner: confirm that the roadmap agrees with itself. But agreement is what planning already produces. The aim can reach only what the document states, and hidden content is what it does not state. The report supports no claim about how the plan will meet the organization, so the plan is untested.' },
+    { text: 'I set out to confirm that the inspection records the quality initiatives need exist at the plants where those initiatives are scheduled. I asked each plant to show me its records. They all exist, and I found no gaps.',
+      statesAim: true, reaches: ['assumption'], findings: [],
+      why: 'This aim reaches one kind of hidden content: an assumption nobody wrote down, here that the records exist. The check found that assumption sound, and that supports a claim exactly that wide. The report says nothing about the other two kinds, so the plan held against what the reviewer tried, and no further.' },
+    { text: 'I read the roadmap twice and spoke with several plant and function leads. As with any program of this size, adoption, data quality, and change management carry risk. Nothing stood out. I recommend no changes.',
+      statesAim: false, reaches: [], findings: [],
+      why: 'No sentence says what this reviewer set out to find. The report names categories, and a category commits nobody to anything. \u201CNothing stood out\u201D shows only that the reviewer looked without a target, so the plan is untested.' },
+    { text: 'I set out to find any start date that waits on something the schedule does not contain, and traced each date back to what it needs. One finding: the extension to three more plants in month 7 waits on a demonstrated benefit, and no step in the first six months produces one. Three plant teams would be staffed against a benefit nobody has seen. Action for the transformation lead: add the demonstration step, then move the extension date behind it.',
+      statesAim: true, reaches: ['order'], findings: [{ action: true }],
+      why: 'This report states its aim, traces dates back to what they need, and closes with a finding that names a date, the people who meet it, and an action. That is what a pressure test produces: findings its owner can act on, and no approval decision.' }
+  ];
+
+  // The rule the concept teaches, applied to what each report states.
+  function claimFor(r) {
+    if (!r.statesAim || r.reaches.length === 0) { return 'untested'; }
+    if (r.findings.length > 0 && r.findings.every(function (f) { return f.action; })) { return 'findings'; }
+    return 'held';
+  }
+
+  var BUCKETS = [
+    { value: 'sound', label: 'The plan is sound' },
+    { value: 'held', label: 'The plan held against what was tried, and no further' },
+    { value: 'untested', label: 'The plan is untested' },
+    { value: 'findings', label: 'The review produced findings the owner can act on' }
+  ];
+
+  var ITEMS = REPORTS.map(function (r, i) {
+    return { text: '\u201C' + r.text + '\u201D', meta: 'Report ' + (i + 1), bucket: claimFor(r), why: r.why };
+  });
+
+  var CORRECT_TEXT = 'Right. Report 4 alone supports a claim about what was found. Report 2 supports a claim as wide as its aim and no wider. Reports 1 and 3 support no claim about how the plan will meet the organization: the first aimed only at what the document already states, and the second stated no aim at all. No report supports \u201Csound,\u201D because a pressure test ends in findings and leaves approval to a separate decision.';
+  var CRITERION_TEXT = 'Find the sentence in each report that says what the reviewer set out to find. Then ask whether that aim could have reached an assumption nobody wrote down, a commitment that quietly waits on another, or a point where the plan would break outright. No stated aim, or an aim that reaches none of the three, leaves the plan untested. An aim that reaches one supports a claim that wide. A report that ends in findings, each with an action, has produced findings.';
+  var FIRST_MOVE_TEXT = 'Read the first sentence or two of each report and underline what the reviewer says they were looking for. Set every verdict aside until you have done that for all four.';
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at ' + it.meta.toLowerCase() + '.', it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+  });
+
+  // Second pass: the result stays fixed at "nothing found"; the stated aim moves.
+  var ticksEl = document.getElementById('ticks');
+  var panel = document.getElementById('sp-panel');
+  var srStatus = document.getElementById('sr-status');
+
+  KINDS.forEach(function (k) {
+    var wrap = document.createElement('label');
+    wrap.className = 'tick';
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = 'tick-input';
+    input.name = 'kind';
+    input.value = k.id;
+    var box = document.createElement('span');
+    box.className = 'tick-box';
+    box.textContent = k.tick;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', renderPanel);
+    ticksEl.appendChild(wrap);
+  });
+
+  function spText(ticked) {
+    var k = ticked.length;
+    var tried = KINDS.filter(function (x) { return ticked.indexOf(x.id) !== -1; }).map(function (x) { return x.phrase; });
+    var notTried = KINDS.filter(function (x) { return ticked.indexOf(x.id) === -1; }).map(function (x) { return x.phrase; });
+    var say, claim;
+    if (k === 0) {
+      say = 'The reviewer can say: \u201CNothing looked wrong.\u201D That is the whole report, because no aim was stated.';
+      claim = 'Strongest claim: none about the plan. The report shows only that nobody looked in a way that could have found a problem.';
+    } else if (k < 3) {
+      say = 'The reviewer can say: \u201CI looked for ' + joinList(tried) + ', and found nothing. I did not look for ' + joinList(notTried) + '.\u201D';
+      claim = 'Strongest claim: the plan held against the ' + word(k) + ' kind' + (k === 1 ? '' : 's') + ' of hidden content the reviewer tried. It remains untested on the other ' + word(3 - k) + '.';
+    } else {
+      say = 'The reviewer can say: \u201CI looked for ' + joinList(tried) + ', and found nothing.\u201D';
+      claim = 'Strongest claim: the plan held against all three kinds of hidden content the reviewer tried. That still describes what was tried. A pressure test ends in findings and not in approval, and a plan can hold against everything one reviewer thought to try.';
+    }
+    return { say: say, claim: claim, count: k.toLocaleString('en-US') + ' of 3' };
+  }
+
+  function renderPanel() {
+    var ticked = [];
+    var boxes = ticksEl.querySelectorAll('input[type=checkbox]');
+    for (var i = 0; i < boxes.length; i++) { if (boxes[i].checked) { ticked.push(boxes[i].value); } }
+    var t = spText(ticked);
+    panel.innerHTML = '';
+    var p1 = document.createElement('p'); p1.textContent = t.say;
+    var p2 = document.createElement('p'); p2.textContent = t.claim;
+    var p3 = document.createElement('p'); p3.appendChild(document.createTextNode('Kinds of hidden content reached: '));
+    var c = document.createElement('span'); c.className = 'count'; c.textContent = t.count; p3.appendChild(c);
+    panel.appendChild(p1); panel.appendChild(p2); panel.appendChild(p3);
+    srStatus.textContent = t.count + ' kinds of hidden content reached.';
+  }
+  renderPanel();
+
+})();
+</script>
+</body>
+</html>

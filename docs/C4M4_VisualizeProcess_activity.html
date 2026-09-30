@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the process</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .context {
+    border-left: 3px solid var(--accent);
+    padding-left: 18px;
+    margin: 0 0 24px;
+    font-size: 1rem;
+    color: var(--ink);
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 24px;
+  }
+
+  .order-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .order-badge {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .order-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-serif);
+    font-size: 0.98rem;
+    color: var(--ink);
+  }
+
+  .order-controls {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 4px;
+  }
+
+  .move-btn {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .move-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .move-btn:not(:disabled):hover {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+  }
+
+  .move-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 8px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 20px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Assemble the process</h1>
+
+  <p class="lead-line">Ten pieces of a pressure test, shown out of order. Put them back the way they actually have to run.</p>
+
+  <p class="context">A manufacturer&rsquo;s transformation lead holds an approved eighteen-month roadmap of eight initiatives. An outside reviewer has been asked to test it before the second wave starts.</p>
+
+  <p class="instruction">Below are ten pieces of the path from that roadmap to a set of findings its owner can act on, out of order. Use the arrows to put them in the sequence the process requires. Where more than one order works, any of them will pass.</p>
+
+  <div id="order-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my order</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+
+<script>
+(function () {
+  var ITEMS = {
+    PROB: { text: "The problem: an approved roadmap whose dates read well and have never met the organization. A flaw caught on paper costs an edit. The same flaw caught in the quarter that needs it costs an undoing." },
+    SEAT: { text: "Seat a reviewer who did not help write the plan, with access to the functions it commits and no authority over the plan itself." },
+    PROMISE: { text: "State what the plan claims will be true at each horizon boundary, in the plan\u2019s own terms, before agreeing or disagreeing." },
+    FAIL: { text: "Assume the failure has already happened: pick a named date and write that the initiative did not deliver by it." },
+    REASONS: { text: "Work backward to reasons that name an event, such as a pilot that started against records three plants keep in three forms, and not a condition, such as slow adoption." },
+    SORT: { text: "Sort each reason into a wrong assumption, a fact that was never true, which gets a correction, or a fragile dependency, a fact true today that may stop being true, which gets a fallback, a trigger, or a resequencing." },
+    LOAD: { text: "Test every control the plan relies on against the load the plan itself creates. A control that cannot be performed at that load becomes a finding." },
+    EXPER: { text: "Ask what could be an experiment instead of a phase, and mark anything cheap enough to test in days." },
+    FINDING: { text: "Write each surviving reason as a finding that says what breaks, for whom, and when, with a disposition and a recipient. A disposition is the action its owner takes: correct, resequence, add a fallback, narrow the scope, or remove the initiative." },
+    SIGNAL: { text: "The signal it worked: the plan\u2019s owner can start work on every finding without another conversation about what it meant, and removing an initiative was a live option." }
+  };
+
+  var CORRECT_TEXT = "Right. This is the whole path: the problem comes first, the reviewer is seated before the plan\u2019s promise is stated, the assumed failure comes before the reasons, and the reasons come before the sort. The load test and the experiment question can sit anywhere between the promise and the findings. The findings wait on all of them, and the signal appears only once an owner can act.";
+  var CRITERION_TEXT = "Each piece depends on something before it being settled first. Reasons need an assumed failure, and that needs a stated promise. The sort needs reasons. The findings need the sort, the load test, and the experiment question. The signal needs findings. The problem and the seated reviewer come before all of it.";
+  var FIRST_MOVE_TEXT = "Take any two pieces and ask which one supplies something the other needs before it can mean anything. The one supplying it goes first. If neither needs the other, either order is fine.";
+  var SOFT_NOTE = "One thing to notice: you ran the load test or the experiment question before working backward to reasons. That passes, because both still come before the findings. But once the reasons are named, they point at which controls and which initiatives deserve the test.";
+
+  var CONSTRAINTS = [
+    { ok: function (pos) { return pos.PROB < pos.SEAT; },
+      why: "The problem has to be stated first. Seat a reviewer before it is stated, and nobody knows what the review is for." },
+    { ok: function (pos) { return pos.SEAT < pos.PROMISE; },
+      why: "The reviewer states the promise, so the reviewer has to be seated first. A promise stated by the plan\u2019s authors carries their belief that it works, and an outsider\u2019s restatement is what puts the plan under test." },
+    { ok: function (pos) { return pos.PROMISE < pos.FAIL; },
+      why: "A failure needs a claim to fail and a date to fail on. Until the plan\u2019s promise at a horizon boundary is stated, there is nothing to assume has failed." },
+    { ok: function (pos) { return pos.FAIL < pos.REASONS; },
+      why: "Reasons come from the assumed failure. Ask for reasons before assuming it, and you are back to asking what could go wrong, which returns categories." },
+    { ok: function (pos) { return pos.REASONS < pos.SORT; },
+      why: "You can only sort reasons that exist. Sort first, and there is nothing yet to put in either group." },
+    { ok: function (pos) { return pos.PROMISE < pos.LOAD; },
+      why: "A load test needs the plan\u2019s pace and volumes, and they come from what the plan promises. Test controls first, and you are testing them against your own guess at the load." },
+    { ok: function (pos) { return pos.PROMISE < pos.EXPER; },
+      why: "Deciding what could be an experiment needs the plan in view, initiative by initiative. That starts from the promise." },
+    { ok: function (pos) { return pos.SORT < pos.FINDING; },
+      why: "A finding carries the disposition its category implies. Write findings before sorting, and the disposition is a guess." },
+    { ok: function (pos) { return pos.LOAD < pos.FINDING; },
+      why: "A control that fails the load test becomes a finding. Write the findings before the test, and that finding never gets written." },
+    { ok: function (pos) { return pos.EXPER < pos.FINDING; },
+      why: "Anything cheap enough to test in days should be marked before the findings are written. Otherwise it is carried into a funded phase on faith." },
+    { ok: function (pos) { return pos.FINDING < pos.SIGNAL; },
+      why: "The signal that it worked is an owner acting on a finding. It cannot appear before the findings exist." }
+  ];
+
+  var srStatus = document.getElementById('sr-status');
+  var containerEl = document.getElementById('order-list');
+  var checkBtnEl = document.getElementById('check-btn');
+  var feedbackEl = document.getElementById('feedback');
+  var statusEl = document.getElementById('fb-status');
+  var detailEl = document.getElementById('fb-detail');
+
+  var order = ['SIGNAL', 'LOAD', 'REASONS', 'FINDING', 'PROB', 'EXPER', 'SORT', 'FAIL', 'SEAT', 'PROMISE'];
+  var pendingFocus = null;
+
+  function render() {
+    containerEl.innerHTML = '';
+    order.forEach(function (id, idx) {
+      var row = document.createElement('div');
+      row.className = 'order-row';
+
+      var badge = document.createElement('span');
+      badge.className = 'order-badge';
+      badge.setAttribute('aria-hidden', 'true');
+      badge.textContent = (idx + 1).toLocaleString('en-US');
+
+      var text = document.createElement('span');
+      text.className = 'order-text';
+      text.textContent = ITEMS[id].text;
+
+      var controls = document.createElement('div');
+      controls.className = 'order-controls';
+
+      var upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'move-btn';
+      upBtn.textContent = '\u2191';
+      upBtn.setAttribute('aria-label', 'Move "' + ITEMS[id].text + '" earlier');
+      upBtn.disabled = (idx === 0);
+      upBtn.addEventListener('click', function () { move(idx, -1, id); });
+
+      var downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.className = 'move-btn';
+      downBtn.textContent = '\u2193';
+      downBtn.setAttribute('aria-label', 'Move "' + ITEMS[id].text + '" later');
+      downBtn.disabled = (idx === order.length - 1);
+      downBtn.addEventListener('click', function () { move(idx, 1, id); });
+
+      controls.appendChild(upBtn);
+      controls.appendChild(downBtn);
+      row.appendChild(badge);
+      row.appendChild(text);
+      row.appendChild(controls);
+      containerEl.appendChild(row);
+    });
+
+    if (pendingFocus) {
+      var newIdx = order.indexOf(pendingFocus.id);
+      var rows = containerEl.children;
+      var row2 = rows[newIdx];
+      if (row2) {
+        var btns = row2.querySelectorAll('.move-btn');
+        var preferred = pendingFocus.dir === -1 ? btns[0] : btns[1];
+        if (preferred && !preferred.disabled) { preferred.focus(); }
+        else if (btns[0] && !btns[0].disabled) { btns[0].focus(); }
+        else if (btns[1] && !btns[1].disabled) { btns[1].focus(); }
+      }
+      pendingFocus = null;
+    }
+  }
+
+  function move(idx, delta, id) {
+    var newIdx = idx + delta;
+    if (newIdx < 0 || newIdx >= order.length) { return; }
+    var tmp = order[idx];
+    order[idx] = order[newIdx];
+    order[newIdx] = tmp;
+    srStatus.textContent = ITEMS[id].text + ' moved to position ' + (newIdx + 1).toLocaleString('en-US') + ' of ' + order.length.toLocaleString('en-US') + '.';
+    feedbackEl.hidden = true;
+    pendingFocus = { id: id, dir: delta };
+    render();
+  }
+
+  checkBtnEl.addEventListener('click', function () {
+    var pos = {};
+    order.forEach(function (id, idx) { pos[id] = idx; });
+    var violations = [];
+    CONSTRAINTS.forEach(function (c) { if (!c.ok(pos)) { violations.push(c); } });
+
+    feedbackEl.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    if (violations.length === 0) {
+      feedbackEl.classList.add('fb-ok');
+      statusEl.textContent = 'Correct.';
+      detailEl.textContent = CORRECT_TEXT + ((pos.LOAD < pos.REASONS || pos.EXPER < pos.REASONS) ? ' ' + SOFT_NOTE : '');
+    } else if (violations.length === 1) {
+      feedbackEl.classList.add('fb-near');
+      statusEl.textContent = 'Close.';
+      detailEl.textContent = violations[0].why;
+    } else {
+      feedbackEl.classList.add('fb-warn');
+      statusEl.textContent = 'Not yet.';
+      detailEl.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+    feedbackEl.hidden = false;
+    feedbackEl.focus();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

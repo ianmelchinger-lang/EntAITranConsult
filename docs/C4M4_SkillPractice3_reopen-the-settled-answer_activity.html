@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reopen the answer that missed the question</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-weight: 700; font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 4px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden] { display: none; }
+  .feedback:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .swap { margin: 0 0 16px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .swap-title { font-family: var(--font-serif); font-weight: 700; font-size: 1rem; color: var(--ink); margin: 0 0 6px; }
+  .swap-need { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .swap-need b { color: var(--ink); font-weight: 600; }
+  fieldset.answers { border: none; margin: 0 0 10px; padding: 0; }
+  fieldset.answers legend { font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--steel); padding: 0; margin: 0 0 6px; }
+  .ans { display: block; position: relative; margin: 0 0 8px; cursor: pointer; }
+  .ans-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .ans-box { display: block; font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 10px 14px; }
+  .ans-tag { display: block; font-weight: 600; font-size: 0.8rem; color: var(--steel); margin: 0 0 2px; }
+  .ans-input:checked + .ans-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); color: var(--ink); }
+  .ans-input:focus-visible + .ans-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .swap-mark { font-family: var(--font-sans); font-size: 0.9rem; font-weight: 700; color: var(--accent-deep); margin: 0; }
+  .swap-mark.is-settled { color: var(--ok); }
+  .sp-summary { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; }
+  .sp-summary .count { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item, .swap { padding: 14px 14px; }
+    .feedback { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Reopen the answer that missed the question</h1>
+
+  <p class="lead-line">Reviewer independence means testing a plan you had no part in writing. The reason is structural and says nothing about anyone&rsquo;s honesty: finishing a plan requires believing it works, so the authors are thorough about the risks they weighed and blind to the ones they did not. An outsider can reopen a question the authors closed, but only some of their answers deserve it.</p>
+
+  <p class="context">A reviewer who did not write a manufacturer&rsquo;s eighteen-month roadmap asked, for six of its dates, what would have to be true for the date to hold. The authors answered each one.</p>
+
+  <div class="instruction">
+    <p>Read what has to be true, then the authors&rsquo; answer. Mark the row <b>Reopen</b> if the answer speaks to a different question than the one the date depends on. Mark it <b>Leave settled</b> if the answer establishes what the date needs.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my marks</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: improve the answer</h2>
+    <p>For each row you would reopen, compare the authors&rsquo; answer with a revised one that speaks to what the date needs. Choose an answer and watch the mark change. Nothing here is checked.</p>
+    <div id="swaps"></div>
+    <p class="sp-summary" id="sp-summary" aria-live="polite"></p>
+    <p class="sp-summary" id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  // Review load for the maintenance-scheduling row, computed from the case figures.
+  var REVIEW_HOURS = 40, MINUTES_PER_ORDER = 3, WEEKLY_ORDERS = 640;
+  var CAPACITY = Math.round(REVIEW_HOURS * 60 / MINUTES_PER_ORDER);
+  var UTILISATION = Math.round(WEEKLY_ORDERS / CAPACITY * 100);
+  function n(x) { return x.toLocaleString('en-US'); }
+
+  // Each row names what the date needs and what the answer establishes. The mark is derived by markFor().
+  var ROWS = [
+    { id: 'alert', title: 'Third horizon, months 13 to 18: wider rollout of the customer-exception workflow',
+      need: 'alert-recipient',
+      needText: 'Someone is alerted when the workflow\u2019s answers stop matching current contract terms.',
+      answer: { text: 'The responsible-AI policy is approved and circulated, and the pre-production form is complete.', supplies: ['policy-exists', 'form-complete'] },
+      revised: { text: 'A deviation threshold is set. Any answer that departs from current contract terms by more than the threshold alerts the governance and risk owner.', supplies: ['alert-recipient'] },
+      why: 'The policy and the form show that a control was intended and checked once, before launch. In this case neither sets a deviation threshold that triggers a review, and neither names who receives an alert. The answer speaks to whether governance exists. The date depends on whether anyone will be told.' },
+    { id: 'load', title: 'First horizon, months 1 to 6: maintenance scheduling at two plants',
+      need: 'review-performable',
+      needText: 'The named reviewer can examine every schedule the automation produces at the current volume.',
+      answer: { text: 'One reviewer has ' + n(REVIEW_HOURS) + ' hours a week. A review that can catch an error takes about ' + word(MINUTES_PER_ORDER) + ' minutes per work order, so those hours cover ' + n(CAPACITY) + ' work orders a week. The two plants send ' + n(WEEKLY_ORDERS) + '.',
+        supplies: (CAPACITY >= WEEKLY_ORDERS) ? ['review-performable'] : [] },
+      why: 'The date needs a review the named person can perform at the current volume, and the answer shows the arithmetic: ' + n(CAPACITY) + ' work orders covered against ' + n(WEEKLY_ORDERS) + ' arriving, or ' + n(UTILISATION) + ' percent of capacity. Reopening it would return nothing.' },
+    { id: 'region', title: 'Second horizon, months 7 to 12: relaunch of the warranty-claims assistant',
+      need: 'one-convention',
+      needText: 'The claims fields the assistant reads follow one convention.',
+      answer: { text: 'The relaunch runs in one region only, on that region\u2019s claims system.', supplies: ['one-convention'] },
+      why: 'The four regions keep four claims systems with different field conventions. Confining the relaunch to one region confines it to one convention, which is what the date needs. Whether the assistant performs there is a different question.' },
+    { id: 'rework', title: 'First horizon, months 1 to 6: supplier write-up drafting at three plants',
+      need: 'rework-owner',
+      needText: 'Someone owns the drafts that come back for rework, and the load is sized.',
+      answer: { text: 'The quality audit finding on the assistant is logged and open.', supplies: ['finding-logged'] },
+      revised: { text: 'The quality lead at each plant owns the returned drafts, and rework time is sized against the return of one draft in six.', supplies: ['rework-owner'] },
+      why: 'A logged finding shows that someone noticed. This one names a revision loop but not its volume or who absorbs it, and one draft in six comes back. The answer speaks to whether the problem is known. The date depends on whether anyone owns the work.' },
+    { id: 'forecast', title: 'Third horizon, months 13 to 18: enterprise demand forecasting',
+      need: 'planners-use-output',
+      needText: 'Planners use the model\u2019s output and stop keeping a parallel spreadsheet.',
+      answer: { text: 'A forecasting assistant ran live at the first plant for five months.', supplies: ['ran-live'] },
+      revised: { text: 'The planners have agreed to retire their parallel spreadsheet at go-live, and a named lead checks each week that they have.', supplies: ['planners-use-output'] },
+      why: 'Running is not using. At that plant the planning team kept a parallel spreadsheet from week six and abandoned the output. The answer speaks to whether forecasting can run. The date depends on whether planners will rely on it.' },
+    { id: 'owners', title: 'Every start date on the roadmap',
+      need: 'agreed-dates',
+      needText: 'The owner of each initiative has agreed to its start date.',
+      answer: { text: 'Each owner is named, and each has confirmed the start date in writing.', supplies: ['agreed-dates'] },
+      why: 'The need is agreement, and the answer supplies it directly. Reopening it would ask the authors to say again what they already said.' }
+  ];
+
+  function markFor(row, useRevised) {
+    var a = (useRevised && row.revised) ? row.revised : row.answer;
+    return a.supplies.indexOf(row.need) !== -1 ? 'settled' : 'reopen';
+  }
+
+  var BUCKETS = [
+    { value: 'reopen', label: 'Reopen' },
+    { value: 'settled', label: 'Leave settled' }
+  ];
+
+  var ITEMS = ROWS.map(function (r) {
+    return { text: r.title,
+      facts: [['What has to be true', r.needText], ['The authors\u2019 answer', r.answer.text]],
+      bucket: markFor(r, false), why: r.why, id: r.id };
+  });
+
+  var CORRECT_TEXT = 'Right. Three answers established what their dates needed, and reopening them would have cost the plan owner a conversation and returned nothing. Three answered a neighboring question: that a policy exists, that a finding is logged, that a system ran. Each looked settled to its authors, who had answered the question they were already thinking about. An outside reviewer can see the gap because they never made the substitution.';
+  var CRITERION_TEXT = 'For each date, write the need in one sentence, then ask whether the authors\u2019 answer says that thing. An answer that establishes the need is settled, even though a reviewer can always imagine more questions. An answer that shows only that something exists, ran, or was logged speaks to a neighboring question and stays open.';
+  var FIRST_MOVE_TEXT = 'Cover the answer and read the line on what has to be true. Then uncover the answer and look for a sentence that says it.';
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at \u201C' + it.text + '.\u201D', it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+  });
+
+  // Second pass: the answer moves; the need stays fixed.
+  var swapsEl = document.getElementById('swaps');
+  var summaryEl = document.getElementById('sp-summary');
+  var noteEl = document.getElementById('sp-note');
+  var revisedState = {};
+  var markEls = {};
+
+  function reopenCount() {
+    return ROWS.filter(function (r) { return markFor(r, !!revisedState[r.id]) === 'reopen'; }).length;
+  }
+
+  function renderSummary() {
+    var c = reopenCount();
+    summaryEl.innerHTML = '';
+    summaryEl.appendChild(document.createTextNode('Rows the reviewer would reopen: '));
+    var span = document.createElement('span');
+    span.className = 'count';
+    span.textContent = c.toLocaleString('en-US') + ' of ' + ROWS.length.toLocaleString('en-US');
+    summaryEl.appendChild(span);
+    noteEl.textContent = (c === 0)
+      ? 'The list is empty because the authors\u2019 answers now speak to what the dates need, not because the reviewer looked less hard.'
+      : 'Each reopened row stays open until the answer says what the date needs.';
+  }
+
+  ROWS.filter(function (r) { return r.revised; }).forEach(function (r) {
+    var box = document.createElement('div');
+    box.className = 'swap';
+    var title = document.createElement('p'); title.className = 'swap-title'; title.textContent = r.title;
+    var need = document.createElement('p'); need.className = 'swap-need';
+    var nb = document.createElement('b'); nb.textContent = 'What has to be true: ';
+    need.appendChild(nb); need.appendChild(document.createTextNode(r.needText));
+    var fs = document.createElement('fieldset'); fs.className = 'answers';
+    var lg = document.createElement('legend'); lg.textContent = 'The authors\u2019 answer'; fs.appendChild(lg);
+    var mark = document.createElement('p'); mark.className = 'swap-mark';
+    markEls[r.id] = mark;
+
+    [['orig', 'Original answer', r.answer.text], ['rev', 'Revised answer', r.revised.text]].forEach(function (opt, idx) {
+      var wrap = document.createElement('label'); wrap.className = 'ans';
+      var input = document.createElement('input'); input.type = 'radio'; input.className = 'ans-input';
+      input.name = 'swap-' + r.id; input.value = opt[0];
+      if (idx === 0) { input.checked = true; }
+      var body = document.createElement('span'); body.className = 'ans-box';
+      var tag = document.createElement('span'); tag.className = 'ans-tag'; tag.textContent = opt[1];
+      body.appendChild(tag); body.appendChild(document.createTextNode(opt[2]));
+      wrap.appendChild(input); wrap.appendChild(body);
+      input.addEventListener('change', function () {
+        revisedState[r.id] = (opt[0] === 'rev');
+        paintMark(r);
+        renderSummary();
+        document.getElementById('sr-status').textContent = r.title + ': ' + mark.textContent + '.';
+      });
+      fs.appendChild(wrap);
+    });
+
+    box.appendChild(title); box.appendChild(need); box.appendChild(fs); box.appendChild(mark);
+    swapsEl.appendChild(box);
+    paintMark(r);
+  });
+
+  function paintMark(r) {
+    var m = markFor(r, !!revisedState[r.id]);
+    var el = markEls[r.id];
+    el.textContent = 'Mark: ' + (m === 'reopen' ? 'Reopen' : 'Leave settled');
+    el.className = 'swap-mark' + (m === 'settled' ? ' is-settled' : '');
+  }
+  renderSummary();
+
+})();
+</script>
+</body>
+</html>
