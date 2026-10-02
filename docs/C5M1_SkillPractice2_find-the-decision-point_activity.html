@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the decision point</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  h3 { font-family: var(--font-sans); font-size: 0.95rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  fieldset.item { min-inline-size: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; font-variant-numeric: tabular-nums; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .field-label { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink); margin: 0 0 6px; }
+  select.line-select { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
+  select.line-select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel ul { margin: 0 0 12px; padding-left: 20px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); }
+  .panel li { margin: 0 0 6px; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.fig { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.fig caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.fig th, table.fig td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.fig th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.fig td.num, table.fig th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.fig tr.moved td { background: var(--highlight-bg); }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row label { flex: 1 1 100%; font-weight: 600; color: var(--ink); }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 12ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .choice-box { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+  table.fig tbody th { white-space: nowrap; }
+  .sov { border-left: 3px solid var(--accent); padding-left: 14px; margin: 0 0 12px; }
+  .sov p { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Find the decision point</h1>
+
+  <p class="lead-line">An investment made under uncertainty carries more than its projected cash flows. It also carries the right, without the obligation, to expand, delay, or stop as information arrives. That right is strategic option value, and it lives in the decision points of a staged plan. A decision point needs two things: new information that bears on whether the investment pays, and a choice that is still open because the money has not been committed.</p>
+
+  <p class="context">A manufacturer&rsquo;s quality organization proposes the supplier-document reader in three stages. Stage one is a pilot at one plant for twelve months. Stage two extends the reader to three plants over the next twelve. Stage three extends it to all nine plants over the following twelve. Each stage&rsquo;s money is committed only when that stage begins. Six events from the plan follow, in no particular order. Every figure on this page is illustrative.</p>
+
+  <div class="instruction">
+    <p>Sort each event as a decision point, a milestone, or a locked-in commitment.</p>
+    <p>A decision point brings new information and leaves a choice open. A milestone brings no new information about whether the reader pays. A locked-in commitment brings information, but its money is already committed, so nothing is left to decide.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sort</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="panel" tabindex="-1" hidden>
+    <h3>What the base case shows</h3>
+    <p>Discounting converts a future cash flow into today&rsquo;s value, using the 9 percent rate finance applies. The base case below projects one fixed sequence of flows for each plan. Both plans spend USD 580,000 in total and earn USD 360,000 a year once all nine plants run.</p>
+    <p class="item-meta">Net cash flow by year, USD, illustrative. Present value at 9 percent. Staged funds the three stages in turn; one step buys all nine plants now.</p>
+    <div class="table-wrap">
+      <table class="fig" aria-label="Net cash flow by year and present value for each plan">
+        <thead id="flow-head"></thead>
+        <tbody id="flow-body"></tbody>
+      </table>
+    </div>
+    <p id="base-note"></p>
+    <h3>What it leaves out: strategic option value</h3>
+    <div class="sov" id="sov"></div>
+    <p>The case carries these sentences as a labeled, qualitative category beside the base case. It does not price them: formal option pricing needs inputs such as volatility and probabilities, and a business setting rarely supplies them. The reviewer weighs the category and the base case separately.</p>
+    <p id="judgment-note"></p>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: the vendor offers a discount</h2>
+    <p>The vendor offers 15 percent off stages two and three if the committee buys both now, at signing. Each stage would still be paid for when it begins. Re-sort the two checkpoints under that offer. Nothing here is checked.</p>
+    <div id="sp-items"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  var DISC = 0.09;                       // finance discount rate
+  var COST = { s1: 100000, s2: 120000, s3: 360000 };
+  var PER_PLANT = 40000;                 // net benefit per plant per year, illustrative
+  var CUT = 0.15;                        // vendor discount on stages two and three
+  var MINUS = '\u2212';
+
+  function usd(n) { return 'USD ' + Math.round(n).toLocaleString('en-US'); }
+  function signed(n) { return n < 0 ? MINUS + Math.abs(n).toLocaleString('en-US') : n.toLocaleString('en-US'); }
+  function pv(flows) { return flows.reduce(function (a, x, t) { return a + x / Math.pow(1 + DISC, t); }, 0); }
+
+  var STAGED = [-COST.s1, 1 * PER_PLANT - COST.s2, 3 * PER_PLANT - COST.s3, 9 * PER_PLANT, 9 * PER_PLANT];
+  var ONE = [-(COST.s1 + COST.s2 + COST.s3), 9 * PER_PLANT, 9 * PER_PLANT, 9 * PER_PLANT, 9 * PER_PLANT];
+  var S2D = Math.round(COST.s2 * (1 - CUT)), S3D = Math.round(COST.s3 * (1 - CUT));
+  var STAGED_DISC = [-COST.s1, 1 * PER_PLANT - S2D, 3 * PER_PLANT - S3D, 9 * PER_PLANT, 9 * PER_PLANT];
+
+  var BUCKETS = [
+    { value: 'dp', label: 'Decision point' },
+    { value: 'ms', label: 'Milestone' },
+    { value: 'li', label: 'Locked-in commitment' }
+  ];
+
+  var EVENTS = {
+    kick:  { title: 'Month 1: kickoff', bucket: 'ms',
+      facts: [['What the team learns', 'The pilot team and the vendor\u2019s configuration lead agree on the start date and on who does what.'],
+              ['What is still open', 'The money for stages two and three is not committed.']],
+      why: 'Nothing the team learns bears on whether the reader pays: a start date and a list of roles. Money is uncommitted, but nothing arrives to decide it on. This is a milestone.' },
+    ck2:   { title: 'Month 12: stage-two checkpoint', bucket: 'dp',
+      facts: [['What the team learns', 'A full year of logged results against the baseline: exceptions found, and false alarms the engineers had to clear.'],
+              ['What is still open', 'The money for stage two is not committed. The committee can fund it, delay it, or stop.']],
+      why: 'A year of results bears directly on whether to continue, and the stage-two money is still uncommitted. Both conditions hold. This is a decision point.' },
+    train: { title: 'Month 15: training complete at the three plants', bucket: 'ms',
+      facts: [['What the team learns', 'Every engineer at the three plants has finished the course.'],
+              ['What is still open', 'The money for stage three is not committed.']],
+      why: 'Finished training is progress, not evidence about whether the reader pays. This is a milestone.' },
+    ck3:   { title: 'Month 24: stage-three checkpoint', bucket: 'dp',
+      facts: [['What the team learns', 'A year of results from three plants, including how heavy the false-alarm load is.'],
+              ['What is still open', 'The money for stage three is not committed. The committee can fund it, delay it, or stop.']],
+      why: 'A year of results from three plants bears directly on whether to extend, and the stage-three money is still uncommitted. Both conditions hold. This is a decision point.' },
+    mid3:  { title: 'Month 30: stage-three midpoint review', bucket: 'li',
+      facts: [['What the team learns', 'Six months of results from all nine plants.'],
+              ['What is still open', 'The integration fee for the six added plants was paid in full at month 25 and cannot be refunded. Nothing in stage three remains to withhold.']],
+      why: 'Results arrive, but the fee was paid at month 25 and cannot be recovered. The review can inform the next case. It cannot expand, delay, or stop anything. This is a locked-in commitment.' },
+    post:  { title: 'Month 36: post-implementation review', bucket: 'li',
+      facts: [['What the team learns', 'Results from all nine plants, set against the case.'],
+              ['What is still open', 'Spending on all three stages is complete.']],
+      why: 'Results arrive, and all the money is spent. Nothing is left to decide. This is a locked-in commitment.' }
+  };
+  var ORDER = ['ck2', 'mid3', 'kick', 'post', 'ck3', 'train'];
+  var ITEMS = ORDER.map(function (k) { var e = EVENTS[k]; e.key = k; return e; });
+
+  var CRITERION_TEXT = 'Two questions decide every event. Does new information arrive that bears on whether the reader pays? Is money still uncommitted, so the committee can expand, delay, or stop? Yes to both is a decision point. No to the first is a milestone. Yes to the first and no to the second is a locked-in commitment.';
+  var FIRST_MOVE_TEXT = 'Start with the first line of each card: does the team learn anything that bears on whether the reader pays? If not, the event is a milestone, and you need not ask the second question.';
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderCards(container, items, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.title;
+      fs.appendChild(legend);
+      var f = document.createElement('div');
+      f.className = 'item-facts';
+      item.facts.forEach(function (pair) {
+        var row = document.createElement('div');
+        var b = document.createElement('b');
+        b.textContent = pair[0] + ': ';
+        row.appendChild(b);
+        row.appendChild(document.createTextNode(pair[1]));
+        f.appendChild(row);
+      });
+      fs.appendChild(f);
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      BUCKETS.forEach(function (b) { choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange)); });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  renderCards(document.getElementById('items'), ITEMS, 'ev', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'ev').indexOf(null) !== -1;
+  });
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function renderPanel() {
+    var pvS = pv(STAGED), pvO = pv(ONE);
+    var head = document.getElementById('flow-head');
+    head.innerHTML = '';
+    var hr = document.createElement('tr');
+    ['Plan', 'Year 0', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Present value'].forEach(function (h, i) {
+      var th = document.createElement('th');
+      th.scope = 'col';
+      if (i > 0) { th.className = 'num'; }
+      th.textContent = h;
+      hr.appendChild(th);
+    });
+    head.appendChild(hr);
+    var body = document.getElementById('flow-body');
+    body.innerHTML = '';
+    [['Staged', STAGED, pvS], ['One step', ONE, pvO]].forEach(function (r) {
+      var tr = document.createElement('tr');
+      var th = document.createElement('th');
+      th.scope = 'row';
+      th.textContent = r[0];
+      tr.appendChild(th);
+      r[1].forEach(function (x) {
+        var td = document.createElement('td');
+        td.className = 'num';
+        td.textContent = signed(x);
+        tr.appendChild(td);
+      });
+      var tdp = document.createElement('td');
+      tdp.className = 'num';
+      tdp.textContent = signed(Math.round(r[2]));
+      tr.appendChild(tdp);
+      body.appendChild(tr);
+    });
+    document.getElementById('base-note').textContent =
+      'On paper the one-step plan is worth ' + usd(pvO - pvS) + ' more, because it earns the full amount sooner. It also commits ' + usd(-ONE[0]) + ' before any result is known, against ' + usd(-STAGED[0]) + ' for the staged plan before its first real choice. The base-case flows for the staged plan show no checkpoint, so they cannot show what the checkpoints are worth.';
+    var sov = document.getElementById('sov');
+    sov.innerHTML = '';
+    var s1 = document.createElement('p');
+    s1.textContent = 'Month 12. By then the team will know whether a year of logged results beats the baseline and how many false alarms the engineers had to clear. That information opens one choice: fund stage two, delay it, or stop with ' + usd(COST.s1) + ' spent.';
+    var s2 = document.createElement('p');
+    s2.textContent = 'Month 24. By then the team will know how three plants perform and how heavy the false-alarm load is. That information opens one choice: fund stage three, delay it, or stop with ' + usd(COST.s1 + COST.s2) + ' spent.';
+    sov.appendChild(s1);
+    sov.appendChild(s2);
+    document.getElementById('judgment-note').textContent =
+      'Whether the exposure the staged plan avoids is worth the base-case value it gives up is a judgment for the person deciding. The case\u2019s job is to show both.';
+    document.getElementById('panel').hidden = false;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var a = answersFor(ITEMS, 'ev');
+    var diff = [];
+    ITEMS.forEach(function (item, i) { if (a[i] !== item.bucket) { diff.push(i); } });
+    if (diff.length === 0) {
+      showFeedback('fb-ok', 'Correct.', ['Right. Two decision points, two milestones, and two locked-in commitments. The reviews at months 30 and 36 sound like gates and are not: by then nothing is left to withhold.']);
+      renderPanel();
+      document.getElementById('second-pass').hidden = false;
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback('fb-near', 'Close.', ['Five of six are sorted correctly. Look again at: \u201C' + it.title + '\u201D', it.why]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+  });
+
+  // Second pass: the same two checkpoints, with stages two and three bought at signing.
+  var SP_ITEMS = [
+    { title: 'Month 12: stage-two checkpoint, with the discount taken', bucket: 'li',
+      facts: [['What the team learns', 'The same full year of logged results.'],
+              ['What is still open', 'The money for stage two was committed at signing, at the discounted price. It will be paid when stage two begins, whatever the results show.']] },
+    { title: 'Month 24: stage-three checkpoint, with the discount taken', bucket: 'li',
+      facts: [['What the team learns', 'The same year of results from three plants.'],
+              ['What is still open', 'The money for stage three was committed at signing, at the discounted price. It will be paid when stage three begins, whatever the results show.']] }
+  ];
+  renderCards(document.getElementById('sp-items'), SP_ITEMS, 'sp', function () {
+    var a = answersFor(SP_ITEMS, 'sp');
+    if (a.indexOf(null) !== -1) { return; }
+    var right = a.every(function (v, i) { return v === SP_ITEMS[i].bucket; });
+    var pvS = pv(STAGED), pvD = pv(STAGED_DISC);
+    var committed = COST.s1 + S2D + S3D;
+    var panel = document.getElementById('sp-panel');
+    panel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = (right ? 'Right: ' : 'The rule says otherwise: ') + 'both checkpoints are now locked-in commitments. The results still arrive, but stages two and three are already bought, so nothing is left to expand, delay, or stop.';
+    var p2 = document.createElement('p');
+    p2.textContent = 'The base case improves. The discount cuts the stage costs in years 1 and 2, and the staged plan\u2019s present value rises by ' + usd(pvD - pvS) + ', from ' + usd(pvS) + ' to ' + usd(pvD) + '. At the same time, the money committed before any choice can change the course rises from ' + usd(COST.s1) + ' to ' + usd(committed) + '.';
+    var p3 = document.createElement('p');
+    p3.textContent = 'Neither number alone shows both effects. Whether to take the discount is a judgment, and a case that reported only the improved base case would have hidden what the discount cost in flexibility.';
+    panel.appendChild(p1); panel.appendChild(p2); panel.appendChild(p3);
+    panel.hidden = false;
+  });
+})();
+</script>
+</body>
+</html>

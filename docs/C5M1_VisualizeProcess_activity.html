@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the process</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+
+  .lead-line {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  .context {
+    border-left: 3px solid var(--accent);
+    padding-left: 18px;
+    margin: 0 0 24px;
+    font-size: 1rem;
+    color: var(--ink);
+  }
+
+  .instruction {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0 0 24px;
+  }
+
+  .order-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .order-badge {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .order-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-serif);
+    font-size: 0.98rem;
+    color: var(--ink);
+  }
+
+  .order-controls {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 4px;
+  }
+
+  .move-btn {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .move-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .move-btn:not(:disabled):hover {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+  }
+
+  .move-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .check-btn {
+    display: block;
+    margin: 8px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .check-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .check-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .feedback {
+    margin-top: 20px;
+    padding: 18px 20px;
+    background: var(--white);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .feedback[hidden] {
+    display: none;
+  }
+
+  .feedback:focus {
+    outline: none;
+  }
+
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+
+  .fb-status {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 8px;
+  }
+
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+
+  .fb-detail {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+    .feedback { padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Assemble the process</h1>
+
+  <p class="lead-line">Eight pieces of the path from a draft case to one a reviewer can check, shown out of order. Put them back in the order the work requires.</p>
+
+  <p class="context">A manufacturer&rsquo;s quality organization lead holds an eleven-page draft for an investment committee: nine pages on the system, two on one return figure, and no benefit that names its line or its owner.</p>
+
+  <p class="instruction">Below are eight pieces of the path from that draft to a case the committee can approve or decline on its merits. Use the arrows to put them in the sequence the work requires. Where more than one order works, any of them will pass.</p>
+
+  <div id="order-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my order</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+
+<script>
+(function () {
+  var ITEMS = {
+    PROB: { text: "The problem: eleven pages, nine on the system and two on one return figure, with no range and no benefit that names its line or its owner." },
+    QUANT: { text: "Quantify the operating problem in the units the people doing the work use, and tie it to a goal the organization has already committed to elsewhere." },
+    SCOPE: { text: "Scope the use case: state what is inside and what is outside, specifically enough that it can be costed." },
+    ADMIT: { text: "Run the admission test on every candidate benefit: its family, whether its effect is observed or estimated, the one line it lands on, and the role that owns that line." },
+    ADJUST: { text: "Adjust every figure carried over from the trial downward, and write the reasoning beside it." },
+    PRICE: { text: "Price the benefits that survive across a small number of named scenarios, so the reviewer can see which assumptions drive the result." },
+    RISK: { text: "Assess risk against the scenarios, separating the risks that would change the recommendation from the risks that would change only the number." },
+    SIGNAL: { text: "The signal it worked: every admitted benefit names a line and an owner, the result is a range, and a reviewer can say what would have made the case recommend against proceeding." }
+  };
+
+  var CORRECT_TEXT = "Right. This is the whole path: the problem comes first, it is quantified before it is scoped, the use case is scoped before any benefit is tested against it, benefits are admitted and trial figures adjusted before anything is priced, risk is assessed against the priced scenarios, and the signal appears only once the case is finished.";
+  var CRITERION_TEXT = "Each piece depends on something before it being settled first. A scope needs a quantified problem. Admitting a benefit needs a scope. Pricing needs both the admitted benefits and the adjusted figures. Risk needs the scenarios. The signal needs a finished case.";
+  var FIRST_MOVE_TEXT = "Take any two pieces and ask which one supplies something the other needs before it can mean anything. The one supplying it goes first. If neither needs the other, either order is fine.";
+  var SOFT_NOTE = "One thing to notice: you adjusted the trial figures before admitting the benefits. That passes, because both come before pricing. But some of those benefits may fail the admission test, and the adjustment work on them is wasted. Admitting first is the stronger habit.";
+
+  var CONSTRAINTS = [
+    { ok: function (pos) { return pos.PROB < pos.QUANT; },
+      why: "The problem has to be stated before anything is quantified. Quantify first, and the figure answers a question nobody has framed." },
+    { ok: function (pos) { return pos.QUANT < pos.SCOPE; },
+      why: "A scope takes the quantified problem as its input. Scope first, and the boundary has nothing to be drawn around." },
+    { ok: function (pos) { return pos.SCOPE < pos.ADMIT; },
+      why: "Benefits belong to a scoped use case. Without a boundary there is nothing to cost, and no way to say which line a benefit touches." },
+    { ok: function (pos) { return pos.SCOPE < pos.ADJUST; },
+      why: "Trial figures can be adjusted only once the use case they describe has been scoped. Before that, you cannot say which conditions differ in production." },
+    { ok: function (pos) { return pos.ADMIT < pos.PRICE; },
+      why: "Pricing arranges claims that have already earned their place. Price first, and you arrange claims that have not." },
+    { ok: function (pos) { return pos.ADJUST < pos.PRICE; },
+      why: "A trial figure priced into the scenarios before it is adjusted carries the trial\u2019s conditions into every case." },
+    { ok: function (pos) { return pos.PRICE < pos.RISK; },
+      why: "Risk is assessed against the scenarios. With no scenarios, you cannot tell which risks change the recommendation and which change only the number." },
+    { ok: function (pos) { return pos.RISK < pos.SIGNAL; },
+      why: "The signal that the work succeeded can be read only in a finished case. It cannot appear before the risk assessment closes." }
+  ];
+
+  var srStatus = document.getElementById('sr-status');
+  var containerEl = document.getElementById('order-list');
+  var checkBtnEl = document.getElementById('check-btn');
+  var feedbackEl = document.getElementById('feedback');
+  var statusEl = document.getElementById('fb-status');
+  var detailEl = document.getElementById('fb-detail');
+
+  var order = ['SIGNAL', 'PRICE', 'ADJUST', 'PROB', 'RISK', 'SCOPE', 'ADMIT', 'QUANT'];
+  var pendingFocus = null;
+
+  function render() {
+    containerEl.innerHTML = '';
+    order.forEach(function (id, idx) {
+      var row = document.createElement('div');
+      row.className = 'order-row';
+
+      var badge = document.createElement('span');
+      badge.className = 'order-badge';
+      badge.setAttribute('aria-hidden', 'true');
+      badge.textContent = String(idx + 1);
+
+      var text = document.createElement('span');
+      text.className = 'order-text';
+      text.textContent = ITEMS[id].text;
+
+      var controls = document.createElement('div');
+      controls.className = 'order-controls';
+
+      var upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'move-btn';
+      upBtn.textContent = '\u2191';
+      upBtn.setAttribute('aria-label', 'Move "' + ITEMS[id].text + '" earlier');
+      upBtn.disabled = (idx === 0);
+      upBtn.addEventListener('click', function () { move(idx, -1, id); });
+
+      var downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.className = 'move-btn';
+      downBtn.textContent = '\u2193';
+      downBtn.setAttribute('aria-label', 'Move "' + ITEMS[id].text + '" later');
+      downBtn.disabled = (idx === order.length - 1);
+      downBtn.addEventListener('click', function () { move(idx, 1, id); });
+
+      controls.appendChild(upBtn);
+      controls.appendChild(downBtn);
+      row.appendChild(badge);
+      row.appendChild(text);
+      row.appendChild(controls);
+      containerEl.appendChild(row);
+    });
+
+    if (pendingFocus) {
+      var newIdx = order.indexOf(pendingFocus.id);
+      var rows = containerEl.children;
+      var row2 = rows[newIdx];
+      if (row2) {
+        var btns = row2.querySelectorAll('.move-btn');
+        var preferred = pendingFocus.dir === -1 ? btns[0] : btns[1];
+        if (preferred && !preferred.disabled) { preferred.focus(); }
+        else if (btns[0] && !btns[0].disabled) { btns[0].focus(); }
+        else if (btns[1] && !btns[1].disabled) { btns[1].focus(); }
+      }
+      pendingFocus = null;
+    }
+  }
+
+  function move(idx, delta, id) {
+    var newIdx = idx + delta;
+    if (newIdx < 0 || newIdx >= order.length) { return; }
+    var tmp = order[idx];
+    order[idx] = order[newIdx];
+    order[newIdx] = tmp;
+    srStatus.textContent = ITEMS[id].text + ' moved to position ' + (newIdx + 1) + ' of ' + order.length + '.';
+    feedbackEl.hidden = true;
+    pendingFocus = { id: id, dir: delta };
+    render();
+  }
+
+  checkBtnEl.addEventListener('click', function () {
+    var pos = {};
+    order.forEach(function (id, idx) { pos[id] = idx; });
+    var violations = [];
+    CONSTRAINTS.forEach(function (c) { if (!c.ok(pos)) { violations.push(c); } });
+
+    feedbackEl.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    if (violations.length === 0) {
+      feedbackEl.classList.add('fb-ok');
+      statusEl.textContent = 'Correct.';
+      detailEl.textContent = CORRECT_TEXT + (pos.ADJUST < pos.ADMIT ? ' ' + SOFT_NOTE : '');
+    } else if (violations.length === 1) {
+      feedbackEl.classList.add('fb-near');
+      statusEl.textContent = 'Close.';
+      detailEl.textContent = violations[0].why;
+    } else {
+      feedbackEl.classList.add('fb-warn');
+      statusEl.textContent = 'Not yet.';
+      detailEl.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+    feedbackEl.hidden = false;
+    feedbackEl.focus();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

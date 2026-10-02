@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whose ledger</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  h3 { font-family: var(--font-sans); font-size: 0.95rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  fieldset.item { min-inline-size: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; font-variant-numeric: tabular-nums; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .field-label { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.86rem; color: var(--ink); margin: 0 0 6px; }
+  select.line-select { display: block; width: 100%; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
+  select.line-select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel ul { margin: 0 0 12px; padding-left: 20px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); }
+  .panel li { margin: 0 0 6px; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table.fig { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.fig caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.fig th, table.fig td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.fig th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.fig td.num, table.fig th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.fig tr.moved td { background: var(--highlight-bg); }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row label { flex: 1 1 100%; font-weight: 600; color: var(--ink); }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 12ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .choice-box { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+  .item .field-label { margin-top: 4px; }
+  .net { list-style: none; padding: 0; margin: 0 0 12px; }
+  .net li { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); padding: 6px 0; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); }
+  .net li b { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Whose ledger</h1>
+
+  <p class="lead-line">Every benefit has a size and a destination. The destination is its landing line: the financial line where the benefit appears, together with the owner accountable for that line. A case that states a size without a destination has answered half of the reviewer&rsquo;s question. Producing a benefit and receiving it are also separate gates. Hours returned to a team remain capacity until a headcount plan or a contract changes.</p>
+
+  <p class="context">A manufacturer&rsquo;s quality organization lead would fund a system that reads supplier quality documents from the quality budget. The case lists five benefits. Every figure on this page is illustrative.</p>
+
+  <div class="instruction">
+    <p>Put two questions to each benefit. What has to change before it arrives, and has anyone agreed to change it? Whose ledger then receives it?</p>
+    <p>Choose the landing line and its owner from the list. Choose the last option when no line and owner can be named yet.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my lines</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="panel" tabindex="-1" hidden>
+    <h3>Netted by your lines</h3>
+    <ul class="net" id="net"></ul>
+    <p id="net-note"></p>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: one agreement changes</h2>
+    <p>The team buys 1,200 of the 2,640 returned hours from a temporary reviewer contract, invoiced at USD 61 an hour. The other 1,440 hours are the engineers&rsquo; own. Suppose the quality organization lead agrees to end the contract when the system goes live, and agrees to nothing else. Choose a line for each part. Nothing here is checked.</p>
+    <div id="sp-items"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  var RATE = 78;                       // loaded quality engineer rate, USD per hour
+  var HOURS = 2640;                    // returned reading hours per year, illustrative
+  var CONTRACT_HOURS = 1200;           // part bought from a temporary reviewer contract, illustrative
+  var CONTRACT_RATE = 61;              // contract invoice rate, USD per hour, illustrative
+  var OWN_HOURS = HOURS - CONTRACT_HOURS;
+
+  function usd(n) { return 'USD ' + Math.round(n).toLocaleString('en-US'); }
+
+  var LINES = [
+    { value: 'qhc', label: 'Quality headcount plan (quality organization lead)', mine: true },
+    { value: 'qcl', label: 'Supplier-quality contract labor (quality organization lead)', mine: true },
+    { value: 'qsw', label: 'Quality software and subscriptions (quality organization lead)', mine: true },
+    { value: 'scrap', label: 'Plant scrap and rework cost (plant lead, site)', mine: false },
+    { value: 'credits', label: 'Supplier credits and chargebacks (procurement lead)', mine: false },
+    { value: 'none', label: 'No line and owner can be named yet: strike it from the calculated benefits', mine: false }
+  ];
+
+  var CLAIMS = [
+    { id: 'hours', key: 'none', size: HOURS * RATE,
+      text: 'The team gets ' + HOURS.toLocaleString('en-US') + ' reading hours a year back.',
+      sizeNote: usd(HOURS * RATE) + ' a year, at the engineer rate of USD ' + RATE + ' an hour',
+      facts: [['What has to change', 'Fewer hours must be paid for: a headcount plan or a contract labor budget has to change.'],
+              ['Who has agreed', 'No one. The engineers stay and no contract changes.']],
+      why: 'Hours are capacity until a line changes. The headcount plan and the contract budget exist, but no one has agreed to change either, so the benefit has no line yet. It needs more work: a decision to change one of those lines, or a place outside the calculated benefits.' },
+    { id: 'scrap', key: 'scrap', size: 74000,
+      text: 'Fewer supplier-caused defects reach final assembly, so scrap and rework fall.',
+      sizeNote: usd(74000) + ' a year',
+      facts: [['What has to change', 'Nothing has to change. Scrap and rework fall as fewer defective parts arrive.'],
+              ['Who has agreed', 'No decision is needed.']],
+      why: 'The benefit arrives by itself on the plants\u2019 scrap and rework line, and the plant lead can confirm it a year later. It is a real benefit on someone else\u2019s ledger.' },
+    { id: 'license', key: 'qsw', size: 42000,
+      text: 'The standalone document-scanning license is retired.',
+      sizeNote: usd(42000) + ' a year',
+      facts: [['What has to change', 'The license is not renewed.'],
+              ['Who has agreed', 'The quality organization lead, at renewal.']],
+      why: 'The quality organization lead has agreed to the change, and the benefit appears on the quality software line that lead owns.' },
+    { id: 'credits', key: 'credits', size: 54000,
+      text: 'Rejected supplier lots are flagged before use and returned for credit.',
+      sizeNote: usd(54000) + ' a year',
+      facts: [['What has to change', 'Rejected lots are caught earlier, and the existing credit-claim process covers them.'],
+              ['Who has agreed', 'No new decision is needed. The process already exists.']],
+      why: 'The credit arrives through procurement\u2019s existing claim process, so it lands on the supplier credits line, which the procurement lead owns.' },
+    { id: 'faster', key: 'none', size: 96000,
+      text: 'Plants wait less for answers on flagged lots.',
+      sizeNote: usd(96000) + ' a year',
+      facts: [['What has to change', 'Plant planners and receiving staff get answers sooner, and then expect them sooner.'],
+              ['Who has agreed', 'No one. No budget line records waiting time.']],
+      why: 'The plants will absorb the faster answers as a higher expectation. No line records waiting time, so no line and owner can be named. The gain is real, and nothing receives it.' }
+  ];
+  var TOTAL = CLAIMS.reduce(function (a, c) { return a + c.size; }, 0);
+
+  var CRITERION_TEXT = 'A benefit lands on a line when it arrives by itself, or through a change someone has already agreed to make. The owner is the role that answers for that line. If the benefit depends on a change nobody has agreed to make, or no line records it at all, no line and owner can be named yet.';
+  var FIRST_MOVE_TEXT = 'On each card, read what has to change and who has agreed. If the change is one nobody has agreed to make, you have found a claim that needs more work.';
+
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  function lineOf(v) { return LINES.filter(function (l) { return l.value === v; })[0]; }
+
+  function makeSelect(id, onChange) {
+    var wrap = document.createElement('div');
+    var label = document.createElement('label');
+    label.className = 'field-label';
+    label.setAttribute('for', id);
+    label.textContent = 'Landing line and owner';
+    var sel = document.createElement('select');
+    sel.className = 'line-select';
+    sel.id = id;
+    var ph = document.createElement('option');
+    ph.value = '';
+    ph.textContent = 'Choose a line\u2026';
+    sel.appendChild(ph);
+    LINES.forEach(function (l) {
+      var o = document.createElement('option');
+      o.value = l.value;
+      o.textContent = l.label;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', onChange);
+    wrap.appendChild(label);
+    wrap.appendChild(sel);
+    return wrap;
+  }
+
+  function renderCards(container, items, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.sizeNote) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = 'Illustrative size: ' + item.sizeNote;
+        fs.appendChild(m);
+      }
+      var f = document.createElement('div');
+      f.className = 'item-facts';
+      item.facts.forEach(function (pair) {
+        var row = document.createElement('div');
+        var b = document.createElement('b');
+        b.textContent = pair[0] + ': ';
+        row.appendChild(b);
+        row.appendChild(document.createTextNode(pair[1]));
+        f.appendChild(row);
+      });
+      fs.appendChild(f);
+      fs.appendChild(makeSelect(prefix + idx, onChange));
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var v = document.getElementById(prefix + idx).value;
+      return v === '' ? null : v;
+    });
+  }
+
+  renderCards(document.getElementById('items'), CLAIMS, 'cl', function () {
+    checkBtn.disabled = answersFor(CLAIMS, 'cl').indexOf(null) !== -1;
+  });
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function net(a) {
+    var landed = 0, mine = 0, none = 0;
+    CLAIMS.forEach(function (c, i) {
+      var l = lineOf(a[i]);
+      if (a[i] === 'none') { none += c.size; }
+      else { landed += c.size; if (l.mine) { mine += c.size; } }
+    });
+    return { landed: landed, mine: mine, others: landed - mine, none: none };
+  }
+
+  function renderNet(a) {
+    var n = net(a);
+    var ul = document.getElementById('net');
+    ul.innerHTML = '';
+    [['Claimed in the case', TOTAL],
+     ['Lands on a ledger the quality organization lead owns', n.mine],
+     ['Lands on a ledger another role owns', n.others],
+     ['Has no line and owner yet', n.none]].forEach(function (r) {
+      var li = document.createElement('li');
+      var s = document.createElement('span');
+      s.textContent = r[0];
+      var b = document.createElement('b');
+      b.textContent = usd(r[1]);
+      li.appendChild(s);
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    document.getElementById('net-note').textContent =
+      'A benefit that lands on another role\u2019s ledger is real, but it justifies that role\u2019s investment. The plant lead and the procurement lead would each have to accept their benefit into their budget before it counts, and no one has asked them. The quality budget funds the system, so only the amount on the quality organization lead\u2019s own ledger lands where the investment is made.';
+    document.getElementById('panel').hidden = false;
+    return n;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var a = answersFor(CLAIMS, 'cl');
+    var diff = [];
+    CLAIMS.forEach(function (c, i) { if (a[i] !== c.key) { diff.push(i); } });
+    renderNet(a);
+    if (diff.length === 0) {
+      showFeedback('fb-ok', 'Correct.', ['Right. Two benefits have no line yet, for different reasons. For one, a line exists but no one has agreed to change it. For the other, no line records the benefit at all. The other three land on named lines, and only one of them on the funder\u2019s own.']);
+      document.getElementById('second-pass').hidden = false;
+    } else if (diff.length === 1) {
+      var c = CLAIMS[diff[0]];
+      showFeedback('fb-near', 'Close.', ['Four of five lines are right. Look again at: \u201C' + c.text + '\u201D', c.why]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+  });
+
+  // Second pass: the contract ends. Two parts of the hours claim.
+  var SP_ITEMS = [
+    { text: 'The ' + CONTRACT_HOURS.toLocaleString('en-US') + ' hours bought from the temporary reviewer contract.', key: 'qcl',
+      sizeNote: CONTRACT_HOURS.toLocaleString('en-US') + ' hours at the invoice rate of USD ' + CONTRACT_RATE + ' an hour',
+      facts: [['What has to change', 'The contract ends and the invoices stop.'],
+              ['Who has agreed', 'The quality organization lead.']] },
+    { text: 'The ' + OWN_HOURS.toLocaleString('en-US') + ' hours that are the engineers\u2019 own.', key: 'none',
+      sizeNote: OWN_HOURS.toLocaleString('en-US') + ' hours at the engineer rate of USD ' + RATE + ' an hour',
+      facts: [['What has to change', 'Fewer hours must be paid for: a headcount plan has to change.'],
+              ['Who has agreed', 'No one.']] }
+  ];
+  renderCards(document.getElementById('sp-items'), SP_ITEMS, 'sp', function () {
+    var a = answersFor(SP_ITEMS, 'sp');
+    if (a.indexOf(null) !== -1) { return; }
+    var right = a[0] === 'qcl' && a[1] === 'none';
+    var invoiced = CONTRACT_HOURS * CONTRACT_RATE;
+    var atRate = CONTRACT_HOURS * RATE;
+    var ownValue = OWN_HOURS * RATE;
+    var before = CLAIMS.filter(function (c) { return c.id === 'license'; })[0].size;
+    var panel = document.getElementById('sp-panel');
+    panel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = (right ? 'Right: ' : 'The rule says otherwise: ') + 'the contract hours now have a line and an owner, because the quality organization lead has agreed to end the contract. The engineers\u2019 hours still have none, because no one has agreed to change the headcount plan.';
+    var p2 = document.createElement('p');
+    p2.textContent = 'The contract line moves by what the invoices say: ' + CONTRACT_HOURS.toLocaleString('en-US') + ' hours at USD ' + CONTRACT_RATE + ' is ' + usd(invoiced) + '. The engineer rate would have said ' + usd(atRate) + '. A ledger receives what its own records show, not what a rate card suggests.';
+    var p3 = document.createElement('p');
+    p3.textContent = 'The amount landing on the quality organization lead\u2019s ledger rises from ' + usd(before) + ' to ' + usd(before + invoiced) + '. The other ' + OWN_HOURS.toLocaleString('en-US') + ' hours, worth ' + usd(ownValue) + ' at the rate card, stay capacity until a line changes. One agreement converted part of the hours. It did not convert all of them.';
+    panel.appendChild(p1); panel.appendChild(p2); panel.appendChild(p3);
+    panel.hidden = false;
+  });
+})();
+</script>
+</body>
+</html>
