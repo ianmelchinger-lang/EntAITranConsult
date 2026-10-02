@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discount by period</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 12px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  fieldset { min-width: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  legend.item-text { float: left; margin-bottom: 8px; }
+  legend.item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 12px; font-variant-numeric: tabular-nums; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 14px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.total td { font-weight: 700; color: var(--ink); background: var(--highlight-bg); }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row label { font-weight: 600; color: var(--ink); }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 6ch; }
+  .field-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; }
+  .field-row label { font-weight: 600; color: var(--ink); }
+  .num-input { font-family: var(--font-sans); font-size: 1rem; width: 9ch; padding: 8px 10px; border: 1px solid var(--steel); border-radius: 4px; background: var(--white); color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
+  .num-input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .unit { color: var(--ink-soft); }
+  dl.readout { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); gap: 8px 18px; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 12px; }
+  dl.readout dt { font-weight: 600; color: var(--ink); }
+  dl.readout dd { margin: 0; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  dl.readout dd.verdict { font-weight: 700; color: var(--ink); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    dl.readout { grid-template-columns: 1fr; gap: 2px 0; }
+    dl.readout dd { margin: 0 0 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Discount by period</h1>
+
+  <p class="lead-line">Present value is what a future benefit or cost is worth today. Money in hand can be put to work while you wait, so an amount that arrives later counts for less, and it counts for less with every year it waits. A case that adds present and future amounts at face value looks stronger than it is.</p>
+
+  <div class="context">
+    <p>A manufacturer&rsquo;s service function wants an assistant that drafts replies to warranty and service questions. Its case sets a payment at signing against three years of net benefit and one later fee. Each net benefit is what remains after running costs and the work the assistant moves to other teams.</p>
+    <p>The page adds all five amounts at face value. The total is +$36,000, and the page calls the case positive. Finance uses a discount rate of 9 percent, the yearly rate at which it marks down money it has to wait for. All amounts here are illustrative.</p>
+  </div>
+
+  <div class="instruction">
+    <p>For each line, choose how long the amount waits before it arrives. Count an amount at the end of the year it arrives in. An amount paid at signing does not wait.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my periods</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="result-panel" tabindex="-1" hidden></div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: the rollout slips a year</h2>
+    <p>Suppose the rollout starts a year late. The payment at signing does not move. Every benefit, and the update fee, arrives one year later. Nothing here is checked.</p>
+    <fieldset class="item">
+      <legend class="item-text">When does the rollout start?</legend>
+      <div class="item-choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  function num(n, d) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+  }
+  function money(n) { return (n < 0 ? '\u2212' : '') + '$' + num(Math.abs(n)); }
+  function signed(n) { return (n < 0 ? '\u2212' : '+') + '$' + num(Math.abs(n)); }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+  function table(caption, heads, rows) {
+    var wrap = el('div', 'table-wrap');
+    var t = el('table', 'scores');
+    if (caption) { t.appendChild(el('caption', null, caption)); }
+    var thead = el('thead'), tr = el('tr');
+    heads.forEach(function (h) { var th = el('th', h.num ? 'num' : null, h.label); th.scope = 'col'; tr.appendChild(th); });
+    thead.appendChild(tr); t.appendChild(thead);
+    var tbody = el('tbody');
+    rows.forEach(function (r) {
+      var row = el('tr', r.total ? 'total' : null);
+      r.cells.forEach(function (c, i) { row.appendChild(el('td', heads[i].num ? 'num' : null, c)); });
+      tbody.appendChild(row);
+    });
+    t.appendChild(tbody); wrap.appendChild(t);
+    return wrap;
+  }
+  function readout(pairs) {
+    var dl = el('dl', 'readout');
+    pairs.forEach(function (p) {
+      dl.appendChild(el('dt', null, p[0]));
+      dl.appendChild(el('dd', p[2] ? 'verdict' : null, p[1]));
+    });
+    return dl;
+  }
+
+  var RATE = 0.09;
+  var LINES = [{"text": "Licence and setup, paid at signing", "amount": -264000, "bucket": "0", "why": "This payment is made today. Ask whether money paid today has to wait at all."}, {"text": "Net benefit in year one", "amount": 90000, "bucket": "1", "why": "Count the year-ends that pass between today and the end of the year this benefit arrives in."}, {"text": "Net benefit in year two", "amount": 120000, "bucket": "2", "why": "Count the year-ends that pass between today and the end of the year this benefit arrives in."}, {"text": "Net benefit in year three", "amount": 120000, "bucket": "3", "why": "Count the year-ends that pass between today and the end of the year this benefit arrives in."}, {"text": "Model update fee, paid at the end of year two", "amount": -30000, "bucket": "2", "why": "A future cost waits just as a future benefit does. Find the benefit that arrives at the same moment as this fee."}];
+  var BUCKETS = [{"value": "0", "label": "Does not wait"}, {"value": "1", "label": "Waits one year"}, {"value": "2", "label": "Waits two years"}, {"value": "3", "label": "Waits three years"}];
+  var CRITERION_TEXT = "Each amount waits as many years as lie between today and its arrival. Benefits and costs follow the same rule.";
+  var FIRST_MOVE_TEXT = "Start with the one amount that is paid today. Then count forward: how many year-ends pass before each of the others arrives?";
+
+  LINES.forEach(function (l) { l.meta = signed(l.amount); });
+
+  function pv(amount, years) { return Math.round(amount / Math.pow(1 + RATE, years)); }
+  function totals(waits) {
+    var face = 0, disc = 0;
+    LINES.forEach(function (l, i) { face += l.amount; disc += pv(l.amount, waits[i]); });
+    return { face: face, disc: disc };
+  }
+  function keyWaits(shift) {
+    return LINES.map(function (l) { var k = Number(l.bucket); return k === 0 ? 0 : k + shift; });
+  }
+  function years(n) { return n === 0 ? 'None' : n + (n === 1 ? ' year' : ' years'); }
+  function linesTable(waits, caption, withFace) {
+    var heads = [{ label: 'Line' }];
+    if (withFace) { heads.push({ label: 'Face value', num: true }); }
+    heads.push({ label: 'Waits' }, { label: 'Value today', num: true });
+    var t = totals(waits);
+    var rows = LINES.map(function (l, i) {
+      var c = [l.text];
+      if (withFace) { c.push(signed(l.amount)); }
+      c.push(years(waits[i]), signed(pv(l.amount, waits[i])));
+      return { cells: c };
+    });
+    var tc = ['Total'];
+    if (withFace) { tc.push(signed(t.face)); }
+    tc.push('', signed(t.disc));
+    rows.push({ cells: tc, total: true });
+    return table(caption, heads, rows);
+  }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var resultPanel = document.getElementById('result-panel');
+  var secondPass = document.getElementById('second-pass');
+
+  renderSortItems(itemsEl, LINES, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(LINES, 'item').indexOf(null) !== -1;
+  });
+
+  function renderResult() {
+    var base = totals(keyWaits(0));
+    resultPanel.innerHTML = '';
+    resultPanel.appendChild(linesTable(keyWaits(0), 'Each amount at 9 percent a year, rounded to the dollar', true));
+    resultPanel.appendChild(el('p', null, 'At face value the case clears its commitment by ' + money(base.face) + '. Discounted, it falls short by ' + money(Math.abs(base.disc)) + '. The difference of ' + money(base.face - base.disc) + ' is the price of the wait.'));
+    resultPanel.appendChild(el('p', null, 'On these figures, the honest finding is that the case does not pay back within three years. Discounting made that answer reachable. The face-value total could only say yes.'));
+    resultPanel.hidden = false;
+    secondPass.hidden = false;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var answers = answersFor(LINES, 'item');
+    var diff = gradeSort(LINES, answers);
+    var waits = answers.map(Number);
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ['Right. Only the payment at signing counts at face value. Each benefit waits one year longer than the one before it. The update fee waits two years, exactly as the year-two benefit does, because a future cost is discounted the same way as a future benefit.']);
+      renderResult();
+      return;
+    }
+    if (diff.length === 1) {
+      var it = LINES[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Four lines are right. Look again at: \u201C' + it.text + '\u201D', it.why]);
+      return;
+    }
+    var allZero = waits.every(function (w) { return w === 0; });
+    var benefitsSame = waits[1] === waits[2] && waits[2] === waits[3];
+    var paras;
+    if (allZero) {
+      paras = ['With no line waiting, your total is the page\u2019s own ' + signed(totals(waits).disc) + '. That is the face-value method the case used. It treats a benefit in year three as if it had already arrived.', FIRST_MOVE_TEXT];
+    } else if (benefitsSame) {
+      paras = ['You gave all three benefit years the same wait. A three-year total is three amounts that arrive at three different times, and each waits a different number of years.', FIRST_MOVE_TEXT];
+    } else if (waits[0] !== 0) {
+      paras = ['You discounted the payment at signing. That money is paid today, so it is already at today\u2019s value. Only amounts that arrive later wait.', FIRST_MOVE_TEXT];
+    } else {
+      paras = [CRITERION_TEXT, FIRST_MOVE_TEXT];
+    }
+    showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', paras);
+  });
+
+  // Second pass: the same instrument with the timing moved by one year.
+  var spChoices = document.getElementById('sp-choices');
+  var spPanel = document.getElementById('sp-panel');
+  function renderSlip() {
+    var c = document.querySelector('input[name="slip"]:checked');
+    if (!c) { return; }
+    var shift = Number(c.value);
+    var base = totals(keyWaits(0)), now = totals(keyWaits(shift));
+    spPanel.innerHTML = '';
+    spPanel.appendChild(linesTable(keyWaits(shift), shift ? 'Rollout one year late' : 'Rollout on schedule', false));
+    if (shift) {
+      spPanel.appendChild(el('p', null, 'The face-value total is still ' + signed(now.face) + '. Adding at face value takes no account of when an amount arrives, so a year\u2019s delay cannot move it.'));
+      spPanel.appendChild(el('p', null, 'The discounted total falls from ' + signed(base.disc) + ' to ' + signed(now.disc) + '. The ' + money(base.disc - now.disc) + ' difference is the price of one more year of waiting, and nothing else changed.'));
+    } else {
+      spPanel.appendChild(el('p', null, 'On schedule, the face-value total is ' + signed(now.face) + ' and the discounted total is ' + signed(now.disc) + '. Now choose the late start and compare.'));
+    }
+    spPanel.hidden = false;
+  }
+  spChoices.appendChild(makeChoice('slip', '0', 'On schedule', renderSlip));
+  spChoices.appendChild(makeChoice('slip', '1', 'One year late', renderSlip));
+
+})();
+</script>
+</body>
+</html>
