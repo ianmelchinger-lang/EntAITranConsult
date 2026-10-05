@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the pair</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  fieldset.item { min-width: 0; }
+  fieldset.item > legend.item-text { float: left; }
+  fieldset.item > legend.item-text + * { clear: both; }
+  .choice-stack { display: flex; flex-direction: column; gap: 8px; }
+  .choice-stack .choice-box { display: block; font-weight: 500; line-height: 1.45; }
+  .opt-row { display: flex; align-items: flex-start; gap: 10px; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); margin: 0 0 12px; cursor: pointer; }
+  .opt-row input { flex: 0 0 auto; width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--accent-deep); }
+  .opt-row input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .field-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); margin: 0 0 14px; }
+  .field-row label { flex: 1 1 260px; }
+  .field-row select { flex: 0 0 auto; font-family: var(--font-sans); font-size: 0.95rem; padding: 9px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); }
+  .field-row select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .facts { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px 14px 34px; margin: 0 0 22px; }
+  .facts li { margin: 0 0 8px; }
+  .facts li:last-child { margin-bottom: 0; }
+  table.scores td.flag-bad { color: var(--warn); font-weight: 600; }
+  table.scores td.flag-ok { color: var(--ok); font-weight: 600; }
+  table.scores .tag { display: block; color: var(--steel); font-size: 0.84rem; }
+  table.scores th.num { white-space: normal; }
+  .sp-note { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  @media (max-width: 480px) {
+    .field-row label { flex: 1 1 100%; }
+    .field-row select { width: 100%; }
+    table.scores { font-size: 0.84rem; }
+    table.scores th, table.scores td { padding: 7px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Find the pair</h1>
+
+  <p class="lead-line">A paired quality metric is a measure attached to an efficiency measure because it would move the wrong way if the efficiency gain were an illusion. Speed and volume measures stop counting when work leaves the desk, so they report the same good news whether the work improved or only left sooner. Your job is to find where the work would come back.</p>
+
+  <p class="context">A manufacturer is writing metric sets for four AI initiatives. Each set already holds one efficiency measure. For each, four companion measures have been proposed.</p>
+
+  <div class="instruction">
+    <p>For each efficiency measure, choose the one companion that would move the wrong way if the gain were false.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my pairs</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: test your picks against a false gain</h2>
+    <p>Suppose the gain in every set is an illusion: work leaves sooner because flaws pass through. Switch between the two cases and watch which measures read differently. Nothing here is checked.</p>
+    <fieldset class="item">
+      <legend class="item-text">Which case?</legend>
+      <div class="item-choices" id="world-choices"></div>
+    </fieldset>
+    <div class="table-wrap">
+      <table class="scores" id="sp-table">
+        <caption id="sp-caption"></caption>
+        <thead><tr><th scope="col">Set</th><th scope="col">Measure</th><th scope="col">What it shows</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="sp-note" id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+
+  var SETS = [
+    { name: "Warranty claims",
+      where: "the warranty claims queue, where an assistant drafts responses",
+      eff: "Share of claims resolved at first contact",
+      options: [
+        { text: "Sessions with the assistant per agent each week", type: 'act' },
+        { text: "Repeat contacts on the same claim within 30 days", type: 'pair' },
+        { text: "Agents\u2019 rating of how much faster the work feels", type: 'self' },
+        { text: "Claims closed per agent each day", type: 'eff' }
+      ] },
+    { name: "Supplier write-ups",
+      where: "supplier nonconformance write-ups at three plants, drafted by an assistant and reviewed by a quality engineer",
+      eff: "Minutes per write-up",
+      options: [
+        { text: "Write-ups completed per engineer each week", type: 'eff' },
+        { text: "Engineers\u2019 estimate of the minutes saved per write-up", type: 'self' },
+        { text: "Share of write-ups returned for correction after filing, and the minutes each correction takes", type: 'pair' },
+        { text: "Share of write-ups that start from an assisted draft", type: 'act' }
+      ] },
+    { name: "Visual inspection",
+      where: "visual inspection at one plant, where an assistant flags suspect units",
+      eff: "Inspection time per unit",
+      options: [
+        { text: "Escapes per million units: flaws found after a unit has passed inspection", type: 'pair' },
+        { text: "Share of shifts that use the inspection assistant", type: 'act' },
+        { text: "Units inspected per shift", type: 'eff' },
+        { text: "Inspectors\u2019 confidence in the assistant\u2019s calls", type: 'self' }
+      ] },
+    { name: "Maintenance scheduling",
+      where: "maintenance scheduling at two plants, where work orders are scheduled automatically and reviewed by a planner",
+      eff: "Work orders scheduled per planner hour",
+      options: [
+        { text: "Planners\u2019 rating of schedule quality", type: 'self' },
+        { text: "Hours from a maintenance request to a published schedule", type: 'eff' },
+        { text: "Share of work orders routed through the automation", type: 'act' },
+        { text: "Schedules corrected after release, when a later check or a technician finds an error", type: 'pair' }
+      ] }
+  ];
+
+  var TYPE_WHY = {
+    eff: "That companion is a second efficiency measure. It counts how fast or how much work leaves, so it would improve along with the first whether or not the work got worse.",
+    act: "That companion describes use of the tool. It shows that people are using it, and it says nothing about what happened to the work.",
+    self: "That companion records how the work seems to the people doing it. It is a perception, collected at the desk the work leaves and before anything comes back."
+  };
+  var SHOWS = {
+    main: { real: 'Improves', illusion: 'Improves' },
+    eff: { real: 'Improves', illusion: 'Improves' },
+    act: { real: 'Stays high', illusion: 'Stays high' },
+    self: { real: 'Stays favorable', illusion: 'Stays favorable' },
+    pair: { real: 'Holds steady', illusion: 'Worsens' }
+  };
+  var CRITERION_TEXT = "A pair has one job: to move the wrong way if the gain is false. A second speed or volume measure improves along with the first. A usage figure describes the tool. A rating records how the work seems at the desk it leaves. None of those three would turn.";
+  var FIRST_MOVE_TEXT = "For each set, follow the work past the desk. Ask who receives it next, and what they would have to do if it arrived flawed. The pair counts that.";
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+  var srStatus = document.getElementById('sr-status');
+
+  function picks() {
+    return SETS.map(function (s, idx) {
+      var c = document.querySelector('input[name="set' + idx + '"]:checked');
+      return c ? parseInt(c.value, 10) : null;
+    });
+  }
+  function pairIndex(set) {
+    for (var i = 0; i < set.options.length; i++) { if (set.options[i].type === 'pair') { return i; } }
+    return -1;
+  }
+  function gradePairs(p) {
+    var diff = [];
+    SETS.forEach(function (s, i) { if (p[i] === null || s.options[p[i]].type !== 'pair') { diff.push(i); } });
+    return diff;
+  }
+
+  SETS.forEach(function (set, idx) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = set.eff;
+    fs.appendChild(legend);
+    var m = document.createElement('p');
+    m.className = 'item-meta';
+    m.textContent = 'The efficiency measure for ' + set.where + '.';
+    fs.appendChild(m);
+    var choices = document.createElement('div');
+    choices.className = 'item-choices choice-stack';
+    set.options.forEach(function (o, j) {
+      choices.appendChild(makeChoice('set' + idx, String(j), o.text, function () {
+        checkBtn.disabled = picks().indexOf(null) !== -1;
+        if (!sp.hidden) { renderWorld(false); }
+      }));
+    });
+    fs.appendChild(choices);
+    itemsEl.appendChild(fs);
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var p = picks();
+    var diff = gradePairs(p);
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ["Right. Each pair sits where the work comes back: the repeat contact, the returned write-up, the escaped flaw, the corrected schedule. With these four in place, a reviewer can say what a masked failure would look like in every set."]);
+    } else if (diff.length === 1) {
+      var s = SETS[diff[0]];
+      var o = s.options[p[diff[0]]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ["Look again at \u201C" + s.eff + ".\u201D You attached \u201C" + o.text + ".\u201D", TYPE_WHY[o.type] + " Ask where this work would come back if it left flawed."]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+    renderWorld(false);
+  });
+
+  var worldEl = document.getElementById('world-choices');
+  [['real', 'The gain is real'], ['illusion', 'The gain is an illusion']].forEach(function (w) {
+    worldEl.appendChild(makeChoice('world', w[0], w[1], function () { renderWorld(true); }));
+  });
+  document.querySelector('input[name="world"][value="real"]').checked = true;
+
+  var spBody = document.querySelector('#sp-table tbody');
+  var spCaption = document.getElementById('sp-caption');
+  var spNote = document.getElementById('sp-note');
+
+  function worldRows(p, world) {
+    var rows = [];
+    SETS.forEach(function (s, i) {
+      rows.push({ set: s.name, measure: s.eff, tag: 'Efficiency measure', shows: SHOWS.main[world], turns: false });
+      var pi = pairIndex(s);
+      if (p[i] !== null && p[i] !== pi) {
+        var o = s.options[p[i]];
+        rows.push({ set: '', measure: o.text, tag: 'Your pick', shows: SHOWS[o.type][world], turns: SHOWS[o.type].real !== SHOWS[o.type].illusion });
+      }
+      rows.push({ set: '', measure: s.options[pi].text, tag: (p[i] === pi ? 'Your pick, the pair' : 'The pair'), shows: SHOWS.pair[world], turns: true });
+    });
+    return rows;
+  }
+
+  function renderWorld(announce) {
+    var world = document.querySelector('input[name="world"]:checked').value;
+    var rows = worldRows(picks(), world);
+    spCaption.textContent = world === 'real' ? 'What each measure shows when the gain is real' : 'What each measure shows when the gain is an illusion';
+    spBody.innerHTML = '';
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      if (world === 'illusion' && r.turns) { tr.className = 'moved'; }
+      var td1 = document.createElement('td'); td1.textContent = r.set; tr.appendChild(td1);
+      var td2 = document.createElement('td'); td2.textContent = r.measure + ' ';
+      var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = r.tag; td2.appendChild(tag); tr.appendChild(td2);
+      var td3 = document.createElement('td'); td3.textContent = r.shows;
+      if (world === 'illusion' && r.turns) { td3.className = 'flag-bad'; }
+      tr.appendChild(td3);
+      spBody.appendChild(tr);
+    });
+    var note = world === 'real'
+      ? "Here every measure brings good news, and the pair confirms it: the gain stands."
+      : "Only the pairs have turned. Every other measure reads exactly as it did when the gain was real, so a set without its pair would report this failure as a success. A rating stays favorable in this case because it is collected at the desk, before the work comes back.";
+    spNote.textContent = note;
+    if (announce) { srStatus.textContent = spCaption.textContent + '. ' + note; }
+  }
+})();
+</script>
+</body>
+</html>
