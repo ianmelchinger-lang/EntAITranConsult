@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tag the source</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 12px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .ref { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: 4px; padding: 16px 18px; margin: 0 0 22px; }
+  .ref h2 { font-family: var(--font-sans); font-size: 1rem; margin: 0 0 6px; }
+  .ref h3 { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 700; color: var(--accent-deep); margin: 12px 0 4px; }
+  .ref ul { margin: 0; padding-left: 20px; }
+  .ref li { margin: 0 0 6px; }
+  .ref li:last-child { margin-bottom: 0; }
+  fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset.item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  fieldset.item > legend { float: left; width: 100%; }
+  fieldset.item > legend + * { clear: both; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel h2, .panel h3 { font-family: var(--font-sans); font-size: 1rem; font-weight: 700; margin: 0 0 10px; color: var(--ink); }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .result-list { list-style: none; margin: 0 0 10px; padding: 0; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); }
+  .result-list li { padding: 10px 0; border-top: 1px solid var(--line); }
+  .result-list li:first-child { border-top: none; padding-top: 0; }
+  .result-list li.moved { background: var(--highlight-bg); padding-left: 10px; padding-right: 10px; }
+  .tag { display: block; font-size: 0.84rem; font-weight: 600; color: var(--accent-deep); margin-top: 4px; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .sp-legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 14px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.total td { font-weight: 700; color: var(--ink); }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .columns { display: flex; gap: 16px; flex-wrap: wrap; }
+  .columns > div { flex: 1 1 240px; min-width: 0; }
+  .columns h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .columns ul { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 20px; }
+  .columns li.moved { color: var(--ink); font-weight: 600; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row label { font-weight: 600; color: var(--ink); }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 11ch; }
+  .order-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); padding: 12px 14px; margin-bottom: 10px; }
+  .order-badge { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 0.85rem; color: var(--ink-soft); }
+  .order-text { flex: 1 1 auto; min-width: 0; font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); }
+  .order-controls { flex: 0 0 auto; display: flex; gap: 4px; }
+  .move-btn { font-family: var(--font-sans); font-size: 1rem; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .move-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .move-btn:not(:disabled):hover { background: var(--highlight-bg); border-color: var(--accent); }
+  .move-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    fieldset.item { padding: 14px 14px; }
+    .feedback, .panel, .ref { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .columns { flex-direction: column; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Tag the source</h1>
+
+  <p class="lead-line">A business case inherits two limits from work the organization has already finished. The readiness assessment sets what the organization can support today. The roadmap sets what can happen, and in what order. Readiness limits what the case may claim, and phasing limits when the case may claim it will arrive. A claim with no source beside it asks the reader to take it on trust.</p>
+
+  <div class="context">
+    <p>An advisor is drafting the case for an AI assistant that helps inspectors at a manufacturer's plants catch defects. An escaped defect is a faulty unit that passes inspection and leaves the plant. The first phase covers two plants: the plant that ran the pilot, and a second plant.</p>
+    <p>The findings and phases below are settled. The financial model follows them.</p>
+  </div>
+
+  <div class="ref" role="region" aria-labelledby="ref-h">
+    <h2 id="ref-h">What the case inherits</h2>
+    <h3>Readiness findings</h3>
+    <ul>
+      <li><b>Records.</b> Inspection records are usable as they stand at the pilot plant. Other plants recorded theirs differently, and each needs reconciling before the tool can run there. The second plant is one of them.</li>
+      <li><b>Shift use.</b> In the pilot, two of three shifts stopped using the tool in its second month.</li>
+    </ul>
+    <h3>Roadmap</h3>
+    <ul>
+      <li><b>Phase one, months 1 to 6.</b> The pilot plant keeps running the tool. The second plant's records are reconciled in months 4 to 6, and the tool goes live there in month 7.</li>
+      <li><b>Phase two, months 7 to 12.</b> Further plants begin, only if a review at month 6 shows phase one's benefit.</li>
+    </ul>
+  </div>
+
+  <div class="instruction">
+    <p>Mark each of the six draft claims below.</p>
+    <p><b>Supported:</b> a finding or phase above makes the claim achievable as written.</p>
+    <p><b>Ahead of its source:</b> a finding or phase bears on the claim, and the claim promises more, or sooner, than that source allows.</p>
+    <p><b>On trust:</b> nothing above bears on the claim.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my tags</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <div class="panel" id="tag-panel" hidden>
+    <h2>The claims, with the constraint stated beside each</h2>
+    <ul class="result-list" id="tag-list"></ul>
+    <p>A reader of a tagged claim can see the condition, trace it to its source, and judge the claim on its evidence.</p>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: move the roadmap</h2>
+    <p>Suppose the team that reconciles the second plant's records can start in month 1 instead of month 4. The draft claims stay as written, and nobody touches the model. Choose a schedule and watch the claims. Nothing here is checked.</p>
+    <fieldset id="sp-set">
+      <legend class="sp-legend">Reconciling the second plant's records</legend>
+      <div class="item-choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" aria-live="polite">
+      <div class="table-wrap">
+        <table class="scores">
+          <caption id="sp-caption"></caption>
+          <thead><tr><th scope="col">Draft claim</th><th scope="col">Reading</th></tr></thead>
+          <tbody id="sp-rows"></tbody>
+        </table>
+      </div>
+      <p id="sp-note"></p>
+    </div>
+  </section>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  function num(n) { return n.toLocaleString('en-US'); }
+  function usd(n) { return 'USD ' + n.toLocaleString('en-US'); }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  // Three feedback states. From the third unsuccessful check, the wrong state
+  // also names which items to look at again. It never gives a placement.
+  function sortVerdict(items, answers, attempts, texts) {
+    var diff = gradeSort(items, answers);
+    if (diff.length === 0) {
+      return { state: 'fb-ok', status: 'Correct.', paras: [texts.correct], ok: true };
+    }
+    if (diff.length === 1) {
+      var it = items[diff[0]];
+      return { state: 'fb-near', status: 'Close.', paras: ['One is out of place. Look again at: \u201C' + it.text + '\u201D', it.why], ok: false };
+    }
+    var paras = [texts.criterion, texts.firstMove];
+    if (attempts >= 3) {
+      paras.push('The ones to look at again: ' + diff.map(function (i) { return items[i].short; }).join('; ') + '.');
+    }
+    return { state: 'fb-warn', status: 'Not yet.', paras: paras, ok: false };
+  }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined && text !== null) { e.textContent = text; }
+    return e;
+  }
+
+  // The inherited constraints, as data. The key is computed from these.
+  var RECON_MONTHS = 3;                 // months needed to reconcile one plant's records
+  var SCHEDULES = {
+    asPlanned: { label: 'Months 4 to 6, as scheduled', start: 4 },
+    earlier: { label: 'Months 1 to 3', start: 1 }
+  };
+  var PHASE_TWO_START = 7;
+  var SHIFTS = 3, SHIFTS_USING = 1;     // pilot floor: shifts still using the tool after month two
+
+  function goLive(schedule) { return schedule.start + RECON_MONTHS; }
+  function reconEnd(schedule) { return schedule.start + RECON_MONTHS - 1; }
+
+  // Each claim names the source that bears on it (or none) and tests itself against that source.
+  var CLAIMS = [
+    { id: 'c2', short: 'savings at the second plant from month 4', claimMonth: 4,
+      text: 'The second plant delivers savings from month 4.',
+      source: 'Roadmap: phase one',
+      within: function (s) { return this.claimMonth >= goLive(s); },
+      why: 'Phase one bears on this claim. It reconciles the second plant\u2019s records in months 4 to 6 and puts the tool live in month 7. Month 4 is sooner than the roadmap allows, so the claim runs ahead of its source.',
+      tagged: function (s) { return 'The second plant delivers savings from month ' + num(goLive(s)) + ', once its records are reconciled in months ' + num(s.start) + ' to ' + num(reconEnd(s)) + '.'; } },
+    { id: 'c5', short: 'the provider\u2019s price',
+      text: 'The software provider will hold its price through both phases.',
+      source: null,
+      why: 'No readiness finding and no roadmap phase says anything about price. With no source here, the reader has only the advisor\u2019s word, so the claim is on trust.' },
+    { id: 'c1', short: 'the pilot plant\u2019s records',
+      text: 'The pilot plant can run the tool on its inspection records as they stand.',
+      source: 'Readiness: records',
+      within: function () { return true; },
+      why: 'The records finding says exactly this about the pilot plant. The claim stays inside its source, so it is supported.',
+      tagged: function () { return 'The pilot plant can run the tool on its inspection records as they stand.'; } },
+    { id: 'c3', short: 'every shift using the tool from the first week',
+      text: 'Every shift at both plants will use the tool from its first week.',
+      source: 'Readiness: shift use',
+      within: function () { return SHIFTS_USING >= SHIFTS; },
+      why: 'The shift-use finding bears on this claim: in the pilot, two of three shifts stopped. The claim promises more than that floor supports, so it runs ahead of its source.',
+      tagged: function () { return 'Shift use starts from the pilot\u2019s floor, ' + num(SHIFTS_USING) + ' shift in ' + num(SHIFTS) + ', and the case says what will raise it.'; } },
+    { id: 'c4', short: 'further plants in month 7', claimMonth: 7,
+      text: 'Further plants begin in month 7, if the review at month 6 shows phase one\u2019s benefit.',
+      source: 'Roadmap: phase two',
+      within: function () { return this.claimMonth >= PHASE_TWO_START; },
+      why: 'Phase two says this, and the claim carries the roadmap\u2019s condition with it. It stays inside its source, so it is supported.',
+      tagged: function () { return 'Further plants begin in month 7, if the review at month 6 shows phase one\u2019s benefit.'; } },
+    { id: 'c6', short: 'customer complaints',
+      text: 'Customer complaints will fall in step with escaped defects.',
+      source: null,
+      why: 'Nothing above measures or schedules customer complaints. With no source here, the claim is on trust.' }
+  ];
+
+  function statusOf(claim, schedule) {
+    if (claim.source === null) { return 'trust'; }
+    return claim.within(schedule) ? 'supported' : 'ahead';
+  }
+
+  var BUCKETS = [
+    { value: 'supported', label: 'Supported' },
+    { value: 'ahead', label: 'Ahead of its source' },
+    { value: 'trust', label: 'On trust' }
+  ];
+  var LABEL = { supported: 'Supported', ahead: 'Ahead of its source', trust: 'On trust' };
+
+  var ITEMS = CLAIMS.map(function (c) {
+    return { text: c.text, short: c.short, why: c.why, bucket: statusOf(c, SCHEDULES.asPlanned) };
+  });
+
+  var TEXTS = {
+    correct: 'Right. Two claims rest on a source as written. Two run ahead of the finding or phase that governs them. Two have no source here at all, so a reader would have to take them on the advisor\u2019s word.',
+    criterion: 'Two questions decide each claim. Does a readiness finding or a roadmap phase bear on it? If nothing does, the claim is on trust. If something does, does the claim stay inside what that source allows, in amount and in timing? Inside is supported. More, or sooner, is ahead of its source.',
+    firstMove: 'Take one claim and look for its subject in the panel: records, shift use, a month, a plant. If the subject isn\u2019t there, you have your answer. If it is, compare what the claim promises with what the source says.'
+  };
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var attempts = 0;
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  function renderTags() {
+    var list = document.getElementById('tag-list');
+    list.innerHTML = '';
+    CLAIMS.forEach(function (c) {
+      var li;
+      if (c.source === null) {
+        li = el('li', null, c.text);
+        li.appendChild(el('span', 'tag', 'No source yet. Trace it to one before the case goes out.'));
+      } else {
+        li = el('li', null, c.tagged(SCHEDULES.asPlanned));
+        li.appendChild(el('span', 'tag', c.source));
+      }
+      list.appendChild(li);
+    });
+    document.getElementById('tag-panel').hidden = false;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    attempts += 1;
+    var v = sortVerdict(ITEMS, answersFor(ITEMS, 'item'), attempts, TEXTS);
+    if (v.ok) {
+      renderTags();
+      document.getElementById('second-pass').hidden = false;
+    }
+    showFeedback(fb, fbStatus, fbDetail, v.state, v.status, v.paras);
+  });
+
+  // Second pass: the roadmap moves; the claims and the model do not.
+  var spChoices = document.getElementById('sp-choices');
+
+  function renderSecondPass(key) {
+    var schedule = SCHEDULES[key];
+    var rows = document.getElementById('sp-rows');
+    rows.innerHTML = '';
+    var moved = [];
+    CLAIMS.forEach(function (c) {
+      var now = statusOf(c, schedule), before = statusOf(c, SCHEDULES.asPlanned);
+      var tr = el('tr', now !== before ? 'moved' : null);
+      tr.appendChild(el('td', null, c.text));
+      tr.appendChild(el('td', null, LABEL[now] + (now !== before ? ' (was: ' + LABEL[before].toLowerCase() + ')' : '')));
+      rows.appendChild(tr);
+      if (now !== before) { moved.push(c); }
+    });
+    document.getElementById('sp-caption').textContent = 'Records reconciled in months ' + num(schedule.start) + ' to ' + num(reconEnd(schedule)) + '. The tool goes live at the second plant in month ' + num(goLive(schedule)) + '.';
+    var note = document.getElementById('sp-note');
+    if (moved.length === 0) {
+      note.textContent = 'On the roadmap as scheduled, the claim about month 4 promises savings three months before the tool is live.';
+    } else {
+      note.textContent = 'One reading changed. The claim about month ' + num(moved[0].claimMonth) + ' is now supported, because the tool goes live in month ' + num(goLive(schedule)) + '. Nobody edited the claim or the model. The roadmap moved, and what the case may claim moved with it. Cause runs one way here: a model can\u2019t bring a date forward, and a roadmap can.';
+    }
+  }
+
+  ['asPlanned', 'earlier'].forEach(function (key, i) {
+    var c = makeChoice('sp-schedule', key, SCHEDULES[key].label, function (e) { renderSecondPass(e.target.value); });
+    if (i === 0) { c.querySelector('input').checked = true; }
+    spChoices.appendChild(c);
+  });
+  renderSecondPass('asPlanned');
+
+})();
+</script>
+</body>
+</html>
