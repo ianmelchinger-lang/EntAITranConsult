@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name the second-order measure</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  fieldset.item { min-width: 0; }
+  fieldset.item > legend.item-text { float: left; }
+  fieldset.item > legend.item-text + * { clear: both; }
+  .choice-stack { display: flex; flex-direction: column; gap: 8px; }
+  .choice-stack .choice-box { display: block; font-weight: 500; line-height: 1.45; }
+  .opt-row { display: flex; align-items: flex-start; gap: 10px; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); margin: 0 0 12px; cursor: pointer; }
+  .opt-row input { flex: 0 0 auto; width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--accent-deep); }
+  .opt-row input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .field-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); margin: 0 0 14px; }
+  .field-row label { flex: 1 1 260px; }
+  .field-row select { flex: 0 0 auto; font-family: var(--font-sans); font-size: 0.95rem; padding: 9px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); }
+  .field-row select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .facts { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px 14px 34px; margin: 0 0 22px; }
+  .facts li { margin: 0 0 8px; }
+  .facts li:last-child { margin-bottom: 0; }
+  table.scores td.flag-bad { color: var(--warn); font-weight: 600; }
+  table.scores td.flag-ok { color: var(--ok); font-weight: 600; }
+  table.scores .tag { display: block; color: var(--steel); font-size: 0.84rem; }
+  table.scores th.num { white-space: normal; }
+  .sp-note { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  @media (max-width: 480px) {
+    .field-row label { flex: 1 1 100%; }
+    .field-row select { width: 100%; }
+    table.scores { font-size: 0.84rem; }
+    table.scores th, table.scores td { padding: 7px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Name the second-order measure</h1>
+
+  <p class="lead-line">A second-order measure tracks real value that reaches the financial statements by a long route: better decisions, more managerial bandwidth, experienced staff who stay. Priced with invented arithmetic, it invites doubt. Left out, it understates what the initiative did. Your job is to decide which lines earn a labeled place on the metric sheet.</p>
+
+  <p class="context">A manufacturer’s service and warranty operation is writing the metric sheet for its AI drafting assistant before any results arrive. The operation states its strategic exposure plainly: it depends on a small group of experienced warranty analysts who are hard to replace. The plan allows at most two second-order measures. Six lines have been proposed.</p>
+
+  <div class="instruction">
+    <p>Sort each proposed line.</p>
+    <p><b>Hard indicator</b> means it lands in a cost line or an operational figure the budget owner already reviews. <b>Second-order: keep and label</b> means the value travels a longer route, the line is tied to the stated exposure, an existing record can supply the reading, and nothing is priced with estimates. <b>Off the sheet as written</b> means one of those conditions fails.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sort</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change the exposure</h2>
+    <p>Suppose experienced analysts were easy to hire, and the operation’s real exposure lay elsewhere: dealer contracts that come up for renewal and are at risk when claim decisions are disputed. Nothing here is checked.</p>
+    <fieldset class="item">
+      <legend class="item-text">Which strategic exposure does the operation state?</legend>
+      <div class="item-choices" id="exp-choices"></div>
+    </fieldset>
+    <div class="table-wrap">
+      <table class="scores" id="sp-table">
+        <caption id="sp-caption"></caption>
+        <thead><tr><th scope="col">Proposed line</th><th scope="col">Place on the sheet</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="sp-note" id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+
+  var EXPOSURE = 'analysts', CAP = 2;
+  var DECISIONS = 1200, PRICE_EACH = 150;
+  function f0(n) { return n.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+  var PRICED = DECISIONS * PRICE_EACH;
+
+  function keyFor(line, exposure) {
+    if (line.route === 'hard') { return 'hard'; }
+    return (line.priced || !line.record || line.exposure !== exposure) ? 'off' : 'keep';
+  }
+
+  var ITEMS = [
+    { short: "Experienced analysts who stay",
+      text: "Experienced analysts who stay: the share of warranty analysts with five or more years in the role who are still in it 12 months later, read from turnover records.",
+      route: 'long', record: true, priced: false, exposure: 'analysts',
+      whyKeep: "The operation\u2019s scarcest input is its experienced analysts. This line reads their retention from a record that already exists and puts no price on it. Kept and labeled second-order, it sits beside the hard indicators without posing as one.",
+      whyOff: "Retention is real second-order value, and turnover records could supply the reading. But the plan ties its second-order measures to the stated exposure, and under this exposure the line has no tie." },
+    { short: "Handling time per claim",
+      text: "Handling time per claim, read from the workforce management system\u2019s standard report.",
+      route: 'hard', record: true, priced: false, exposure: null,
+      whyHard: "This is an operational figure the budget owner already reviews. It needs no second-order label." },
+    { short: "Better decisions, priced",
+      text: "Better decisions: an estimated " + f0(DECISIONS) + " better claim decisions a year at an estimated USD " + f0(PRICE_EACH) + " each, entered as USD " + f0(PRICED) + " of value.",
+      route: 'long', record: false, priced: true, exposure: null,
+      whyOff: "The value may be real. But the line multiplies one estimate by another and enters the product as dollars, and finance will ask where each estimate came from. As written, it comes off." },
+    { short: "Budgeted positions not requested",
+      text: "Budgeted positions and contractor renewals that were not requested, read from the budget re-approval record.",
+      route: 'hard', record: true, priced: false, exposure: null,
+      whyHard: "A position that was budgeted and not requested is a declined spend, which finance can read in its own records. It is a hard indicator." },
+    { short: "Decisions overturned on dealer appeal",
+      text: "Claim decisions overturned on dealer appeal, as a share of all claim decisions, read from the appeals log.",
+      route: 'long', record: true, priced: false, exposure: 'dealers',
+      whyKeep: "Disputed decisions put dealer contracts at risk, and this line reads decision quality from a record that already exists, with no price attached. Kept and labeled second-order, it measures the thing the operation is exposed on.",
+      whyOff: "Decision quality is real second-order value, and the appeals log could supply the reading. But the plan ties its second-order measures to the stated exposure, which is the scarcity of experienced analysts. This line has no tie to it, so it stays off this sheet." },
+    { short: "Supervisors\u2019 time freed, by asking",
+      text: "Supervisors\u2019 time freed for coaching, estimated each quarter by asking supervisors how many hours they got back.",
+      route: 'long', record: false, priced: false, exposure: null,
+      whyOff: "Managerial bandwidth is real second-order value. Here the only instrument is asking supervisors what they feel they got back, and no record exists to read. As written, it comes off." }
+  ];
+  function whyFor(it, exposure) {
+    var k = keyFor(it, exposure);
+    return k === 'hard' ? it.whyHard : (k === 'keep' ? it.whyKeep : it.whyOff);
+  }
+  ITEMS.forEach(function (it) { it.bucket = keyFor(it, EXPOSURE); it.why = whyFor(it, EXPOSURE); });
+
+  var BUCKETS = [{ value: 'hard', label: 'Hard indicator' }, { value: 'keep', label: 'Second-order: keep and label' }, { value: 'off', label: 'Off the sheet as written' }];
+  var PLACE_TEXT = { hard: 'Hard indicator', keep: 'Second-order: keep and label', off: 'Off the sheet as written' };
+  var CRITERION_TEXT = "Three tests, in order. Does the line land in a cost line or an operational figure the budget owner already reviews? Then it is a hard indicator. If the value travels a longer route, is the line tied to the stated exposure, read from an existing record, and free of invented prices? Then keep it and label it. Otherwise it comes off as written.";
+  var FIRST_MOVE_TEXT = "Start with the stated exposure. Reread what the operation says it depends on. Then ask of each long-route line whether it measures that, and where its reading would come from.";
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+  var srStatus = document.getElementById('sr-status');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ["Right. Two hard indicators, one second-order measure kept and labeled, and three lines off the sheet as written: one priced with invented arithmetic, one with no tie to the stated exposure, and one with no record to read. The sheet names its second-order measure now, before any results arrive, so nobody can call it a refuge later."]);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ["Look again at the line: \u201C" + it.text + "\u201D", it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+  });
+
+  var expEl = document.getElementById('exp-choices');
+  [['analysts', 'Scarce experienced analysts'], ['dealers', 'Dealer contracts at risk from disputed decisions']].forEach(function (e) {
+    expEl.appendChild(makeChoice('exposure', e[0], e[1], function () { renderExposure(true); }));
+  });
+  document.querySelector('input[name="exposure"][value="analysts"]').checked = true;
+
+  var spBody = document.querySelector('#sp-table tbody');
+  var spCaption = document.getElementById('sp-caption');
+  var spNote = document.getElementById('sp-note');
+
+  function renderExposure(announce) {
+    var exposure = document.querySelector('input[name="exposure"]:checked').value;
+    spCaption.textContent = exposure === EXPOSURE ? 'The sheet when the exposure is scarce experienced analysts' : 'The sheet when the exposure is dealer contracts at risk';
+    spBody.innerHTML = '';
+    ITEMS.forEach(function (it) {
+      var k = keyFor(it, exposure);
+      var tr = document.createElement('tr');
+      if (k !== it.bucket) { tr.className = 'moved'; }
+      var td1 = document.createElement('td'); td1.textContent = it.short; tr.appendChild(td1);
+      var td2 = document.createElement('td'); td2.textContent = PLACE_TEXT[k]; tr.appendChild(td2);
+      spBody.appendChild(tr);
+    });
+    var note = exposure === EXPOSURE
+      ? "This is the sheet from the first pass."
+      : "The six lines are the same. The retention line has lost its tie to the exposure, and the appeals line has gained one, so they trade places. The two hard indicators and the two lines that fail on price or record stay where they were. Strategic exposure decides which second-order measures qualify, so two operations running the same tool can rightly carry different ones.";
+    spNote.textContent = note;
+    if (announce) { srStatus.textContent = spCaption.textContent + '. ' + note; }
+  }
+  renderExposure(false);
+})();
+</script>
+</body>
+</html>

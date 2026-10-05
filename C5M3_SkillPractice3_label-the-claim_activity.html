@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Label the claim</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .shortlists { display: flex; gap: 16px; flex-wrap: wrap; }
+  .shortlists > div { flex: 1 1 240px; }
+  .shortlists h3 { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .shortlists ol { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 8px; padding-left: 22px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 16px; }
+  .slider-row input[type=range] { flex: 1 1 220px; accent-color: var(--accent-deep); }
+  .slider-row input[type=range]:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+  .slider-value { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 13ch; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  fieldset.item { min-width: 0; }
+  fieldset.item > legend.item-text { float: left; }
+  fieldset.item > legend.item-text + * { clear: both; }
+  .choice-stack { display: flex; flex-direction: column; gap: 8px; }
+  .choice-stack .choice-box { display: block; font-weight: 500; line-height: 1.45; }
+  .opt-row { display: flex; align-items: flex-start; gap: 10px; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); margin: 0 0 12px; cursor: pointer; }
+  .opt-row input { flex: 0 0 auto; width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--accent-deep); }
+  .opt-row input:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .field-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); margin: 0 0 14px; }
+  .field-row label { flex: 1 1 260px; }
+  .field-row select { flex: 0 0 auto; font-family: var(--font-sans); font-size: 0.95rem; padding: 9px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); }
+  .field-row select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .facts { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px 14px 34px; margin: 0 0 22px; }
+  .facts li { margin: 0 0 8px; }
+  .facts li:last-child { margin-bottom: 0; }
+  table.scores td.flag-bad { color: var(--warn); font-weight: 600; }
+  table.scores td.flag-ok { color: var(--ok); font-weight: 600; }
+  table.scores .tag { display: block; color: var(--steel); font-size: 0.84rem; }
+  table.scores th.num { white-space: normal; }
+  .sp-note { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  @media (max-width: 480px) {
+    .field-row label { flex: 1 1 100%; }
+    .field-row select { width: 100%; }
+    table.scores { font-size: 0.84rem; }
+    table.scores th, table.scores td { padding: 7px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Label the claim</h1>
+
+  <p class="lead-line">Attribution is the work of determining how much of an observed change an initiative caused. Claim fidelity is the label that tells a reader how firmly the evidence supports that answer. A reviewer who catches one overstated label will doubt the next number too. Your job is to give each result the label its comparison can support.</p>
+
+  <p class="context">A manufacturer’s service and warranty operation has run an AI drafting assistant for two quarters. In the same two quarters, a seasonal peak in claims came and went, and a change to how claims are routed went live a month after the assistant. Six results are headed for the quarterly review.</p>
+
+  <div class="instruction">
+    <p>Label each result by reading the measure and the comparison behind it.</p>
+    <p><b>Attributed</b> means a quantified change that can be assigned to the assistant with high confidence. <b>Directional</b> means the evidence shows which way the effect points and leaves its size open, because other causes share the period. <b>Assumption</b> means an effect nobody measured here, which the organization would be choosing to accept.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my labels</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: hold two teams back</h2>
+    <p>Suppose the rollout had been phased. Five teams received the assistant at the start, and two waited eight weeks. All seven teams went through the same seasonal peak and the same routing change. Nothing here is checked.</p>
+    <label class="opt-row"><input type="checkbox" id="sp-phase"><span>Phase the rollout: two teams wait eight weeks</span></label>
+    <div class="table-wrap">
+      <table class="scores" id="sp-table">
+        <caption id="sp-caption"></caption>
+        <thead><tr><th scope="col">Result</th><th scope="col">Label the evidence supports</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="sp-note" id="sp-note"></p>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, buckets, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      if (item.meta) {
+        var m = document.createElement('p');
+        m.className = 'item-meta';
+        m.textContent = item.meta;
+        fs.appendChild(m);
+      }
+      if (item.facts) {
+        var f = document.createElement('div');
+        f.className = 'item-facts';
+        item.facts.forEach(function (pair) {
+          var row = document.createElement('div');
+          var b = document.createElement('b');
+          b.textContent = pair[0] + ': ';
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(pair[1]));
+          f.appendChild(row);
+        });
+        fs.appendChild(f);
+      }
+      if (item.effect) {
+        var e = document.createElement('p');
+        e.className = 'item-effect';
+        e.textContent = item.effect;
+        fs.appendChild(e);
+      }
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      buckets.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  function word(n) { return ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'][n] || n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+
+  var POP = 14200, HOURS_PER_YEAR = 1760, HOURS_PER_DAY = 8, ASSUMED_HOURS = 0.5;
+  var CLAIMS = 186000, OLD = 18.5, NOW = 14.2, CASE_CUT = 0.40;
+  function f0(n) { return n.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+  function f1(n) { return n.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+  var WORK_DAYS = HOURS_PER_YEAR / HOURS_PER_DAY;
+  var HOURS_POP = POP * ASSUMED_HOURS * WORK_DAYS;
+  var HOURS_CASE = CASE_CUT * OLD * CLAIMS / 60;
+
+  function labelFor(r, phased) {
+    if (r.level === 'task') { return 'attributed'; }
+    if (r.level === 'team') { return (phased && r.comparison === 'trend') ? 'attributed' : 'directional'; }
+    return 'assumption';
+  }
+
+  var ITEMS = [
+    { short: "Queue handling time",
+      text: "Average handling time in the claims queue fell from " + f1(OLD) + " minutes to " + f1(NOW) + ".",
+      facts: [["Measure", "A queue-wide figure for the whole operation"],
+              ["Comparison", "The queue\u2019s own trend across the two quarters"]],
+      level: 'team', comparison: 'trend',
+      why: "The queue\u2019s trend shares its two quarters with a seasonal peak and a routing change. The fall points the right way. The trend alone can\u2019t say how much of it belongs to the assistant." },
+    { short: "Drafting time per standard claim",
+      text: "Drafting the response to a standard claim takes 6 minutes with the assistant and 11 by hand.",
+      facts: [["Measure", "One task, drafting, on one type of claim"],
+              ["Comparison", "The same agents before and after the assistant arrived, timed by the claims system"]],
+      level: 'task', comparison: 'before-after',
+      why: "The measure sits on one task, where few other causes can reach it. A peak changes how many claims arrive, and routing changes who gets them. Neither changes how long this task takes. A before-and-after comparison here can assign a size to the assistant with high confidence." },
+    { short: "Heavier against lighter users",
+      text: "Agents who use the assistant most close 22 percent more claims a day than agents who use it least.",
+      facts: [["Measure", "A team-level output figure"],
+              ["Comparison", "Heavier users against lighter users in the same quarter. Agents chose how much to use the assistant."]],
+      level: 'team', comparison: 'heavy-light',
+      why: "Agents chose how much to use the assistant, so the heavier users may differ from the lighter ones in skill, tenure, or the claims they handle. The gap shows a direction and leaves the size open." },
+    { short: "Time saved across the company",
+      text: "If each of the company\u2019s " + f0(POP) + " knowledge workers saves 30 minutes a day, assistants return " + f0(HOURS_POP) + " hours a year.",
+      facts: [["Measure", "The whole knowledge-worker population"],
+              ["Comparison", "None. The 30 minutes is a premise, applied across " + f0(WORK_DAYS) + " working days."]],
+      level: 'population', comparison: 'none',
+      why: "Nothing was measured. The result is a premise multiplied across a population. It can go on the page as an assumption the organization chooses to accept, and under no other label." },
+    { short: "Unrequested backfill",
+      text: "A budgeted backfill for a warranty analyst has gone unrequested for two quarters. The team absorbed the caseload.",
+      facts: [["Measure", "One staffing decision by one team"],
+              ["Comparison", "The team\u2019s requests against its budget, over a period in which other things also changed"]],
+      level: 'team', comparison: 'decision',
+      why: "A hire that wasn\u2019t requested is real evidence. It is also one decision at team level, in a period when other things changed. It supports a direction. Calling it an attributed saving would claim more than the comparison gives." },
+    { short: "Vendor\u2019s percentage applied here",
+      text: "A vendor\u2019s case study reports handling time down 40 percent at another customer. Applied to this queue\u2019s " + f0(CLAIMS) + " claims a year, that is " + f0(HOURS_CASE) + " hours.",
+      facts: [["Measure", "The whole queue, a year ahead"],
+              ["Comparison", "None taken here. The 40 percent is another organization\u2019s result."]],
+      level: 'population', comparison: 'none',
+      why: "The percentage was measured somewhere else. Using it here means accepting the premise that this queue behaves like that customer\u2019s, so the result is an assumption." }
+  ];
+  ITEMS.forEach(function (it) { it.bucket = labelFor(it, false); });
+
+  var BUCKETS = [{ value: 'attributed', label: 'Attributed' }, { value: 'directional', label: 'Directional' }, { value: 'assumption', label: 'Assumption' }];
+  var LABEL_TEXT = { attributed: 'Attributed', directional: 'Directional', assumption: 'Assumption' };
+  var CRITERION_TEXT = "The label follows from how close the measure sits to the work and what the comparison holds still. A measure on one task, compared before and after, supports an attributed claim. A team or function figure that moved over time, or that differs between heavier and lighter users, supports a directional claim. An effect nobody measured here is an assumption.";
+  var FIRST_MOVE_TEXT = "For each result, list what else happened in the same period. Then ask whether the comparison would look any different if only those other things had happened.";
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var sp = document.getElementById('second-pass');
+  var srStatus = document.getElementById('sr-status');
+
+  renderSortItems(itemsEl, ITEMS, BUCKETS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', ["Right. One result is attributed, three are directional, and two are assumptions. All six can earn a place in the review, each under its own label. A label that matches its evidence is what lets a reviewer trust the next number."]);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ["Look again at the result: \u201C" + it.text + "\u201D", it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    sp.hidden = false;
+  });
+
+  var spPhase = document.getElementById('sp-phase');
+  var spBody = document.querySelector('#sp-table tbody');
+  var spCaption = document.getElementById('sp-caption');
+  var spNote = document.getElementById('sp-note');
+
+  function renderPhase(announce) {
+    var phased = spPhase.checked;
+    spCaption.textContent = phased ? 'Labels with two teams held back for eight weeks' : 'Labels with all seven teams starting together';
+    spBody.innerHTML = '';
+    var risen = [];
+    ITEMS.forEach(function (it) {
+      var lab = labelFor(it, phased);
+      var changed = lab !== it.bucket;
+      if (changed) { risen.push(it.short); }
+      var tr = document.createElement('tr');
+      if (changed) { tr.className = 'moved'; }
+      var td1 = document.createElement('td'); td1.textContent = it.short; tr.appendChild(td1);
+      var td2 = document.createElement('td'); td2.textContent = LABEL_TEXT[lab] + (changed ? ', for the eight weeks of the comparison' : ''); tr.appendChild(td2);
+      spBody.appendChild(tr);
+    });
+    var note = phased
+      ? "One label rose. The peak and the routing change now fall on both groups, so the gap in handling time between the five teams and the two can be assigned to the assistant for those eight weeks. The other labels stay. Agents still choose how much to use the assistant, the backfill is still one decision with no comparison team, and the two assumptions were never measured here. The comparison had to be chosen before the rollout began."
+      : "These are the labels from the first pass. With every team starting together, nothing separates the assistant from the peak and the routing change at queue level.";
+    spNote.textContent = note;
+    if (announce) { srStatus.textContent = (risen.length ? 'Label changed for ' + risen.join(', ') + '. ' : 'No label changed. ') + note; }
+  }
+  spPhase.addEventListener('change', function () { renderPhase(true); });
+  renderPhase(false);
+})();
+</script>
+</body>
+</html>
