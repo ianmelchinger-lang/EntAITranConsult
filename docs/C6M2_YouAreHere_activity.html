@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read this first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 24px;
+    color: var(--ink);
+  }
+
+  .scenario {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin: 0 0 28px;
+  }
+
+  .scenario p {
+    margin: 0 0 16px;
+  }
+
+  .scenario p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prompt-lead {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 16px;
+  }
+
+  .option {
+    display: block;
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .option-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .option-box {
+    display: block;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 18px;
+    background: var(--white);
+  }
+
+  .option-lead {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .option-detail {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .option-input:checked + .option-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .option-input:focus-visible + .option-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  fieldset.locked .option {
+    cursor: default;
+  }
+
+  fieldset.locked .option-box {
+    opacity: 0.9;
+  }
+
+  .reveal-btn {
+    display: block;
+    margin: 22px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .reveal-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .reveal-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .reveal-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .reveal {
+    margin-top: 32px;
+    padding: 22px 24px;
+    background: var(--highlight-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .reveal[hidden] {
+    display: none;
+  }
+
+  .reveal:focus {
+    outline: none;
+  }
+
+  .reveal-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--accent-deep);
+    margin: 0 0 4px;
+  }
+
+  .reveal-chosen {
+    font-family: var(--font-sans);
+    font-style: italic;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p {
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .desk {
+    margin: 18px 0 0;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px 6px;
+  }
+
+  .desk-title {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--steel);
+    margin: 0 0 8px;
+  }
+
+  .desk table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+  }
+
+  .desk th, .desk td {
+    text-align: left;
+    vertical-align: top;
+    padding: 8px 8px 8px 0;
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+
+  .desk th {
+    font-weight: 600;
+    color: var(--ink);
+    width: 34%;
+  }
+
+  .reveal-body { font-variant-numeric: tabular-nums; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .desk { padding: 12px 12px 4px; }
+    .desk th { width: 38%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read this first</h1>
+
+  <div class="scenario">
+    <p>A manufacturer&rsquo;s service function runs an AI workflow in its customer-exception path. The workflow takes each incoming request, retrieves the terms that apply from a document store, classifies the request against them, writes and sends the customer a message, and updates the record to match.</p>
+    <p>The function head says it is working. Volume is up, the queue is short, and nothing has escalated. The compliance lead has an examination coming and wants a risk plan on file before it.</p>
+    <p>So far there is one document, a single page headed &ldquo;risk assessment.&rdquo; It is on your desk.</p>
+    <div class="desk" role="group" aria-label="The one-page risk assessment">
+      <p class="desk-title">Risk assessment</p>
+      <table>
+        <thead class="sr-only"><tr><th scope="col">Risk</th><th scope="col">Mitigation</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Model risk</th><td>A person will review the output before it is used.</td></tr>
+          <tr><th scope="row">Data risk</th><td>Output is reviewed by a person before use.</td></tr>
+          <tr><th scope="row">Regulatory risk</th><td>A person reviews each response before it is relied on.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="prompt-lead">Before reading on, choose the step that comes closest to your own first instinct.</p>
+
+  <fieldset id="reading-fieldset">
+    <legend>What would you do first with this page before it is filed?</legend>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="a">
+      <span class="option-box">
+        <span class="option-lead">Sharpen each line.</span>
+        <span class="option-detail">Give every mitigation an owner, a date, and a measure. The three categories are sound, and a working risk register carries those fields.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="b">
+      <span class="option-box">
+        <span class="option-lead">Ask for the launch evidence.</span>
+        <span class="option-detail">Request the pre-launch test results and the sign-off record. If the workflow passed review before it went live, the examiner will want to see that.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="c">
+      <span class="option-box">
+        <span class="option-lead">Widen the categories.</span>
+        <span class="option-detail">Three lines is thin for a system that writes to customers. Add third-party, privacy, and security risk so the page shows the whole exposure.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="d">
+      <span class="option-box">
+        <span class="option-lead">Find out what the review involves.</span>
+        <span class="option-detail">Every mitigation rests on one sentence. Before rewriting anything, learn how many items the reviewer sees and how long a real check takes.</span>
+      </span>
+    </label>
+  </fieldset>
+
+  <button type="button" class="reveal-btn" id="reveal-btn" disabled>See what this misses</button>
+
+  <div class="reveal" id="reveal" role="region" aria-label="What this step misses" tabindex="-1" hidden>
+    <span class="reveal-tag">You chose:</span>
+    <p class="reveal-chosen" id="reveal-chosen"></p>
+    <div class="reveal-body" id="reveal-body"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // Figures supplied by the activity. The six minutes is an assumption made for this exercise.
+  var REQUESTS_PER_WEEK = 1150;
+  var MINUTES_PER_CHECK = 6;
+  var REVIEW_HOURS_PER_WEEK = 40;
+
+  var READINGS = {
+    a: {
+      lead: "Sharpen each line.",
+      rebuttal: "Owners, dates, and measures make a register look finished. Here they would attach to a sentence that names no step, no volume, and no minutes. A dated, owned, and measured version of “a person will review the output” would pass a read-through and still give the team nothing they could build. The sharper the wording, the harder the gap is to see."
+    },
+    b: {
+      lead: "Ask for the launch evidence.",
+      rebuttal: "A sign-off describes the system that shipped. Since launch, the documents it retrieves may have been replaced, the requests may have changed shape, and the uses it is put to may have widened. Launch evidence also says nothing about whether the page’s one control can be carried out. A test of whether the answers were good is a different thing from a test of whether anyone can check them."
+    },
+    c: {
+      lead: "Widen the categories.",
+      rebuttal: "A category can’t fail. A wrong figure sent to a customer at a particular step can. More categories would arrive with the same one-sentence mitigation, so the page would grow longer without becoming any easier to govern."
+    },
+    d: {
+      lead: "Find out what the review involves.",
+      rebuttal: "This is the right first question, and it stops short. The answer comes back in hours. It does not say where in the sequence the person looks. This workflow sends the message and updates the record itself, and nothing on the page says it waits for anyone. A review that fits its hours can still arrive after the customer has the answer."
+    }
+  };
+
+  function fmt(n, digits) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 });
+  }
+
+  function closing() {
+    var hoursNeeded = REQUESTS_PER_WEEK * MINUTES_PER_CHECK / 60;
+    var multiple = hoursNeeded / REVIEW_HOURS_PER_WEEK;
+    var arithmetic = "The page never did this arithmetic, so do it now. The workflow handles " + fmt(REQUESTS_PER_WEEK) +
+      " requests a week. Suppose a genuine check, reading each message back against the governing terms, takes " + fmt(MINUTES_PER_CHECK) +
+      " minutes (an assumption for this exercise). That is " + fmt(hoursNeeded) + " hours of reading a week. If one reviewer gave every productive hour of a " +
+      fmt(REVIEW_HOURS_PER_WEEK) + "-hour week to nothing else, the review would still need " + fmt(multiple, 1) +
+      " times the time available.";
+    var capability = "A fully owned, dated, and measured version of that sentence would pass a review and still not be a control. What the page lacks is a test of the stated control against the conditions it has to run under: the volume it faces, the minutes it needs, and the step where it sits. That test comes before anything else in a plan can be scoped, because until it is done, the plan lists controls that nobody can perform.";
+    return [arithmetic, capability];
+  }
+
+  var radios = document.querySelectorAll('input[name="reading"]');
+  var revealBtn = document.getElementById('reveal-btn');
+  var revealPanel = document.getElementById('reveal');
+  var revealChosen = document.getElementById('reveal-chosen');
+  var revealBody = document.getElementById('reveal-body');
+  var fieldset = document.getElementById('reading-fieldset');
+
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function () {
+      revealBtn.disabled = false;
+    });
+  }
+
+  revealBtn.addEventListener('click', function () {
+    var chosen = null;
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { chosen = radios[i].value; }
+    }
+    if (!chosen) { return; }
+
+    for (var j = 0; j < radios.length; j++) {
+      radios[j].disabled = true;
+    }
+    fieldset.classList.add('locked');
+    revealBtn.disabled = true;
+
+    var data = READINGS[chosen];
+    revealChosen.textContent = '“' + data.lead + '”';
+
+    revealBody.innerHTML = '';
+    var paras = [data.rebuttal].concat(closing());
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.textContent = t;
+      revealBody.appendChild(p);
+    });
+
+    revealPanel.hidden = false;
+    revealPanel.focus();
+  });
+})();
+</script>
+</body>
+</html>

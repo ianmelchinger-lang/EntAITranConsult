@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the load</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  .num, .figs td { font-variant-numeric: tabular-nums; }
+  table.figs tbody th { font-weight: 400; background: transparent; color: var(--ink-soft); }
+  .estimate-q { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); margin: 0 0 14px; }
+  .field { margin: 0 0 16px; }
+  .field label.field-label { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink); margin: 0 0 6px; }
+  .field select { width: 100%; max-width: 100%; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
+  .field select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .panel.live { margin-top: 18px; }
+  .panel.live p.verdict { font-weight: 600; color: var(--ink); }
+  .note { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Find the load</h1>
+
+  <p class="lead-line">Detectability is how hard an error is to see in the output, given what the reviewer has in front of them, and a plan sets it through how the review is built. A review that needs real minutes for each item, at a volume those minutes cannot fit, fails by construction before anyone asks how diligent the reviewer is. The arithmetic comes first: items, times minutes, against hours.</p>
+
+  <div class="context">
+    <p>A manufacturer&rsquo;s scheduling assistant writes the maintenance work-order schedule for each plant, and one named reviewer reads it before release. It runs at two sites today. The plan extends it to seven and keeps the one reviewer. A review that can actually catch an error means reading each schedule entry back against the work order and equipment records, with those sources beside it.</p>
+  </div>
+
+  <div class="table-wrap">
+    <table class="scores figs" id="givens">
+      <caption>What the plan assumes</caption>
+      <thead><tr><th scope="col">Fact</th><th scope="col" class="num">Value</th></tr></thead>
+      <tbody id="givens-body"></tbody>
+    </table>
+  </div>
+
+  <div class="instruction">
+    <p>Before you test anything, estimate. What is the smallest whole number of reviewers who could read every work order at the seven sites for the full time a real check takes, if each reviewer gives all of their productive hours?</p>
+  </div>
+
+  <fieldset class="item" id="estimate-set">
+    <legend class="item-text" id="estimate-legend">Reviewers needed at seven sites</legend>
+    <div class="item-choices" id="estimate-choices"></div>
+  </fieldset>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my estimate</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="load-test" aria-labelledby="lt-h" tabindex="-1" hidden>
+    <h2 id="lt-h">Test the load yourself</h2>
+    <p>Set the volume and the number of reviewers, and read what changes. About 1 in <span id="inc-n"></span> schedules looks right and is wrong. In this deployment a review at <span id="min-3"></span> minutes catches <span id="catch-3"></span> of those, and a review at <span id="sec-anchor"></span> seconds catches <span id="catch-s"></span>. No other pace has a figure.</p>
+
+    <fieldset class="item">
+      <legend class="item-text">Work orders a week</legend>
+      <div class="item-choices" id="vol-choices"></div>
+    </fieldset>
+    <fieldset class="item">
+      <legend class="item-text">Reviewers, each giving all their productive hours</legend>
+      <div class="item-choices" id="rev-choices"></div>
+    </fieldset>
+
+    <div class="table-wrap">
+      <table class="scores figs" id="results">
+        <caption>What the arithmetic shows</caption>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+    <div class="panel live" id="live" aria-live="polite" aria-atomic="true">
+      <p class="verdict" id="live-verdict"></p>
+      <p id="live-errors"></p>
+    </div>
+  </section>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: narrow the check</h2>
+    <p>Suppose the review is redesigned. The source material sits beside each schedule, and the reviewer checks only the claims where unsupported content clusters: specific figures, statements that depend on recency, and references to the organization&rsquo;s own material. Nothing else changes. Choose how long a narrowed check takes. This is an assumption for the exercise, not a measured figure.</p>
+    <div class="field">
+      <label class="field-label" for="sp-min">Assumed minutes per work order</label>
+      <select id="sp-min">
+        <option value="">Choose a time</option>
+      </select>
+    </div>
+    <fieldset class="item">
+      <legend class="item-text">At seven sites, how many reviewers does the narrowed check need, at minimum?</legend>
+      <div class="item-choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  // Supplied figures. Everything shown or keyed below is computed from these.
+  var HOURS_PER_REVIEWER = 40;                 // productive review hours per reviewer per week
+  var MINUTES_TO_CATCH = 3.0;                  // minutes per work order for a review that can actually catch an error
+  var SITES_TODAY = [340, 300];                // work orders a week at the two running sites
+  var SITES_EXTENSION = [300, 290, 270, 320, 260];
+  var PLAN_REVIEWERS = 1;
+  var ONE_IN = 260;                            // plausible-but-wrong schedules: 1 in 260
+  var CATCH_AT_MINUTES = 0.70;                 // share of plausible errors caught at 3.0 minutes
+  var ANCHOR_SECONDS = 69;                     // the one rushed pace that has a figure
+  var CATCH_AT_ANCHOR = 0.25;                  // share of plausible errors caught at 69 seconds
+
+  function sum(a) { return a.reduce(function (s, x) { return s + x; }, 0); }
+  var VOL_TODAY = sum(SITES_TODAY);
+  var VOL_SEVEN = VOL_TODAY + sum(SITES_EXTENSION);
+
+  function fmt(n, digits) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 });
+  }
+  function plural(n, word) { return fmt(n) + ' ' + word + (n === 1 ? '' : 's'); }
+
+  // The arithmetic, in one place.
+  function hoursNeeded(volume, minutes) { return volume * minutes / 60; }
+  function reviewersNeeded(volume, minutes) {
+    return Math.max(1, Math.ceil(hoursNeeded(volume, minutes) / HOURS_PER_REVIEWER - 1e-9));
+  }
+  function ceilingPerReviewer(minutes) { return HOURS_PER_REVIEWER * 60 / minutes; }
+
+  var KEY = reviewersNeeded(VOL_SEVEN, MINUTES_TO_CATCH);
+
+  // ---- Givens table ----
+  var givens = [
+    ['Reviewers named in the plan', fmt(PLAN_REVIEWERS)],
+    ['Productive review hours per reviewer per week', fmt(HOURS_PER_REVIEWER)],
+    ['Minutes per work order for a review that can actually catch an error', fmt(MINUTES_TO_CATCH, 1)],
+    ['Work orders a week at the two sites running today', fmt(VOL_TODAY)],
+    ['Work orders a week at the seven sites proposed', fmt(VOL_SEVEN)]
+  ];
+  var gBody = document.getElementById('givens-body');
+  givens.forEach(function (g) {
+    var tr = document.createElement('tr');
+    var th = document.createElement('th');
+    th.scope = 'row';
+    th.textContent = g[0];
+    var td = document.createElement('td');
+    td.className = 'num';
+    td.textContent = g[1];
+    tr.appendChild(th);
+    tr.appendChild(td);
+    gBody.appendChild(tr);
+  });
+
+  // ---- Shared helpers ----
+  function makeChoice(name, value, label, checked, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    input.checked = !!checked;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+  function checkedValue(name) {
+    var c = document.querySelector('input[name="' + name + '"]:checked');
+    return c ? c.value : null;
+  }
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  var WORDS = { 1: 'One reviewer', 2: 'Two reviewers', 3: 'Three reviewers', 4: 'Four reviewers' };
+
+  // ---- First estimate ----
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var estimateChoices = document.getElementById('estimate-choices');
+  [1, 2, 3, 4].forEach(function (n) {
+    estimateChoices.appendChild(makeChoice('est', String(n), WORDS[n], false, function () { checkBtn.disabled = false; }));
+  });
+
+  var CRITERION_TEXT = 'A review is performable only if the hours it needs fit inside the hours the reviewers have. The hours it needs come from the number of work orders times the minutes each one takes, converted to hours.';
+  var FIRST_MOVE_TEXT = 'Take the seven-site volume and multiply it by the minutes a real check takes. Convert the result to hours, then compare it with what one reviewer gives in a week.';
+
+  checkBtn.addEventListener('click', function () {
+    var n = parseInt(checkedValue('est'), 10);
+    var need = hoursNeeded(VOL_SEVEN, MINUTES_TO_CATCH);
+    var have = n * HOURS_PER_REVIEWER;
+    var oneHave = PLAN_REVIEWERS * HOURS_PER_REVIEWER;
+    var secs = oneHave * 3600 / VOL_SEVEN;
+    if (n === KEY) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [
+        'Right. ' + fmt(VOL_SEVEN) + ' work orders at ' + fmt(MINUTES_TO_CATCH, 1) + ' minutes each is ' + fmt(need, 1) + ' hours of reading a week. One reviewer gives ' + fmt(HOURS_PER_REVIEWER) + ', so the reading needs ' + fmt(need / HOURS_PER_REVIEWER, 1) + ' reviewers’ worth of time, which means ' + KEY + ' people.',
+        'The plan as proposed names ' + PLAN_REVIEWERS + '. That reviewer would have about ' + fmt(Math.round(secs)) + ' seconds for each work order, and no amount of diligence turns ' + fmt(oneHave) + ' hours into ' + fmt(need, 1) + '. This is not a finding that the assistant is unsafe. It is a finding that this review step, as written, may not run at this volume.'
+      ]);
+    } else if (n === KEY - 1) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', [
+        'Look again at the count. ' + WORDS[n] + ' give ' + fmt(have) + ' hours a week, and the reading needs ' + fmt(need, 1) + '. They would still be ' + fmt(need - have, 1) + ' hours short. The reading needs ' + fmt(need / HOURS_PER_REVIEWER, 1) + ' reviewers’ worth of time, and a plan can only name whole people.'
+      ]);
+    } else if (n === KEY + 1) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', [
+        'Look again at the count. ' + WORDS[n] + ' would be enough, with ' + fmt(have) + ' hours against ' + fmt(need, 1) + ' needed, but the question asks for the smallest number that can do the reading. ' + WORDS[KEY] + ' already give ' + fmt(KEY * HOURS_PER_REVIEWER) + ' hours.'
+      ]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('load-test').hidden = false;
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // ---- Instrument ----
+  document.getElementById('inc-n').textContent = fmt(ONE_IN);
+  document.getElementById('min-3').textContent = fmt(MINUTES_TO_CATCH, 1);
+  document.getElementById('catch-3').textContent = fmt(CATCH_AT_MINUTES * 100) + '%';
+  document.getElementById('sec-anchor').textContent = fmt(ANCHOR_SECONDS);
+  document.getElementById('catch-s').textContent = fmt(CATCH_AT_ANCHOR * 100) + '%';
+
+  var volChoices = document.getElementById('vol-choices');
+  var revChoices = document.getElementById('rev-choices');
+  var resultsBody = document.getElementById('results-body');
+  var liveVerdict = document.getElementById('live-verdict');
+  var liveErrors = document.getElementById('live-errors');
+
+  var ROWS = [
+    ['need', 'Hours of reading the plan needs'],
+    ['have', 'Hours the reviewers have'],
+    ['share', 'Share of those hours the reading uses'],
+    ['crew', 'Reviewers’ worth of time the reading needs'],
+    ['ceil', 'Most work orders these reviewers can read at ' + fmt(MINUTES_TO_CATCH, 1) + ' minutes each'],
+    ['secs', 'Seconds available for each work order']
+  ];
+  var cells = {};
+  ROWS.forEach(function (r) {
+    var tr = document.createElement('tr');
+    var th = document.createElement('th');
+    th.scope = 'row';
+    th.textContent = r[1];
+    var td = document.createElement('td');
+    td.className = 'num';
+    cells[r[0]] = td;
+    tr.appendChild(th);
+    tr.appendChild(td);
+    resultsBody.appendChild(tr);
+  });
+
+  function currentVolume() { return parseInt(checkedValue('vol'), 10); }
+  function currentReviewers() { return parseInt(checkedValue('rev'), 10); }
+
+  function update() {
+    var vol = currentVolume();
+    var rev = currentReviewers();
+    var need = hoursNeeded(vol, MINUTES_TO_CATCH);
+    var have = rev * HOURS_PER_REVIEWER;
+    var secs = have * 3600 / vol;
+    var performable = need <= have + 1e-9;
+    cells.need.textContent = fmt(need, 1);
+    cells.have.textContent = fmt(have);
+    cells.share.textContent = fmt(need / have * 100) + '%';
+    cells.crew.textContent = fmt(need / HOURS_PER_REVIEWER, 1);
+    cells.ceil.textContent = fmt(rev * ceilingPerReviewer(MINUTES_TO_CATCH));
+    cells.secs.textContent = fmt(Math.round(secs));
+
+    var plausible = vol / ONE_IN;
+    if (performable) {
+      liveVerdict.textContent = 'Performable at ' + fmt(MINUTES_TO_CATCH, 1) + ' minutes. The reading uses ' + fmt(need / have * 100) + '% of the reviewers’ hours.';
+      liveErrors.textContent = 'About ' + fmt(plausible, 1) + ' plausible-but-wrong schedules arrive each week. A review at ' + fmt(MINUTES_TO_CATCH, 1) + ' minutes catches ' + fmt(CATCH_AT_MINUTES * 100) + '% of them, so about ' + fmt(plausible * (1 - CATCH_AT_MINUTES), 1) + ' still get through. A performable review is a real control, and it is still not a perfect one.';
+    } else {
+      liveVerdict.textContent = 'Not performable at ' + fmt(MINUTES_TO_CATCH, 1) + ' minutes. The reading needs ' + fmt(need, 1) + ' hours and the reviewers have ' + fmt(have) + '. The review would exist on paper and not in practice, so the plan may not run at this volume with this review step.';
+      if (Math.round(secs) === ANCHOR_SECONDS) {
+        liveErrors.textContent = 'At about ' + fmt(ANCHOR_SECONDS) + ' seconds for each work order, this deployment’s figure is ' + fmt(CATCH_AT_ANCHOR * 100) + '% of plausible errors caught, against ' + fmt(CATCH_AT_MINUTES * 100) + '% at ' + fmt(MINUTES_TO_CATCH, 1) + ' minutes. About ' + fmt(plausible, 1) + ' plausible-but-wrong schedules arrive each week, so about ' + fmt(plausible * (1 - CATCH_AT_ANCHOR), 1) + ' would get through, each one carrying a reviewer’s name.';
+      } else {
+        liveErrors.textContent = 'The reviewers would have about ' + fmt(Math.round(secs)) + ' seconds for each work order. No figure is given for how many errors a review catches at that pace, so the plan could not claim one.';
+      }
+    }
+  }
+
+  var VOLS = [
+    { value: String(VOL_TODAY), label: 'Two sites today: ' + fmt(VOL_TODAY), checked: false },
+    { value: String(VOL_SEVEN), label: 'Seven sites proposed: ' + fmt(VOL_SEVEN), checked: true }
+  ];
+  VOLS.forEach(function (v) { volChoices.appendChild(makeChoice('vol', v.value, v.label, v.checked, update)); });
+  [1, 2, 3, 4].forEach(function (n) {
+    revChoices.appendChild(makeChoice('rev', String(n), String(n), n === PLAN_REVIEWERS, update));
+  });
+  update();
+
+  // ---- Second pass: the minutes per work order move ----
+  var spMin = document.getElementById('sp-min');
+  [2.0, 1.5, 1.0].forEach(function (m) {
+    var o = document.createElement('option');
+    o.value = String(m);
+    o.textContent = fmt(m, 1) + ' minutes';
+    spMin.appendChild(o);
+  });
+  var spPanel = document.getElementById('sp-panel');
+  var spChoices = document.getElementById('sp-choices');
+
+  function spUpdate() {
+    var m = parseFloat(spMin.value);
+    var n = parseInt(checkedValue('sp'), 10);
+    if (!(m > 0) || !(n > 0)) { return; }
+    var key = reviewersNeeded(VOL_SEVEN, m);
+    var need = hoursNeeded(VOL_SEVEN, m);
+    spPanel.innerHTML = '';
+    var p1 = document.createElement('p');
+    var p2 = document.createElement('p');
+    if (n === key) {
+      p1.textContent = 'Right. At ' + fmt(m, 1) + ' minutes, ' + fmt(VOL_SEVEN) + ' work orders need ' + fmt(need, 1) + ' hours, which is ' + fmt(need / HOURS_PER_REVIEWER, 1) + ' reviewers’ worth of time, so ' + plural(key, 'reviewer') + '. One reviewer’s ceiling moved from ' + fmt(ceilingPerReviewer(MINUTES_TO_CATCH)) + ' work orders a week to ' + fmt(ceilingPerReviewer(m)) + '.';
+      p2.textContent = 'Nothing about the reviewer changed. The design did: the source sits beside the draft and fewer claims are read. Asking for more diligence would have moved none of these numbers. Two cautions apply. The claims outside the narrowed set go unread, so the plan has to show that errors do not concentrate there. And no figure here says how well a narrowed check catches errors, so the arithmetic closing means the review can be performed, not that it works. A sample of the results would have to test that.';
+    } else {
+      p1.textContent = 'Look again. Work out how many work orders one reviewer’s ' + fmt(HOURS_PER_REVIEWER) + ' hours cover at ' + fmt(m, 1) + ' minutes each, then compare that with ' + fmt(VOL_SEVEN) + '.';
+      p2.textContent = 'Reading time is the only thing that moved. The reviewer’s effort is not an input to the count.';
+    }
+    spPanel.appendChild(p1);
+    spPanel.appendChild(p2);
+    spPanel.hidden = false;
+  }
+  spMin.addEventListener('change', spUpdate);
+  [1, 2, 3, 4].forEach(function (n) {
+    spChoices.appendChild(makeChoice('sp', String(n), WORDS[n], false, spUpdate));
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What the silence shows</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  .item-text, .panel, .feedback { font-variant-numeric: tabular-nums; }
+  .claim { margin-top: 22px; }
+  .claim .item-choices { flex-direction: column; }
+  .claim .choice { flex: 1 1 100%; }
+  .claim .choice-box { display: block; font-weight: 400; line-height: 1.45; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>What the silence shows</h1>
+
+  <p class="lead-line">Risk is a condition, not a property. It changes as the system, its data, its users, and its uses change, so a launch sign-off describes the system that shipped and nothing after it. Evidence about a running system is useful only if it would read differently when the system is failing. Evidence that reads the same either way shows nothing, and silence from users shows only that nobody has complained yet.</p>
+
+  <div class="context">
+    <p>Six months after launch, the function head says the customer-exception workflow is working. The workflow retrieves the terms that apply, classifies each request, writes and sends the customer a message, and updates the record. You are deciding how strongly the plan may repeat that claim. Seven pieces of evidence are on the table.</p>
+  </div>
+
+  <div class="instruction">
+    <p><b>Describes the launch:</b> the evidence was gathered before launch, so it describes the system that shipped.</p>
+    <p><b>Looks the same either way:</b> the evidence would read just as it does now if wrong answers were piling up unseen.</p>
+    <p><b>Would change if errors piled up:</b> the evidence would read differently if the workflow were failing.</p>
+    <p>Mark each piece, then choose the strongest claim the evidence supports.</p>
+  </div>
+
+  <div id="items"></div>
+
+  <fieldset class="item claim" id="claim-fs">
+    <legend class="item-text">How strongly may the plan write the claim &ldquo;the workflow is working&rdquo;?</legend>
+    <div class="item-choices" id="claim-choices"></div>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my reading</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: add one more piece of evidence</h2>
+    <p>Suppose the plan had included a standing audit from the start. The piece below now exists. Mark it, then choose the strongest claim again. The figures are illustrative.</p>
+    <div id="sp-items"></div>
+    <fieldset class="item claim" id="sp-claim-fs">
+      <legend class="item-text">How strongly may the plan write the claim now?</legend>
+      <div class="item-choices" id="sp-claim-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var MARKS = [
+    { value: 'launch', label: 'Describes the launch' },
+    { value: 'same', label: 'Looks the same either way' },
+    { value: 'change', label: 'Would change if errors piled up' }
+  ];
+
+  var CLAIMS = [
+    { value: 'whole', label: 'The workflow is working.' },
+    { value: 'bounded', label: 'The workflow is working for the replies someone has read back against the source, as of that date, and the result is stated.' },
+    { value: 'open', label: 'Whether the workflow is working has not been established.' }
+  ];
+
+  // Illustrative sample, used only in the second pass. The key does not depend on these numbers.
+  var SAMPLE_READ = 40;
+  var SAMPLE_MATCHED = 34;
+  var SAMPLE_MISMATCHED = SAMPLE_READ - SAMPLE_MATCHED;
+
+  function fmt(n) { return n.toLocaleString('en-US'); }
+
+  var ITEMS = [
+    { text: 'The launch sign-off is on file.', mark: 'launch',
+      why: 'A sign-off describes the system as it shipped. It cannot change when something goes wrong afterward.' },
+    { text: 'The workflow passed its pre-launch tests.', mark: 'launch',
+      why: 'Pre-launch results describe the shipped system. Documents have been replaced and requests have shifted since.' },
+    { text: 'Volume has risen every month.', mark: 'same',
+      why: 'Volume would rise just as much if some of the answers were wrong. It measures use, not correctness.' },
+    { text: 'The queue is short.', mark: 'same',
+      why: 'A short queue means requests are being closed. It does not say they are being closed correctly.' },
+    { text: 'Nothing has escalated to a person. No deviation threshold is defined, and no one is named to receive an alert.', mark: 'same',
+      why: 'With no threshold and no recipient, nothing would escalate whether or not anything were wrong. The silence is built in.' },
+    { text: 'The function head read five sent replies and found them clear and sensible.', mark: 'same',
+      why: 'Wrong replies read as clear and sensible, because fluent, confident text is not evidence of being right, and a replaced source leaves no trace in the reply. Five replies read for sense is a glance, not a test.' },
+    { text: 'The model’s supplier reports that its latest release passed the supplier’s own evaluation.', mark: 'same',
+      why: 'That is the supplier’s governance, not evidence about this workflow’s replies on this organization’s documents. It belongs in the plan as something the supplier owes, not as proof of anything here.' }
+  ];
+
+  var SP_ITEM = {
+    text: 'Last month, someone outside the build team read ' + fmt(SAMPLE_READ) + ' sent replies back against the terms in force on each reply’s date. ' +
+      fmt(SAMPLE_MATCHED) + ' matched. ' + fmt(SAMPLE_MISMATCHED) + ' cited terms that had since been replaced.',
+    mark: 'change'
+  };
+
+  var CLAIM_WHY = {
+    whole: 'An unqualified claim about the whole stream is stronger than evidence that reads the same either way can carry.',
+    bounded: 'A claim limited to replies someone has read back needs such a reading to exist. Nothing on the table is one yet.',
+    open: 'A sample read back against the source is the one thing that would let the plan say more.'
+  };
+
+  var CRITERION_TEXT = 'One question sorts every piece of evidence: if the workflow were failing, would this read differently? If it would read just the same, it shows nothing about today. If it was gathered before launch, it describes the system that shipped. Only evidence that would change counts, and a claim can reach no further than the evidence that would change.';
+  var FIRST_MOVE_TEXT = 'Take the first piece you are unsure about and imagine one in ten replies going out wrong. Ask whether that piece would look any different. If it would not, it looks the same either way.';
+  var CORRECT_TEXT = 'Right. Two pieces describe the launch, and five look the same whether the workflow is working or failing. None would change if errors were piling up, so the plan may write only that whether the workflow is working has not been established. That is not an accusation that it is failing. It says the evidence cannot tell the two apart, and silence from users shows only that nobody has complained yet.';
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderMarkItems(container, items, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      MARKS.forEach(function (m) {
+        choices.appendChild(makeChoice(prefix + idx, m.value, m.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function renderClaim(container, name, onChange) {
+    CLAIMS.forEach(function (c) { container.appendChild(makeChoice(name, c.value, c.label, onChange)); });
+  }
+
+  function checked(name) {
+    var c = document.querySelector('input[name="' + name + '"]:checked');
+    return c ? c.value : null;
+  }
+
+  function marksFor(items, prefix) {
+    return items.map(function (item, idx) { return checked(prefix + idx); });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  // The claim the evidence licenses is computed from the key, never typed in.
+  function licensedClaim(items) {
+    var anyChange = items.some(function (it) { return it.mark === 'change'; });
+    return anyChange ? 'bounded' : 'open';
+  }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  function ready() {
+    checkBtn.disabled = marksFor(ITEMS, 'item').indexOf(null) !== -1 || checked('claim') === null;
+  }
+
+  renderMarkItems(itemsEl, ITEMS, 'item', ready);
+  renderClaim(document.getElementById('claim-choices'), 'claim', ready);
+
+  checkBtn.addEventListener('click', function () {
+    var marks = marksFor(ITEMS, 'item');
+    var wrongCards = [];
+    ITEMS.forEach(function (it, i) { if (marks[i] !== it.mark) { wrongCards.push(i); } });
+    var claimOk = checked('claim') === licensedClaim(ITEMS);
+    var wrongCount = wrongCards.length + (claimOk ? 0 : 1);
+
+    if (wrongCount === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (wrongCount === 1) {
+      if (wrongCards.length === 1) {
+        var it = ITEMS[wrongCards[0]];
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: “' + it.text + '”', it.why]);
+      } else {
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Your marks are right. The claim is the part to revisit.', CLAIM_WHY[checked('claim')]]);
+      }
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: the same instrument, with one piece of evidence added.
+  var spPanel = document.getElementById('sp-panel');
+  function spUpdate() {
+    var m = checked('sp0');
+    var c = checked('spclaim');
+    if (m === null || c === null) { return; }
+    var all = ITEMS.concat([SP_ITEM]);
+    var markOk = m === SP_ITEM.mark;
+    var claimOk = c === licensedClaim(all);
+    spPanel.innerHTML = '';
+    var p1 = document.createElement('p');
+    if (markOk && claimOk) {
+      p1.textContent = 'Right. This is the first piece that would read differently if errors were piling up, because a person positioned to see a mismatch read replies against the source. It supports a claim limited to what was read, with the date and the result stated.';
+    } else if (!markOk) {
+      p1.textContent = 'Look again at the new piece. If the workflow were failing, a person reading replies against the terms in force would find mismatches. It would read differently, so it would change.';
+    } else {
+      p1.textContent = 'The mark is right, and it changes what the plan may say. A reading of ' + fmt(SAMPLE_READ) + ' replies supports a claim limited to those replies, with the date and the result stated. It does not support the whole stream.';
+    }
+    var p2 = document.createElement('p');
+    p2.textContent = 'The claim now reaches only the replies someone read. It says nothing about the replies nobody read, and it ages: next month it describes last month. The sample has to recur, performed by someone who did not build the workflow, and what it finds has to go to a person who can act. The claim would be bounded the same way whatever the sample found.';
+    spPanel.appendChild(p1);
+    spPanel.appendChild(p2);
+    spPanel.hidden = false;
+  }
+  renderMarkItems(document.getElementById('sp-items'), [SP_ITEM], 'sp', spUpdate);
+  renderClaim(document.getElementById('sp-claim-choices'), 'spclaim', spUpdate);
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read the review step</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  .sentences { margin: 0 0 22px; }
+  .sent { display: block; width: 100%; text-align: left; font-family: var(--font-serif); font-size: 1rem; line-height: 1.5; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 12px 14px; margin: 0 0 8px; cursor: pointer; }
+  .sent:hover { background: var(--paper); }
+  .sent:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .sent.s-acc { border-left-color: var(--warn); background: var(--warn-bg); }
+  .sent.s-load { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .s-tag { display: block; font-family: var(--font-sans); font-weight: 700; font-size: 0.8rem; margin-top: 6px; color: var(--ink-soft); }
+  .s-acc .s-tag { color: var(--warn); }
+  .s-load .s-tag { color: var(--accent-deep); }
+  .s-tag:empty { display: none; }
+  .fixes { margin: 0 0 18px; }
+  .fix-row { margin: 0 0 14px; }
+  .fix-row label { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.9rem; color: var(--ink); margin: 0 0 6px; }
+  .fix-row select { width: 100%; max-width: 100%; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
+  .fix-row select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .item-text, .sent, .panel, .feedback { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read the review step</h1>
+
+  <p class="lead-line">Reviewer complacency is the decline in a person&rsquo;s vigilance as they check a system&rsquo;s output. Practitioners differ about what sustains vigilance in review work. One account locates it in the consequence attached to the review: when a flag changes nothing, the reason to catch errors fades. Another locates it in workload and in how reliable the automation is: a system that is usually right trains attention away from itself, and a heavy queue speeds the drift. The two accounts point to different fixes, and a plan that addresses only one leaves the other operative.</p>
+
+  <div class="context">
+    <p>A manufacturer&rsquo;s quality function has an AI assistant draft supplier nonconformance write-ups. A human review step comes before each write-up is filed. The sentences below describe that step.</p>
+  </div>
+
+  <div class="instruction">
+    <p>Select a sentence to cycle its mark. The first selection marks an <b>accountability gap</b>: it shows what happens after a reviewer flags something, or whether anyone must answer for a flag. The second marks a <b>load or reliance gap</b>: it shows how much a reviewer carries or how far the system&rsquo;s record leans them on it. The third clears the mark. Leave a sentence unmarked if it shows neither.</p>
+  </div>
+
+  <div class="sentences" id="sentences" role="group" aria-label="Sentences describing the review step"></div>
+
+  <div class="fixes">
+    <div class="fix-row">
+      <label for="fix-acc">Your fix for the accountability gap</label>
+      <select id="fix-acc"></select>
+    </div>
+    <div class="fix-row">
+      <label for="fix-load">Your fix for the load or reliance gap</label>
+      <select id="fix-load"></select>
+    </div>
+  </div>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my reading</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: close one gap</h2>
+    <p>Suppose flags now go to a named quality owner, who answers each one within a day and tells the engineer what changed. Nothing else in the description changes.</p>
+    <fieldset class="item">
+      <legend class="item-text">Which gap remains?</legend>
+      <div class="item-choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  function fmt(n) { return n.toLocaleString('en-US'); }
+
+  // Write-ups filed per year at the three plants.
+  var PLANT_WRITEUPS = [3800, 3200, 2600];
+  var TOTAL = PLANT_WRITEUPS.reduce(function (a, b) { return a + b; }, 0);
+  var FEWEST_PER_MONTH = Math.min.apply(null, PLANT_WRITEUPS) / 12;
+  var MORE_THAN = Math.floor(FEWEST_PER_MONTH / 100) * 100;
+
+  var STATES = ['none', 'acc', 'load'];
+  var TAGS = { none: '', acc: 'Marked: accountability gap', load: 'Marked: load or reliance gap' };
+
+  var SENTENCES = [
+    { text: 'A quality engineer at each of three plants reviews every drafted write-up before it is filed in the quality file.', mark: 'none',
+      why: 'It describes the control and shows neither gap. Who reviews and what they review is the starting point, not a gap.' },
+    { text: 'The engineers do the review between inspection duties, usually in one block at the end of a shift.', mark: 'load',
+      why: 'The review is squeezed into the end of a shift alongside other work. That points to load.' },
+    { text: 'The three plants file ' + fmt(TOTAL) + ' write-ups a year, so even the lightest plant’s engineer sees more than ' + fmt(MORE_THAN) + ' a month.', mark: 'load',
+      why: 'It shows how much each reviewer carries. That points to load.' },
+    { text: 'Five of every six drafts pass without a revision request.', mark: 'load',
+      why: 'A system that is usually right leans the reviewer on it. That points to reliance.' },
+    { text: 'Engineers have flagged the same wording error in corrective-action clauses several times, and none has heard whether anything was done about it.', mark: 'acc',
+      why: 'It shows what happens after a flag: nothing comes back. That points to an accountability gap.' },
+    { text: 'No deviation threshold is defined, and no one is named to receive a deviation alert.', mark: 'acc',
+      why: 'It shows that a flag has nowhere to go and no one who must answer it. That points to an accountability gap.' },
+    { text: 'Engineers now tend to read the opening lines of a draft and its corrective-action clause, and skim the rest.', mark: 'load',
+      why: 'Attention has drifted away from a system that is usually right. That points to reliance.' },
+    { text: 'About 14 percent of write-ups carry a corrective-action commitment or a customer-specific clause.', mark: 'neither-detail',
+      why: 'It says which drafts matter most. It does not show what happens after a flag or how much a reviewer carries, so it shows neither gap.' },
+    { text: 'Write-ups are filed in the quality management system, where corrective-action clauses are held as free text.', mark: 'neither-detail',
+      why: 'It describes where the text lives. It shows neither gap.' }
+  ];
+  SENTENCES.forEach(function (s) { if (s.mark === 'neither-detail') { s.mark = 'none'; } });
+
+  var FIXES = [
+    { value: 'owner', label: 'Send each flag to a named owner who must respond, and tell the reviewer what changed.' },
+    { value: 'load', label: 'Reduce the drafts each engineer reads and spread the review across the shift.' },
+    { value: 'remind', label: 'Remind engineers to read every draft carefully.' },
+    { value: 'swap', label: 'Replace the assistant with a more accurate model.' }
+  ];
+  var FIX_KEY = { acc: 'owner', load: 'load' };
+  var FIX_WHY = {
+    owner: 'This gives a flag somewhere to go and someone who must answer it. It addresses the accountability gap.',
+    load: 'This lowers what each reviewer carries. It addresses the load and reliance gap.',
+    remind: 'A reminder changes neither what happens after a flag nor how much a reviewer carries. It asks for vigilance without supporting it.',
+    swap: 'A more accurate assistant leaves both gaps open. Under the load and reliance account it can widen the second, because a system that is right more often trains attention further away from itself.'
+  };
+
+  var CRITERION_TEXT = 'Two questions sort every sentence. What happens after a reviewer flags something, and must anyone answer for it? If the answer is nothing, that is an accountability gap. How much does each reviewer carry, and how far does the system’s record lean them on it? A heavy load or a long run of correct drafts is a load or reliance gap. A sentence that answers neither is left unmarked.';
+  var FIRST_MOVE_TEXT = 'Take any sentence and ask which of the two questions it helps answer. Then pair each gap you find with the fix that acts on it, not with a fix that only asks for more care.';
+  var CORRECT_TEXT = 'Right. Two sentences point to an accountability gap: nothing comes back after a flag, and no one is named to receive one. Four point to a load and reliance gap: a review squeezed into the end of a shift, a heavy monthly volume, a system right five times in six, and reading that has drifted. Each gap has its own fix, and the plan needs both, because a review that fails on either count fails in practice. Nothing here says which gap dominates, and no observation available to you settles that.';
+
+  var state = SENTENCES.map(function () { return 'none'; });
+  var container = document.getElementById('sentences');
+  var checkBtn = document.getElementById('check-btn');
+  var fixAcc = document.getElementById('fix-acc');
+  var fixLoad = document.getElementById('fix-load');
+  var srStatus = document.getElementById('sr-status');
+
+  function labelFor(i) {
+    var s = state[i];
+    var m = s === 'none' ? 'Not marked' : (s === 'acc' ? 'Marked as an accountability gap' : 'Marked as a load or reliance gap');
+    return SENTENCES[i].text + ' ' + m + '. Select to change.';
+  }
+
+  function paint(i, btn) {
+    btn.className = 'sent' + (state[i] === 'acc' ? ' s-acc' : (state[i] === 'load' ? ' s-load' : ''));
+    btn.setAttribute('aria-label', labelFor(i));
+    btn.setAttribute('data-state', state[i]);
+    btn.querySelector('.s-tag').textContent = TAGS[state[i]];
+  }
+
+  SENTENCES.forEach(function (s, i) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('data-index', String(i));
+    var txt = document.createElement('span');
+    txt.textContent = s.text;
+    var tag = document.createElement('span');
+    tag.className = 's-tag';
+    btn.appendChild(txt);
+    btn.appendChild(tag);
+    btn.addEventListener('click', function () {
+      state[i] = STATES[(STATES.indexOf(state[i]) + 1) % STATES.length];
+      paint(i, btn);
+      srStatus.textContent = TAGS[state[i]] || 'Mark cleared';
+    });
+    container.appendChild(btn);
+    paint(i, btn);
+  });
+
+  function fillSelect(sel) {
+    var blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = 'Choose a fix';
+    sel.appendChild(blank);
+    FIXES.forEach(function (f) {
+      var o = document.createElement('option');
+      o.value = f.value;
+      o.textContent = f.label;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () {
+      checkBtn.disabled = fixAcc.value === '' || fixLoad.value === '';
+    });
+  }
+  fillSelect(fixAcc);
+  fillSelect(fixLoad);
+
+  function showFeedback(state2, status, paras) {
+    var el = document.getElementById('feedback');
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state2);
+    document.getElementById('fb-status').textContent = status;
+    var d = document.getElementById('fb-detail');
+    d.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      d.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var wrongMarks = [];
+    SENTENCES.forEach(function (s, i) { if (state[i] !== s.mark) { wrongMarks.push(i); } });
+    var accOk = fixAcc.value === FIX_KEY.acc;
+    var loadOk = fixLoad.value === FIX_KEY.load;
+    var wrongFixes = (accOk ? 0 : 1) + (loadOk ? 0 : 1);
+
+    if (wrongMarks.length === 0 && wrongFixes === 0) {
+      showFeedback('fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (wrongMarks.length === 1 && wrongFixes === 0) {
+      var s = SENTENCES[wrongMarks[0]];
+      showFeedback('fb-near', 'Close.', ['Look again at: “' + s.text + '”', s.why]);
+    } else if (wrongMarks.length === 0 && wrongFixes === 1) {
+      var which = accOk ? 'load and reliance gap' : 'accountability gap';
+      var chosen = accOk ? fixLoad.value : fixAcc.value;
+      showFeedback('fb-near', 'Close.', [
+        'Your marks are right. One fix does not act on its gap, so the ' + which + ' is still operative.',
+        FIX_WHY[chosen],
+        'A plan has to address both gaps, because a review that fails on either count fails in practice.'
+      ]);
+    } else if (wrongMarks.length === 0) {
+      showFeedback('fb-warn', 'Not yet.', ['Your marks are right. Neither fix acts on its gap, so both gaps are still operative.', FIX_WHY[fixAcc.value], FIX_WHY[fixLoad.value]]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: the accountability gap closes; one assumption moves.
+  var SP_CHOICES = [
+    { value: 'acc', label: 'The accountability gap' },
+    { value: 'load', label: 'The load and reliance gap' },
+    { value: 'both', label: 'Both' },
+    { value: 'neither', label: 'Neither' }
+  ];
+  var spPanel = document.getElementById('sp-panel');
+  SP_CHOICES.forEach(function (c) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = 'sp';
+    input.value = c.value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = c.label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', function () {
+      spPanel.innerHTML = '';
+      var p1 = document.createElement('p');
+      p1.textContent = c.value === 'load'
+        ? 'Right. The load and reliance gap remains.'
+        : 'Look again. A flag now goes somewhere and the engineer hears back, so the accountability gap has closed. The reading load has not changed at all.';
+      var p2 = document.createElement('p');
+      p2.textContent = 'The same engineers still read more than ' + fmt(MORE_THAN) + ' drafts a month at the end of a shift, and five in six still pass untouched. An engineer who now gets answers is still reading on a thin margin. A plan that fixed only the first gap leaves the second operative.';
+      spPanel.appendChild(p1);
+      spPanel.appendChild(p2);
+      spPanel.hidden = false;
+    });
+    document.getElementById('sp-choices').appendChild(wrap);
+  });
+
+})();
+</script>
+</body>
+</html>

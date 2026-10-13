@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Place the check</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  .steps { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; margin: 0 0 22px; padding: 12px 16px 12px 38px; }
+  .steps li { margin: 0 0 4px; }
+  .steps li:last-child { margin-bottom: 0; }
+  .place-row { margin: 0; }
+  .place-row label { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink); margin: 0 0 6px; }
+  .place-row select { width: 100%; max-width: 100%; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
+  .place-row select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Place the check</h1>
+
+  <p class="lead-line">An oversight failure happens when a system performs as specified and a person defers, without noticing, to output that is wrong. A malfunction is different: the system itself misbehaves, and engineers repair it. In a workflow that acts across several steps there is a second problem. A review at the end arrives too late, because an irreversible action may already have happened before anyone saw the input. So verification has to be designed into the sequence: at a named step, held by a named person, with the power to halt the run.</p>
+
+  <div class="context">
+    <p>A manufacturer&rsquo;s customer-exception workflow runs five steps in order. Last month a customer received terms that had since been replaced. The log shows that each step performed as it was built to perform. Once step 4 runs, the customer has the message and nothing recalls it.</p>
+  </div>
+
+  <ol class="steps" aria-label="The five steps of the workflow">
+    <li>Retrieve the terms that apply from the document store.</li>
+    <li>Classify the request against those terms.</li>
+    <li>Write the message.</li>
+    <li>Send the message to the customer.</li>
+    <li>Update the record to match the decision.</li>
+  </ol>
+
+  <div class="instruction">
+    <p>Each card names a check and the job it is meant to do. Place each one where it can still do that job. A check cannot sit before the step that produces what it needs. If a card cannot do its job anywhere in this sequence, choose &ldquo;Cannot be placed.&rdquo; Where more than one position works, any of them passes.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my placements</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: move the point of no return</h2>
+    <p>Suppose the workflow now holds every written message for a day before step 4 sends it. Nothing else changes. Place the day-end read again, as it now works.</p>
+    <div id="sp-items"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var SEND = 4;   // the first step whose result the customer can see
+
+  var POSITIONS = [
+    { value: 'p1', label: 'After step 1: retrieve the terms' },
+    { value: 'p2', label: 'After step 2: classify the request' },
+    { value: 'p3', label: 'After step 3: write the message' },
+    { value: 'p4', label: 'After step 4: send the message' },
+    { value: 'p5', label: 'After step 5: update the record' },
+    { value: 'np', label: 'Cannot be placed' }
+  ];
+
+  // needs: the earliest step after which the check has what it needs to run.
+  // A stopping check is valid from there up to, but not past, the send.
+  var ITEMS = [
+    { text: 'If the retrieved document is undated, superseded, or past its age limit, stop the run and escalate to a person.',
+      job: 'Stop a reply built on a document that is no longer current.',
+      needs: 1, needsText: 'the retrieved document, which exists after step 1' },
+    { text: 'If the classification scores below the agreed threshold, or two classifications conflict, stop the run and escalate to a person.',
+      job: 'Stop a reply built on a doubtful classification.',
+      needs: 2, needsText: 'a classification, which exists after step 2' },
+    { text: 'A service agent reads each written message beside the governing terms, then approves, edits, or stops it.',
+      job: 'Stop a message nobody has approved from reaching a customer.',
+      needs: 3, needsText: 'the written message, which exists after step 3' },
+    { text: 'A reviewer reads a sample of the day’s sent messages at the end of each day.',
+      job: 'Stop wrong messages reaching customers.',
+      unplaceable: 'A day-end read looks at messages that have already been sent. Wherever you place it, the customer already has the message, so it can find a wrong reply but not stop one.' },
+    { text: 'A human checks the results.',
+      job: 'Catch errors.',
+      unplaceable: 'It names no step, no holder, and no power to halt. There is nothing to place, and a sentence like this is more dangerous than a plain risk warning because it will pass a review.' },
+    { text: 'Retune the classifier to reduce misclassifications.',
+      job: 'Reduce errors at step 2.',
+      unplaceable: 'Retuning repairs a component that misbehaved. The log shows every step did what it was built to do, so there is nothing to retune. The fix lies in where the checks sit, and a repair is not a check at any step.' }
+  ];
+
+  var SP_ITEM = {
+    text: 'A reviewer reads the day’s held messages at the end of each day, before any of them is sent.',
+    job: 'Stop a wrong message from reaching a customer.',
+    needs: 3, needsText: 'the written messages, which exist after step 3 and are now held until the send'
+  };
+
+  function stepOf(value) { return value === 'np' ? null : parseInt(value.slice(1), 10); }
+
+  // The key is computed from the rule, not typed in.
+  function isValid(item, value) {
+    var step = stepOf(value);
+    if (item.unplaceable) { return value === 'np'; }
+    if (value === 'np') { return false; }
+    return step >= item.needs && step < SEND;
+  }
+
+  function reason(item, value) {
+    var step = stepOf(value);
+    if (item.unplaceable) { return item.unplaceable; }
+    if (value === 'np') {
+      return 'This one can be placed. It needs ' + item.needsText + ', and it can still stop the harm before the send.';
+    }
+    if (step >= SEND) {
+      return 'By then the customer has the message. A check placed after step 4 can find an error but cannot stop one.';
+    }
+    return 'The check has nothing to work on at that point. It needs ' + item.needsText + ', so it cannot sit before that step.';
+  }
+
+  var CRITERION_TEXT = 'Find the first step the customer can see. Only a check that sits before it can still stop what it is meant to stop. Then ask what each check needs in order to run, such as a document, a classification, or a written message, because it cannot sit before the step that produces it. A check that names no step, that reads only after the send, or that repairs a component nothing blamed cannot be placed.';
+  var FIRST_MOVE_TEXT = 'Start with step 4. For each card, ask whether it can still stop the harm before the customer has the message, and whether what it needs exists yet.';
+  var CORRECT_TEXT = 'Right. Three checks sit before the send, each at a step where it has what it needs. Three cannot be placed. The day-end read finds errors after the customer has them. “A human checks the results” names no step, holder, or power. Retuning the classifier repairs a component that did nothing wrong. Every step did what it was built to do, so the plan has to say where the checks live. Step 4 is the first point of no return, and every check that has to stop something sits before it.';
+
+  function renderPlace(container, items, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('div');
+      fs.className = 'item';
+      var t = document.createElement('p');
+      t.className = 'item-text';
+      t.style.float = 'none';
+      t.textContent = item.text;
+      fs.appendChild(t);
+      var facts = document.createElement('div');
+      facts.className = 'item-facts';
+      var row = document.createElement('div');
+      var b = document.createElement('b');
+      b.textContent = 'Its job: ';
+      row.appendChild(b);
+      row.appendChild(document.createTextNode(item.job));
+      facts.appendChild(row);
+      fs.appendChild(facts);
+      var wrap = document.createElement('div');
+      wrap.className = 'place-row';
+      var id = prefix + idx;
+      var label = document.createElement('label');
+      label.setAttribute('for', id);
+      label.textContent = 'Where does it go?';
+      var sel = document.createElement('select');
+      sel.id = id;
+      var blank = document.createElement('option');
+      blank.value = '';
+      blank.textContent = 'Choose a position';
+      sel.appendChild(blank);
+      POSITIONS.forEach(function (p) {
+        var o = document.createElement('option');
+        o.value = p.value;
+        o.textContent = p.label;
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', onChange);
+      wrap.appendChild(label);
+      wrap.appendChild(sel);
+      fs.appendChild(wrap);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var v = document.getElementById(prefix + idx).value;
+      return v === '' ? null : v;
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  renderPlace(itemsEl, ITEMS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var a = answersFor(ITEMS, 'item');
+    var wrong = [];
+    ITEMS.forEach(function (item, i) { if (!isValid(item, a[i])) { wrong.push(i); } });
+    if (wrong.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (wrong.length === 1) {
+      var it = ITEMS[wrong[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: “' + it.text + '”', reason(it, a[wrong[0]])]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: one assumption moves. The read is unchanged; the sequence is not.
+  var spPanel = document.getElementById('sp-panel');
+  renderPlace(document.getElementById('sp-items'), [SP_ITEM], 'sp', function () {
+    var v = document.getElementById('sp0').value;
+    if (v === '') { return; }
+    spPanel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = isValid(SP_ITEM, v)
+      ? 'Right. The read can now sit after step 3 and before the send, so it can do its job.'
+      : 'Look again. ' + reason(SP_ITEM, v);
+    var p2 = document.createElement('p');
+    p2.textContent = 'The same read that could not do its job before now can, because the messages it reads exist ahead of the point of no return. The check did not change. The sequence did. The cost is a day’s delay on every reply, and the plan has to say it accepts that. Where a check goes depends on what an error costs and whether the action can be undone. Whether a reviewer can read every held message in the time available is a separate question, which placement does not answer.';
+    spPanel.appendChild(p1);
+    spPanel.appendChild(p2);
+    spPanel.hidden = false;
+  });
+
+})();
+</script>
+</body>
+</html>

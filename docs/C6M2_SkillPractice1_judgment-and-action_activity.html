@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Judgment and action</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Judgment and action</h1>
+
+  <p class="lead-line">An authority grant is the permission a system holds to act: the tools it may call, the actions it may take, and how far it may go before a person steps in. The model underneath makes judgments. The grant decides what happens next, and governance attaches to the grant. Two systems built on the same model can carry very different accountability, because they are allowed to do different things.</p>
+
+  <div class="context">
+    <p>A manufacturer runs two automated systems. One is a workflow in the service function&rsquo;s customer-exception path. The other automates maintenance scheduling at its plants. The cards below break them into steps.</p>
+  </div>
+
+  <div class="instruction">
+    <p><b>Judgment:</b> the step produces a decision, and nothing outside the system changes.</p>
+    <p><b>Acts alone:</b> the step changes something outside the system, such as a customer&rsquo;s inbox or a record, and no person stands before the change.</p>
+    <p><b>Waits for a person:</b> the step changes something outside the system only after a person approves.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my sort</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: add an approval step</h2>
+    <p>Suppose the service function changes the workflow. A service agent now reads each drafted reply, edits it if needed, and approves it. The reply is sent and the record updated only after that approval. The model and its three judgments stay exactly as they were. Nothing here is checked until you sort both cards.</p>
+    <div id="sp-items"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var BUCKETS = [
+    { value: 'judgment', label: 'Judgment' },
+    { value: 'alone', label: 'Acts alone' },
+    { value: 'waits', label: 'Waits for a person' }
+  ];
+
+  var ITEMS = [
+    { text: 'Decides which retrieved document holds the terms that apply',
+      facts: [['System', 'customer-exception workflow'], ['Produces', 'a decision about which document governs'], ['Changes outside the system', 'nothing']],
+      bucket: 'judgment',
+      why: 'It picks a document. Nothing outside the workflow has changed when the step ends, so it is a judgment.' },
+    { text: 'Decides how the request is classified under those terms',
+      facts: [['System', 'customer-exception workflow'], ['Produces', 'a classification of the request'], ['Changes outside the system', 'nothing']],
+      bucket: 'judgment',
+      why: 'It produces a classification. The result stays inside the workflow, so it is a judgment.' },
+    { text: 'Writes the reply the customer will receive',
+      facts: [['System', 'customer-exception workflow'], ['Produces', 'draft wording, held inside the workflow'], ['Changes outside the system', 'nothing until the reply is sent']],
+      bucket: 'judgment',
+      why: 'Writing sounds like acting, but the draft sits inside the workflow and the customer has seen nothing. Deciding what to say is a judgment. Sending it is the action.' },
+    { text: 'Sends the reply to the customer',
+      facts: [['System', 'customer-exception workflow'], ['Changes outside the system', 'the customer now holds the reply'], ['Person before the change', 'none']],
+      bucket: 'alone',
+      why: 'The customer’s inbox changes and no person stands before the change. It acts alone.' },
+    { text: 'Updates the record to match the decision',
+      facts: [['System', 'customer-exception workflow'], ['Changes outside the system', 'the customer record now shows the decision'], ['Person before the change', 'none']],
+      bucket: 'alone',
+      why: 'The record changes and no person stands before the change. It acts alone.' },
+    { text: 'Decides which crew and time slot each work order should take',
+      facts: [['System', 'maintenance-scheduling automation'], ['Produces', 'a proposed schedule'], ['Changes outside the system', 'nothing']],
+      bucket: 'judgment',
+      why: 'It proposes a schedule. Whatever sits underneath, nothing outside the system has changed yet, so it is a judgment.' },
+    { text: 'Writes each schedule into the maintenance system',
+      facts: [['System', 'maintenance-scheduling automation'], ['Changes outside the system', 'crews will work from the schedule it writes'], ['Person before the change', 'a reviewer approves each schedule first']],
+      bucket: 'waits',
+      why: 'The maintenance system changes, but only after a reviewer approves. The change waits for a person.' }
+  ];
+
+  var SP_ITEMS = [
+    { text: 'Sends the reply to the customer',
+      facts: [['System', 'customer-exception workflow, with the approval step'], ['Changes outside the system', 'the customer now holds the reply'], ['Person before the change', 'a service agent approves each reply first']],
+      bucket: 'waits' },
+    { text: 'Updates the record to match the decision',
+      facts: [['System', 'customer-exception workflow, with the approval step'], ['Changes outside the system', 'the customer record now shows the decision'], ['Person before the change', 'a service agent approves each reply first']],
+      bucket: 'waits' }
+  ];
+
+  var CRITERION_TEXT = 'One question sorts every card: when this step ends, has anything outside the system changed? If not, it is a judgment. If so, ask whether a person approves before the change lands. If one does, the step waits for a person. If none does, it acts alone. How capable the model is and how important the step feels play no part.';
+  var FIRST_MOVE_TEXT = 'Take the first card you are unsure about and read its “changes outside the system” line. If it says nothing, you are done with that card. If it names a change, read the line about the person.';
+  var CORRECT_TEXT = 'Right. Four steps make judgments. Two act alone, and one waits for a person. The scheduling automation sorts the same way as the workflow, because the sort asks what each step may do and not what kind of model sits underneath. The two steps that act alone are where a judgment turns into a change with no one in between, and that is where the accountability question attaches.';
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderSortItems(container, items, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      var f = document.createElement('div');
+      f.className = 'item-facts';
+      item.facts.forEach(function (pair) {
+        var row = document.createElement('div');
+        var b = document.createElement('b');
+        b.textContent = pair[0] + ': ';
+        row.appendChild(b);
+        row.appendChild(document.createTextNode(pair[1]));
+        f.appendChild(row);
+      });
+      fs.appendChild(f);
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      BUCKETS.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, onChange));
+      });
+      fs.appendChild(choices);
+      container.appendChild(fs);
+    });
+  }
+
+  function answersFor(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+
+  function gradeSort(items, answers) {
+    var diff = [];
+    items.forEach(function (item, i) { if (answers[i] !== item.bucket) { diff.push(i); } });
+    return diff;
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  renderSortItems(itemsEl, ITEMS, 'item', function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item').indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var diff = gradeSort(ITEMS, answersFor(ITEMS, 'item'));
+    if (diff.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (diff.length === 1) {
+      var it = ITEMS[diff[0]];
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: “' + it.text + '”', it.why]);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: the same two action cards, with one assumption moved.
+  var spPanel = document.getElementById('sp-panel');
+  renderSortItems(document.getElementById('sp-items'), SP_ITEMS, 'sp', function () {
+    var a = answersFor(SP_ITEMS, 'sp');
+    if (a.indexOf(null) !== -1) { return; }
+    var diff = gradeSort(SP_ITEMS, a);
+    spPanel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = diff.length === 0
+      ? 'Right: both steps now wait for a person. The change lands only after a service agent approves.'
+      : 'Look again. A service agent now approves each reply before it is sent and before the record changes, so both steps wait for a person.';
+    var p2 = document.createElement('p');
+    p2.textContent = 'The three judgments did not change, and neither did the model that makes them. What changed is the grant. Before, no one stood between the model’s decision and the customer. Now a service agent does, so the exposure has moved from the system’s own action to that approval. Governance follows the grant, not the model.';
+    spPanel.appendChild(p1);
+    spPanel.appendChild(p2);
+    spPanel.hidden = false;
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who can catch it</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-text + * { clear: both; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 0 0 12px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.scores { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.scores caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.scores th, table.scores td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.scores th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.scores td.num, table.scores th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.scores tr.moved td { background: var(--highlight-bg); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+
+  .redesign { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); }
+  .redesign[hidden] { display: none; }
+  .redesign label { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink); margin: 0 0 6px; }
+  .redesign select { width: 100%; max-width: 100%; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
+  .redesign select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .means { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; margin: 0 0 22px; padding: 12px 16px 12px 38px; }
+  .means li { margin: 0 0 4px; }
+  .means li:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Who can catch it</h1>
+
+  <p class="lead-line">Responsibility is misattributed when the person nearest an automated system takes the blame for a failure that the system&rsquo;s design produced. A control that names a person is a control only if that person has a realistic means of catching the error. There are three. When one is missing, the control is a design defect, and the fix is to redesign it so that the person has what is missing, not to blame the person who was named.</p>
+
+  <ol class="means" aria-label="The three means a named person needs">
+    <li><b>Time:</b> enough set aside to do the reading.</li>
+    <li><b>Source:</b> the source material beside the draft.</li>
+    <li><b>Authority:</b> the power to halt the process.</li>
+  </ol>
+
+  <div class="context">
+    <p>A manufacturer&rsquo;s AI plan names a person beside each of five controls. Each line below states what the design gives that person. Read it against the three means and use only what the line says.</p>
+  </div>
+
+  <div class="instruction">
+    <p>Each control lacks at most one means. Choose &ldquo;Holds&rdquo; when the line gives the person all three. Otherwise choose the means it lacks, then choose the redesign that supplies it.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my findings</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change one fact</h2>
+    <p>Suppose the plan now shows the work orders and equipment records beside each schedule the planner reviews. Nothing else changes. Test the planner&rsquo;s control again, as it now reads.</p>
+    <div id="sp-items"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var MEANS = [
+    { value: 'holds', label: 'Holds' },
+    { value: 'time', label: 'Lacks time' },
+    { value: 'source', label: 'Lacks the source' },
+    { value: 'authority', label: 'Lacks authority to halt' }
+  ];
+
+  // Each redesign supplies one means, or none. The decoys add a name or ask for more care.
+  var REDESIGNS = [
+    { value: 'r-time', label: 'Protect time for the reading and cap the queue to fit it', supplies: 'time' },
+    { value: 'r-source', label: 'Put the source material beside the draft', supplies: 'source' },
+    { value: 'r-authority', label: 'Give the person a way to hold the action before it takes effect', supplies: 'authority' },
+    { value: 'r-name', label: 'Add a second person’s signature', supplies: null,
+      note: 'A second signature adds another name. It supplies none of the three means.' },
+    { value: 'r-train', label: 'Train the reviewer to look more carefully', supplies: null,
+      note: 'Training changes what the person brings. The gap is in what the design gives them.' }
+  ];
+
+  var MEANS_NAME = { time: 'time', source: 'the source beside the draft', authority: 'the authority to halt' };
+
+  // Each line states, for each means, whether the design gives it. The key is derived from these facts.
+  var ITEMS = [
+    { text: 'The most experienced claims analyst on the desk is named as the reviewer of every claim summary the assistant writes. The original claim file opens beside each summary, and she may return any summary to the queue. Summaries arrive all day. She reads them in the gaps between her own claims, and the plan sets no time aside for it.',
+      facts: { time: false, source: true, authority: true },
+      why: 'The claim file is beside each summary, and she can return one. Time is the gap: the plan sets none aside, so the reading is squeezed between her own work. Experience does not supply time.' },
+    { text: 'A service agent is named as the reviewer of each reply the assistant drafts. The governing coverage clause appears beside the draft. A block of each shift is protected for this reading, with the queue capped to fit it, and one control lets him stop a reply from being sent. He joined the team last month.',
+      facts: { time: true, source: true, authority: true },
+      why: 'All three means are stated: protected time, the clause beside the draft, and a control that stops the reply. Joining the team recently is not one of the three, so the control holds on what the design gives him.' },
+    { text: 'A maintenance planner is named as the reviewer of each schedule the assistant produces. An hour of every morning is protected for the review, and he may hold any schedule before it is released. The assistant shows the new schedule only. The work orders and equipment records it was built from stay in a separate system, and the plan does not show them with the schedule.',
+      facts: { time: true, source: false, authority: true },
+      why: 'Time and the power to hold are both in the line. The source is not: the work orders and records sit elsewhere, so he is reading a schedule with nothing to check it against.' },
+    { text: 'A finance analyst is named as the reviewer of each supplier payment the assistant queues. An hour each morning is protected for the review, and the invoice and purchase order open beside every payment. The payment run releases at midnight. Her screen shows the queued payments and offers no way to hold one. Her review is recorded in the audit trail.',
+      facts: { time: true, source: true, authority: false },
+      why: 'She has the hour and the documents. Authority is the gap: the run releases at midnight and nothing on her screen can hold a payment. The audit trail records her name without giving her the power to stop anything.' },
+    { text: 'A quality engineer is named as the reviewer of each supplier nonconformance draft. The supplier’s file and the contract’s corrective-action clause appear beside the draft. A standing block in her week is set aside for this reading, and she may return any draft to its writer or hold it from release. Her name is on the release record.',
+      facts: { time: true, source: true, authority: true },
+      why: 'All three means are stated: the standing block, the file and clause beside the draft, and the power to return or hold a draft. Her name on the release record is not the defect. A named person is a problem only when the design has not given them the means.' }
+  ];
+
+  var SP_ITEM = {
+    text: 'A maintenance planner is named as the reviewer of each schedule the assistant produces. An hour of every morning is protected for the review, and he may hold any schedule before it is released. The work orders and equipment records the schedule was built from now appear beside it.',
+    facts: { time: true, source: true, authority: true }
+  };
+
+  // The key is computed from the stated facts: holds when all three are given, otherwise the one that is not.
+  function keyOf(item) {
+    var f = item.facts;
+    if (f.time && f.source && f.authority) { return 'holds'; }
+    if (!f.time) { return 'time'; }
+    if (!f.source) { return 'source'; }
+    return 'authority';
+  }
+
+  function redesignFor(value) {
+    for (var i = 0; i < REDESIGNS.length; i++) { if (REDESIGNS[i].value === value) { return REDESIGNS[i]; } }
+    return null;
+  }
+
+  // A card is right when the finding is right and, for a defect, the redesign supplies that means.
+  // Returns null when right, otherwise a short code naming what is out of place.
+  function judge(item, finding, redesign) {
+    var key = keyOf(item);
+    if (finding !== key) { return 'finding'; }
+    if (key === 'holds') { return null; }
+    var r = redesignFor(redesign);
+    if (!r || r.supplies !== key) { return 'redesign'; }
+    return null;
+  }
+
+  var CRITERION_TEXT = 'A control that names a person is a control only if that person has all three means: time set aside, the source beside the draft, and the authority to halt. A person’s experience, tenure, or signature is not one of the three. When one is missing, the finding is a design defect, and the redesign is whatever supplies that means. Adding a name or asking for more care supplies none of them.';
+  var FIRST_MOVE_TEXT = 'Take one control and ask the three questions about the person it names, in turn, using only what the line says. Is time set aside? Is the source beside the draft? Can the person stop the action?';
+  var CORRECT_TEXT = 'Right. Three controls name a person who has not been given what the control needs: one lacks time, one lacks the source, and one lacks the authority to halt. Each redesign supplies exactly what is missing. Two controls hold, and one of them carries a name on the record without being a defect, because the person also has the means. In every failing case the person named would be the one found after an incident, though the cause sits in the design that placed the control there. This reading is qualitative. Whether protected time actually fits the number of cases that arrive is a separate test, one of minutes against volume, and a control can pass this reading and fail that one.';
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  var srStatus = document.getElementById('sr-status');
+
+  // withRedesign: each card gets a redesign row that appears once a defect is chosen.
+  function renderCards(container, items, prefix, withRedesign, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+      var row = null;
+      var sel = null;
+      function refresh(fromUser) {
+        if (!row) { return; }
+        var picked = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+        var defect = picked && picked.value !== 'holds';
+        var wasHidden = row.hidden;
+        row.hidden = !defect;
+        if (!defect) { sel.value = ''; }
+        if (fromUser && defect && wasHidden) { srStatus.textContent = 'A redesign choice is now available for this control.'; }
+      }
+      MEANS.forEach(function (m) {
+        choices.appendChild(makeChoice(prefix + idx, m.value, m.label, function () { refresh(true); onChange(); }));
+      });
+      fs.appendChild(choices);
+      if (withRedesign) {
+        row = document.createElement('div');
+        row.className = 'redesign';
+        row.hidden = true;
+        var id = prefix + 'r' + idx;
+        var label = document.createElement('label');
+        label.setAttribute('for', id);
+        label.textContent = 'Which redesign supplies what is missing?';
+        sel = document.createElement('select');
+        sel.id = id;
+        var blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = 'Choose a redesign';
+        sel.appendChild(blank);
+        REDESIGNS.forEach(function (r) {
+          var o = document.createElement('option');
+          o.value = r.value;
+          o.textContent = r.label;
+          sel.appendChild(o);
+        });
+        sel.addEventListener('change', onChange);
+        row.appendChild(label);
+        row.appendChild(sel);
+        fs.appendChild(row);
+      }
+      container.appendChild(fs);
+    });
+  }
+
+  // Returns one {finding, redesign} per card, or null for any card not yet complete.
+  function answersFor(items, prefix, withRedesign) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      if (!c) { return null; }
+      var red = '';
+      if (withRedesign && c.value !== 'holds') {
+        red = document.getElementById(prefix + 'r' + idx).value;
+        if (red === '') { return null; }
+      }
+      return { finding: c.value, redesign: red };
+    });
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  renderCards(itemsEl, ITEMS, 'item', true, function () {
+    checkBtn.disabled = answersFor(ITEMS, 'item', true).indexOf(null) !== -1;
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var a = answersFor(ITEMS, 'item', true);
+    var out = [];
+    ITEMS.forEach(function (item, i) {
+      var j = judge(item, a[i].finding, a[i].redesign);
+      if (j) { out.push({ idx: i, kind: j }); }
+    });
+    if (out.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (out.length === 1) {
+      var o = out[0];
+      var it = ITEMS[o.idx];
+      var paras = ['Look again at: “' + it.text + '”'];
+      if (o.kind === 'finding') {
+        paras.push(it.why);
+      } else {
+        var r = redesignFor(a[o.idx].redesign);
+        var key = keyOf(it);
+        paras.push('You named the gap correctly. The redesign does not fit it. ' + (r.supplies
+          ? 'That redesign supplies ' + MEANS_NAME[r.supplies] + ', and this control already has it. The gap is ' + MEANS_NAME[key] + '.'
+          : r.note + ' The gap is ' + MEANS_NAME[key] + '.'));
+      }
+      showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', paras);
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass: one fact changes. The person, the hour and the power to hold stay as they were.
+  var spPanel = document.getElementById('sp-panel');
+  renderCards(document.getElementById('sp-items'), [SP_ITEM], 'sp', false, function () {
+    var a = answersFor([SP_ITEM], 'sp', false);
+    if (a[0] === null) { return; }
+    spPanel.innerHTML = '';
+    var p1 = document.createElement('p');
+    p1.textContent = a[0].finding === keyOf(SP_ITEM)
+      ? 'Right. On this reading the control now holds. The planner has the same hour and the same power to hold, and one fact changed: the source now sits beside the schedule.'
+      : 'Look again. Read the revised line against the three means one at a time. The change supplied one of them. Which one, and is anything still missing?';
+    var p2 = document.createElement('p');
+    p2.textContent = 'The person did not change. The design did, and the defect went with it, which is why the fault was never the planner’s. A control that passes this reading can still fail a different test. Whether one protected hour is enough for the number of schedules that arrive depends on minutes against volume, and that takes arithmetic, not a reading of the line.';
+    spPanel.appendChild(p1);
+    spPanel.appendChild(p2);
+    spPanel.hidden = false;
+  });
+
+})();
+</script>
+</body>
+</html>
