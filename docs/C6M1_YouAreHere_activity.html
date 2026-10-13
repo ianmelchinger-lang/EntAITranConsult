@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read this first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  .container.narrow { max-width: 640px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  h2:focus, h3:focus { outline: none; }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .scenario { border-left: 3px solid var(--accent); padding-left: 20px; margin: 0 0 28px; }
+  .scenario p { margin: 0 0 16px; }
+  .scenario p:last-child { margin-bottom: 0; }
+  .prompt-lead { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+
+  /* Orientation: checkbox group */
+  fieldset.group { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset.group > legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 1.05rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .counter { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 14px; }
+  .option { display: block; position: relative; margin-bottom: 12px; cursor: pointer; }
+  .option.is-disabled { cursor: not-allowed; }
+  .option-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .option-box { display: block; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 14px 18px; background: var(--white); }
+  .option-lead { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+  .option-detail { display: block; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; }
+  .option-input:checked + .option-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); }
+  .option-input:checked + .option-box .option-lead::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .option-input:disabled:not(:checked) + .option-box { opacity: 0.55; }
+  .option-input:focus-visible + .option-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  fieldset.group.locked .option { cursor: default; }
+  .reveal-btn { display: block; margin: 22px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .reveal-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .reveal-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .reveal-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal { margin-top: 32px; padding: 22px 24px; background: var(--highlight-bg); border-left: 4px solid var(--accent); border-radius: 4px; }
+  .reveal:focus { outline: none; }
+  .reveal-tag { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.82rem; color: var(--accent-deep); margin: 0 0 4px; }
+  .reveal-chosen { font-family: var(--font-sans); font-style: italic; color: var(--ink); margin: 14px 0 4px; }
+  .reveal-chosen:first-of-type { margin-top: 0; }
+  .reveal-body p { margin: 0 0 16px; }
+  .reveal-body p.back { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 4px; }
+  .reveal-body details { margin: 18px 0 18px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); }
+  .reveal-body summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+  .reveal-body summary:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal-body details p.other-lead { font-style: italic; color: var(--ink); margin: 12px 0 2px; }
+  .reveal-body details p.back { margin: 0; }
+  .reveal-body .asks { margin: 0 0 20px; }
+  .reveal-body .asks p.back:last-child { margin-bottom: 0; }
+  .reveal-body p:last-child { margin-bottom: 0; }
+
+  /* Skill practices: items, choices, buttons, feedback */
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 12px 0 0; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .sub-label { display: block; font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); margin: 14px 0 8px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:checked + .choice-box::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .choice-input:disabled + .choice-box { opacity: 0.7; cursor: default; }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .select-row { display: flex; flex-direction: column; gap: 6px; }
+  .select-row label { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); }
+  select { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--ink-soft); border-radius: 4px; padding: 10px 12px; width: 100%; max-width: 100%; }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p.quote { font-style: italic; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.data { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.data caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); padding: 0 0 8px; }
+  table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.data th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.data tr.moved td { background: var(--highlight-bg); }
+
+  /* Proposal text */
+  .proposal { margin: 0 0 24px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px 6px; }
+  .proposal h2 { font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 10px; }
+  .proposal ol { margin: 0; padding-left: 26px; font-family: var(--font-sans); font-size: 0.93rem; color: var(--ink); }
+  .proposal li { margin: 0 0 10px; }
+
+  /* Consolidation: ordering */
+  .order-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); padding: 12px 14px; margin-bottom: 10px; }
+  .order-badge { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 0.85rem; color: var(--ink-soft); }
+  .order-text { flex: 1 1 auto; min-width: 0; font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); }
+  .order-controls { flex: 0 0 auto; display: flex; gap: 4px; }
+  .move-btn { font-family: var(--font-sans); font-size: 1rem; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .move-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .move-btn:not(:disabled):hover { background: var(--highlight-bg); border-color: var(--accent); }
+  .move-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+    .proposal { padding: 14px 14px 4px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container narrow">
+
+  <h1>Read this first</h1>
+
+  <div class="scenario">
+    <p>A multinational manufacturer has asked an advisor whether it governs its AI. Its risk and compliance lead opens with two documents. One is a responsible-AI policy: approved, circulated, and principled. The other is the one-page form a team completes before anything reaches production. Both are real.</p>
+    <p>Meanwhile, assistants and scoring tools are already at work in the service network and on the plant floor. Before reporting back, the advisor may make three requests.</p>
+  </div>
+
+  <p class="prompt-lead">Before reading on, pick the three requests you would make first.</p>
+
+  <fieldset class="group" id="request-fieldset">
+    <legend>Which three requests would you make before reporting back?</legend>
+    <p class="counter" id="counter">Selected: 0 of 3</p>
+    <div id="request-list"></div>
+  </fieldset>
+
+  <button type="button" class="reveal-btn" id="reveal-btn" disabled>See what this misses</button>
+
+  <div class="reveal" id="reveal" role="region" aria-label="What this reading misses" tabindex="-1" hidden>
+    <span class="reveal-tag">You asked for:</span>
+    <div class="reveal-body" id="reveal-body"></div>
+  </div>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  var REQUESTS = [
+    { id: 'd1', kind: 'doc',
+      lead: 'The approved policy and its approval record.',
+      detail: 'Shows the principles were agreed, and by whom.',
+      back: 'Produced. The policy is approved, and the approval record is in order.' },
+    { id: 'o1', kind: 'op',
+      lead: 'The register of approved AI systems, set against what teams actually use.',
+      detail: 'A register is the company’s own list of its AI systems. This shows which ones the company knows about.',
+      back: 'The register lists 11 deployments the company has sanctioned. About 40 tools are estimated to be in active use across the company. Asked who holds the full list, the answer is a name: someone who would know.' },
+    { id: 'd3', kind: 'doc',
+      lead: 'Completed forms for the sanctioned deployments.',
+      detail: 'A sanctioned deployment is one the company has approved. This shows each one went through the form.',
+      back: 'Produced. A completed form is on file for each sanctioned deployment.' },
+    { id: 'd6', kind: 'doc',
+      lead: 'Signed review sheets for systems in production.',
+      detail: 'Shows a person signed off on the output of each batch.',
+      back: 'Produced. Each batch sheet carries a signature.' },
+    { id: 'o2', kind: 'op',
+      lead: 'The deviation that triggers a review, and who receives the alert.',
+      detail: 'Shows what the company would notice, and who would hear about it.',
+      back: 'No deviation level is defined, and no recipient is named. The answer is a name: someone who would know.' },
+    { id: 'd2', kind: 'doc',
+      lead: 'The one-page pre-production form.',
+      detail: 'Shows what a team has to answer before launch.',
+      back: 'Produced. The form is one page and ready to complete before launch.' },
+    { id: 'd4', kind: 'doc',
+      lead: 'Attendance records for the policy training.',
+      detail: 'Shows who was taught the policy.',
+      back: 'Produced. Attendance is recorded and complete.' },
+    { id: 'o3', kind: 'op',
+      lead: 'The uses ruled out, and where that boundary is written.',
+      detail: 'Shows what a team may not do with AI.',
+      back: 'The boundary is not written down. The answer is a name: someone who would know.' },
+    { id: 'd5', kind: 'doc',
+      lead: 'Minutes of the steering group’s reviews of AI work.',
+      detail: 'Shows decisions were taken and recorded.',
+      back: 'Produced. The minutes are in order.' },
+    { id: 'o4', kind: 'op',
+      lead: 'What the systems may do with employee and customer data.',
+      detail: 'Shows what is used, what is kept, and what is audited.',
+      back: 'The answer is a name: someone who would know.' }
+  ];
+  var LIMIT = 3;
+
+  var CLOSING = 'Every document in the file exists, and each one is complete. What the file cannot show is the distance between what the policy requires and what the people named could do on an ordinary working day. Reading that distance, and handing each part of it to someone who can close it, is the capability that has to be in place before any approval can be credited.';
+
+  var listEl = document.getElementById('request-list');
+  var counterEl = document.getElementById('counter');
+  var btn = document.getElementById('reveal-btn');
+  var fieldset = document.getElementById('request-fieldset');
+  var panel = document.getElementById('reveal');
+  var bodyEl = document.getElementById('reveal-body');
+  var srStatus = document.getElementById('sr-status');
+  var inputs = [];
+  var locked = false;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+
+  REQUESTS.forEach(function (r) {
+    var label = el('label', 'option');
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = 'option-input';
+    input.value = r.id;
+    var box = el('span', 'option-box');
+    box.appendChild(el('span', 'option-lead', r.lead));
+    box.appendChild(el('span', 'option-detail', r.detail));
+    label.appendChild(input);
+    label.appendChild(box);
+    listEl.appendChild(label);
+    inputs.push({ input: input, label: label });
+    input.addEventListener('change', refresh);
+  });
+
+  function chosenCount() {
+    var n = 0;
+    inputs.forEach(function (p) { if (p.input.checked) { n += 1; } });
+    return n;
+  }
+
+  function refresh() {
+    if (locked) { return; }
+    var n = chosenCount();
+    inputs.forEach(function (p) {
+      var blocked = (n >= LIMIT && !p.input.checked);
+      p.input.disabled = blocked;
+      if (blocked) { p.label.classList.add('is-disabled'); } else { p.label.classList.remove('is-disabled'); }
+    });
+    counterEl.textContent = 'Selected: ' + n.toLocaleString('en-US') + ' of ' + LIMIT.toLocaleString('en-US');
+    btn.disabled = (n !== LIMIT);
+  }
+
+  function summaryFor(k) {
+    if (k === 0) {
+      return 'All three requests came back complete. On this evidence you would tell the risk and compliance lead that the organization governs its AI. That report would not hold.';
+    }
+    if (k === 1) {
+      return 'Two of your requests returned documents, and both came back complete. One reached for what people can do, and it came back as a name. A file made only of documents would have passed. This one did not, because of that single request.';
+    }
+    if (k === 2) {
+      return 'One of your requests returned a document, and it came back complete. Two reached for what people can do, and both came back as names. A file made only of documents would have passed. This one did not.';
+    }
+    return 'All three of your requests reached for what people can do, and all three came back as names. The documents would have come back complete and told you nothing about this. Your instinct went where the gap is. The work from here is reading that gap and handing it to someone who can close it.';
+  }
+
+  btn.addEventListener('click', function () {
+    if (chosenCount() !== LIMIT) { return; }
+    locked = true;
+    inputs.forEach(function (p) { p.input.disabled = true; p.label.classList.add('is-disabled'); });
+    fieldset.classList.add('locked');
+    btn.disabled = true;
+
+    var chosen = [], other = [];
+    REQUESTS.forEach(function (r, i) {
+      if (inputs[i].input.checked) { chosen.push(r); } else { other.push(r); }
+    });
+    var k = chosen.filter(function (r) { return r.kind === 'op'; }).length;
+
+    bodyEl.innerHTML = '';
+    var asks = el('div', 'asks');
+    chosen.forEach(function (r) {
+      asks.appendChild(el('p', 'reveal-chosen', '“' + r.lead + '”'));
+      asks.appendChild(el('p', 'back', r.back));
+    });
+    bodyEl.appendChild(asks);
+    bodyEl.appendChild(el('p', '', summaryFor(k)));
+
+    var det = document.createElement('details');
+    det.appendChild(el('summary', '', 'What the other seven would have returned'));
+    other.forEach(function (r) {
+      det.appendChild(el('p', 'other-lead', r.lead));
+      det.appendChild(el('p', 'back', r.back));
+    });
+    bodyEl.appendChild(det);
+
+    bodyEl.appendChild(el('p', '', CLOSING));
+
+    panel.hidden = false;
+    srStatus.textContent = 'Your three requests are locked. The results are below.';
+    panel.focus();
+  });
+
+  refresh();
+})();
+</script>
+</body>
+</html>

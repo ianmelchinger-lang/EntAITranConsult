@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classify by condition, not by feel</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  .container.narrow { max-width: 640px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  h2:focus, h3:focus { outline: none; }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .scenario { border-left: 3px solid var(--accent); padding-left: 20px; margin: 0 0 28px; }
+  .scenario p { margin: 0 0 16px; }
+  .scenario p:last-child { margin-bottom: 0; }
+  .prompt-lead { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+
+  /* Orientation: checkbox group */
+  fieldset.group { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset.group > legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 1.05rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .counter { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 14px; }
+  .option { display: block; position: relative; margin-bottom: 12px; cursor: pointer; }
+  .option.is-disabled { cursor: not-allowed; }
+  .option-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .option-box { display: block; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 14px 18px; background: var(--white); }
+  .option-lead { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+  .option-detail { display: block; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; }
+  .option-input:checked + .option-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); }
+  .option-input:checked + .option-box .option-lead::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .option-input:disabled:not(:checked) + .option-box { opacity: 0.55; }
+  .option-input:focus-visible + .option-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  fieldset.group.locked .option { cursor: default; }
+  .reveal-btn { display: block; margin: 22px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .reveal-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .reveal-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .reveal-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal { margin-top: 32px; padding: 22px 24px; background: var(--highlight-bg); border-left: 4px solid var(--accent); border-radius: 4px; }
+  .reveal:focus { outline: none; }
+  .reveal-tag { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.82rem; color: var(--accent-deep); margin: 0 0 4px; }
+  .reveal-chosen { font-family: var(--font-sans); font-style: italic; color: var(--ink); margin: 14px 0 4px; }
+  .reveal-chosen:first-of-type { margin-top: 0; }
+  .reveal-body p { margin: 0 0 16px; }
+  .reveal-body p.back { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 4px; }
+  .reveal-body details { margin: 18px 0 18px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); }
+  .reveal-body summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+  .reveal-body summary:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal-body details p.other-lead { font-style: italic; color: var(--ink); margin: 12px 0 2px; }
+  .reveal-body details p.back { margin: 0; }
+  .reveal-body .asks { margin: 0 0 20px; }
+  .reveal-body .asks p.back:last-child { margin-bottom: 0; }
+  .reveal-body p:last-child { margin-bottom: 0; }
+
+  /* Skill practices: items, choices, buttons, feedback */
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 12px 0 0; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .sub-label { display: block; font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); margin: 14px 0 8px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:checked + .choice-box::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .choice-input:disabled + .choice-box { opacity: 0.7; cursor: default; }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .select-row { display: flex; flex-direction: column; gap: 6px; }
+  .select-row label { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); }
+  select { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--ink-soft); border-radius: 4px; padding: 10px 12px; width: 100%; max-width: 100%; }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p.quote { font-style: italic; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.data { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.data caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); padding: 0 0 8px; }
+  table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.data th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.data tr.moved td { background: var(--highlight-bg); }
+
+  /* Proposal text */
+  .proposal { margin: 0 0 24px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px 6px; }
+  .proposal h2 { font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 10px; }
+  .proposal ol { margin: 0; padding-left: 26px; font-family: var(--font-sans); font-size: 0.93rem; color: var(--ink); }
+  .proposal li { margin: 0 0 10px; }
+
+  /* Consolidation: ordering */
+  .order-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); padding: 12px 14px; margin-bottom: 10px; }
+  .order-badge { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 0.85rem; color: var(--ink-soft); }
+  .order-text { flex: 1 1 auto; min-width: 0; font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); }
+  .order-controls { flex: 0 0 auto; display: flex; gap: 4px; }
+  .move-btn { font-family: var(--font-sans); font-size: 1rem; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .move-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .move-btn:not(:disabled):hover { background: var(--highlight-bg); border-color: var(--accent); }
+  .move-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+    .proposal { padding: 14px 14px 4px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Classify by condition, not by feel</h1>
+
+  <p class="lead-line">Under a risk-tiered law, a category such as high-risk is a legal classification that anyone can check. Enumerable conditions trigger it. It does not describe how dangerous a system feels. Two reviewers who rate by feel can disagree, and neither can show why. Two reviewers who check the same list of conditions reach the same category and name the same trigger.</p>
+
+  <p class="context">A manufacturer&rsquo;s transformation team has five systems to classify. Each card gives the system&rsquo;s intended use in one sentence.</p>
+
+  <div class="instruction" id="step1">
+    <p><b>First, by feel.</b> Rate how dangerous each system feels, then lock your ratings.</p>
+  </div>
+
+  <section class="panel" id="list-panel" aria-labelledby="list-h" hidden>
+    <h2 id="list-h" tabindex="-1">The list of conditions</h2>
+    <p>This short list is illustrative. It was written for this exercise and is not the text of any law. A system that meets any one condition is in the high-risk category.</p>
+    <ol id="list-ol"></ol>
+  </section>
+
+  <div class="instruction" id="step2" style="margin-top: 24px;" hidden>
+    <p><b>Now, by condition.</b> On each card, tick every condition the system meets. Tick none if it meets none.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="lock-btn" disabled>Lock my ratings</button>
+  <button type="button" class="check-btn" id="check-btn" hidden>Check the classification</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="panel" id="compare-panel" aria-labelledby="cmp-h" tabindex="-1" hidden>
+    <h2 id="cmp-h">Feel beside category</h2>
+    <p>This table uses the correct classification.</p>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th scope="col">System</th><th scope="col">Your rating by feel</th><th scope="col">Category by condition</th><th scope="col">Condition met</th></tr></thead>
+        <tbody id="cmp-body"></tbody>
+      </table>
+    </div>
+    <p id="cmp-note"></p>
+  </section>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: cut the HR tool back</h2>
+    <p>Suppose the HR tool is cut back to booking interview rooms and sending calendar invitations. It ranks no one and recommends no one. Nothing here is checked.</p>
+    <div id="sp-item"></div>
+    <button type="button" class="check-btn" id="sp-btn">See the result</button>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var CONDS = [
+    { id: 'C1', pill: '1 · Scores people', name: 'Scores people',
+      text: 'The system is meant to score, rank, or rate individual people.' },
+    { id: 'C2', pill: '2 · Regulated product', name: 'Regulated product',
+      text: 'The system is a safety component of a product, or is itself a product, that product-safety rules already cover.' },
+    { id: 'C3', pill: '3 · Listed domain', name: 'Listed domain',
+      text: 'The system’s output feeds a decision about employment, or about whether a customer or other person receives a service or benefit.' }
+  ];
+  var FEELS = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' }
+  ];
+
+  var SYSTEMS = [
+    { name: 'Visual quality-inspection assistant',
+      use: 'Inspects units on the line at one plant and recommends whether each passes or is held. It inspects products. It is not part of them.',
+      key: [],
+      why: 'It inspects products and is not part of them, so the second condition is not met. It scores no people and feeds no decision about employment or a person’s service. It is not high-risk under this list, however costly an escape would be.' },
+    { name: 'HR shortlisting and scheduling support',
+      use: 'Recommends which job applicants move forward to interview, and helps schedule the interviews. Its recommendation decides who progresses.',
+      key: ['C1', 'C3'],
+      why: 'It ranks people (the first condition), and its output feeds a decision about employment (the third). It meets two conditions, and either one alone would put it in the high-risk category.' },
+    { name: 'Morning briefing agent',
+      use: 'Reads one planner’s mail and calendar and four connected systems, and prepares a daily brief on a schedule. It is built for that planner’s own use.',
+      key: [],
+      why: 'It reads private mail, which is a question for the data boundary. None of the three conditions is met, so it is not high-risk under this list.' },
+    { name: 'Warranty-claims assistant',
+      use: 'Recommends whether each warranty claim is covered. The claims desk acts on the recommendation.',
+      key: ['C3'],
+      why: 'It scores no people, and it is not part of a product. But its recommendation decides whether a customer receives a service: the third condition. One met condition is enough.' },
+    { name: 'Plant demand-forecasting assistant',
+      use: 'Advises the planning team on expected demand at one plant. It takes no action of its own.',
+      key: [],
+      why: 'It advises and takes no action, and it scores no one. It meets none of the three conditions, so it is not high-risk under this list, however much money its forecasts touch.' }
+  ];
+
+  var CRITERION_TEXT = 'A system is high-risk when it meets at least one of the three conditions. Check each condition separately against the one-sentence use. How dangerous the system feels, how much it costs, and how new it is play no part.';
+  var FIRST_MOVE_TEXT = 'Take one condition at a time and read it against every card. Does the system score people? Is it part of a product that safety rules already cover? Does its output feed a decision about employment, or about whether someone receives a service or benefit?';
+
+  var NUM = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+  function word(n) { return NUM[n] !== undefined ? NUM[n] : n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+  function condName(id) { return CONDS.filter(function (c) { return c.id === id; })[0].name; }
+  function category(set) { return set.length > 0 ? 'high-risk' : 'not high-risk'; }
+  function sameSet(a, b) {
+    return a.length === b.length && a.every(function (x) { return b.indexOf(x) !== -1; });
+  }
+
+  var itemsEl = document.getElementById('items');
+  var lockBtn = document.getElementById('lock-btn');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var srStatus = document.getElementById('sr-status');
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function makeInput(type, name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = type;
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    if (onChange) { input.addEventListener('change', onChange); }
+    return wrap;
+  }
+
+  function condBlock(prefix) {
+    var wrap = document.createElement('div');
+    var lab = document.createElement('span');
+    lab.className = 'sub-label';
+    lab.textContent = 'Which conditions does it meet? Tick all that apply, or none.';
+    wrap.appendChild(lab);
+    var row = document.createElement('div');
+    row.className = 'item-choices';
+    CONDS.forEach(function (c) { row.appendChild(makeInput('checkbox', prefix, c.id, c.pill, null)); });
+    wrap.appendChild(row);
+    return wrap;
+  }
+
+  // Conditions list
+  var listOl = document.getElementById('list-ol');
+  CONDS.forEach(function (c) {
+    var li = document.createElement('li');
+    var b = document.createElement('b');
+    b.textContent = c.name + '. ';
+    li.appendChild(b);
+    li.appendChild(document.createTextNode(c.text));
+    listOl.appendChild(li);
+  });
+
+  // Cards
+  var cards = [];
+  SYSTEMS.forEach(function (s, i) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = s.name;
+    fs.appendChild(legend);
+    var meta = document.createElement('p');
+    meta.className = 'item-meta';
+    meta.textContent = s.use;
+    fs.appendChild(meta);
+
+    var feelLab = document.createElement('span');
+    feelLab.className = 'sub-label';
+    feelLab.textContent = 'How dangerous does it feel?';
+    fs.appendChild(feelLab);
+    var feelRow = document.createElement('div');
+    feelRow.className = 'item-choices';
+    FEELS.forEach(function (f) {
+      feelRow.appendChild(makeInput('radio', 'feel' + i, f.value, f.label, onFeel));
+    });
+    fs.appendChild(feelRow);
+
+    var cond = condBlock('cond' + i);
+    cond.hidden = true;
+    fs.appendChild(cond);
+
+    var effect = document.createElement('p');
+    effect.className = 'item-effect';
+    effect.hidden = true;
+    fs.appendChild(effect);
+
+    itemsEl.appendChild(fs);
+    cards.push({ fs: fs, cond: cond, effect: effect });
+  });
+
+  function feels() {
+    return SYSTEMS.map(function (s, i) {
+      var c = document.querySelector('input[name="feel' + i + '"]:checked');
+      return c ? c.value : null;
+    });
+  }
+  function onFeel() { lockBtn.disabled = feels().indexOf(null) !== -1; }
+
+  lockBtn.addEventListener('click', function () {
+    if (feels().indexOf(null) !== -1) { return; }
+    var radios = document.querySelectorAll('input[type="radio"][name^="feel"]');
+    for (var r = 0; r < radios.length; r++) { radios[r].disabled = true; }
+    cards.forEach(function (c) { c.cond.hidden = false; });
+    document.getElementById('step1').hidden = true;
+    document.getElementById('step2').hidden = false;
+    document.getElementById('list-panel').hidden = false;
+    lockBtn.hidden = true;
+    checkBtn.hidden = false;
+    srStatus.textContent = 'Your ratings are locked. The list of conditions is above the cards.';
+    document.getElementById('list-h').focus();
+  });
+
+  function ticked(prefix) {
+    var out = [];
+    var boxes = document.querySelectorAll('input[name="' + prefix + '"]:checked');
+    for (var k = 0; k < boxes.length; k++) { out.push(boxes[k].value); }
+    return out;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var res = SYSTEMS.map(function (s, i) {
+      var t = ticked('cond' + i);
+      if (sameSet(t, s.key)) { return 'ok'; }
+      return (category(t) === category(s.key)) ? 'near' : 'wrong';
+    });
+    var off = [];
+    res.forEach(function (st, i) {
+      if (st === 'ok') {
+        cards[i].effect.textContent = category(SYSTEMS[i].key) === 'high-risk'
+          ? 'High-risk. Condition met: ' + SYSTEMS[i].key.map(condName).join(' and ').toLowerCase() + '.'
+          : 'Not high-risk. No condition met.';
+        cards[i].effect.hidden = false;
+      } else {
+        cards[i].effect.hidden = true;
+        off.push(i);
+      }
+    });
+
+    if (off.length === 0) {
+      var hi = SYSTEMS.filter(function (s) { return s.key.length > 0; }).length;
+      showFeedback('fb-ok', 'Correct.', [
+        'Right. ' + Word(hi) + ' of the ' + word(SYSTEMS.length) + ' systems are high-risk, and each one can show the condition that makes it so. The other ' + word(SYSTEMS.length - hi) + ' meet none of the three.'
+      ]);
+    } else if (off.length === 1) {
+      var s = SYSTEMS[off[0]];
+      var why = s.why;
+      showFeedback('fb-near', 'Close.', ['Look again at: ' + s.name, why]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [
+        off.length.toLocaleString('en-US') + ' of the ' + word(SYSTEMS.length) + ' systems need another look.',
+        CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+
+    // Feel beside category, using the correct classification.
+    var fl = feels();
+    var body = document.getElementById('cmp-body');
+    body.innerHTML = '';
+    var agree = 0;
+    SYSTEMS.forEach(function (s, i) {
+      var cat = category(s.key);
+      if ((fl[i] === 'high') === (cat === 'high-risk')) { agree += 1; }
+      var tr = document.createElement('tr');
+      var cells = [s.name, fl[i].charAt(0).toUpperCase() + fl[i].slice(1), cat.charAt(0).toUpperCase() + cat.slice(1),
+        s.key.length ? s.key.map(condName).join(', ') : 'None'];
+      cells.forEach(function (t) {
+        var td = document.createElement('td');
+        td.textContent = t;
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    });
+    var note = document.getElementById('cmp-note');
+    if (agree === SYSTEMS.length) {
+      note.textContent = 'Your rating by feel and the category agreed on all ' + word(SYSTEMS.length) + ' systems. A rating that happens to match is still not something you can show another reviewer. The conditions are.';
+    } else {
+      note.textContent = 'Your rating by feel and the category agreed on ' + agree.toLocaleString('en-US') + ' of ' + word(SYSTEMS.length) + ' systems. Where they differ, the conditions decide, and the conditions are the part you can show another reviewer.';
+    }
+    document.getElementById('compare-panel').hidden = false;
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass
+  var spFs = document.createElement('fieldset');
+  spFs.className = 'item';
+  var spLegend = document.createElement('legend');
+  spLegend.className = 'item-text';
+  spLegend.textContent = 'HR scheduling support, cut back';
+  spFs.appendChild(spLegend);
+  var spMeta = document.createElement('p');
+  spMeta.className = 'item-meta';
+  spMeta.textContent = 'Books interview rooms and sends calendar invitations. It ranks no one and recommends no one.';
+  spFs.appendChild(spMeta);
+  spFs.appendChild(condBlock('spcond'));
+  document.getElementById('sp-item').appendChild(spFs);
+
+  document.getElementById('sp-btn').addEventListener('click', function () {
+    var t = ticked('spcond');
+    var panel = document.getElementById('sp-panel');
+    panel.innerHTML = '';
+    var p1 = document.createElement('p');
+    var p2 = document.createElement('p');
+    if (t.length === 0) {
+      p1.textContent = 'Right: not high-risk. The tool kept its name and lost its intended use.';
+    } else {
+      p1.textContent = 'The conditions say otherwise: this version is not high-risk. Nothing on the card meets ' + t.map(function (id) { return 'the ' + condName(id).toLowerCase() + ' condition'; }).join(' or ') + '.';
+    }
+    p2.textContent = 'It no longer scores people, so the first condition is not met. Its output no longer feeds a decision about employment, so the third is not met. The category followed the use, not the name or the technology.';
+    panel.appendChild(p1);
+    panel.appendChild(p2);
+    panel.hidden = false;
+  });
+
+})();
+</script>
+</body>
+</html>

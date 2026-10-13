@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Answered, or a gap?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  .container.narrow { max-width: 640px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  h2:focus, h3:focus { outline: none; }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .scenario { border-left: 3px solid var(--accent); padding-left: 20px; margin: 0 0 28px; }
+  .scenario p { margin: 0 0 16px; }
+  .scenario p:last-child { margin-bottom: 0; }
+  .prompt-lead { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+
+  /* Orientation: checkbox group */
+  fieldset.group { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset.group > legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 1.05rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .counter { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 14px; }
+  .option { display: block; position: relative; margin-bottom: 12px; cursor: pointer; }
+  .option.is-disabled { cursor: not-allowed; }
+  .option-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .option-box { display: block; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 14px 18px; background: var(--white); }
+  .option-lead { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+  .option-detail { display: block; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; }
+  .option-input:checked + .option-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); }
+  .option-input:checked + .option-box .option-lead::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .option-input:disabled:not(:checked) + .option-box { opacity: 0.55; }
+  .option-input:focus-visible + .option-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  fieldset.group.locked .option { cursor: default; }
+  .reveal-btn { display: block; margin: 22px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .reveal-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .reveal-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .reveal-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal { margin-top: 32px; padding: 22px 24px; background: var(--highlight-bg); border-left: 4px solid var(--accent); border-radius: 4px; }
+  .reveal:focus { outline: none; }
+  .reveal-tag { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.82rem; color: var(--accent-deep); margin: 0 0 4px; }
+  .reveal-chosen { font-family: var(--font-sans); font-style: italic; color: var(--ink); margin: 14px 0 4px; }
+  .reveal-chosen:first-of-type { margin-top: 0; }
+  .reveal-body p { margin: 0 0 16px; }
+  .reveal-body p.back { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 4px; }
+  .reveal-body details { margin: 18px 0 18px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); }
+  .reveal-body summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+  .reveal-body summary:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal-body details p.other-lead { font-style: italic; color: var(--ink); margin: 12px 0 2px; }
+  .reveal-body details p.back { margin: 0; }
+  .reveal-body .asks { margin: 0 0 20px; }
+  .reveal-body .asks p.back:last-child { margin-bottom: 0; }
+  .reveal-body p:last-child { margin-bottom: 0; }
+
+  /* Skill practices: items, choices, buttons, feedback */
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 12px 0 0; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .sub-label { display: block; font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); margin: 14px 0 8px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:checked + .choice-box::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .choice-input:disabled + .choice-box { opacity: 0.7; cursor: default; }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .select-row { display: flex; flex-direction: column; gap: 6px; }
+  .select-row label { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); }
+  select { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--ink-soft); border-radius: 4px; padding: 10px 12px; width: 100%; max-width: 100%; }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p.quote { font-style: italic; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.data { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.data caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); padding: 0 0 8px; }
+  table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.data th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.data tr.moved td { background: var(--highlight-bg); }
+
+  /* Proposal text */
+  .proposal { margin: 0 0 24px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px 6px; }
+  .proposal h2 { font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 10px; }
+  .proposal ol { margin: 0; padding-left: 26px; font-family: var(--font-sans); font-size: 0.93rem; color: var(--ink); }
+  .proposal li { margin: 0 0 10px; }
+
+  /* Consolidation: ordering */
+  .order-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); padding: 12px 14px; margin-bottom: 10px; }
+  .order-badge { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 0.85rem; color: var(--ink-soft); }
+  .order-text { flex: 1 1 auto; min-width: 0; font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); }
+  .order-controls { flex: 0 0 auto; display: flex; gap: 4px; }
+  .move-btn { font-family: var(--font-sans); font-size: 1rem; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .move-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .move-btn:not(:disabled):hover { background: var(--highlight-bg); border-color: var(--accent); }
+  .move-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+    .proposal { padding: 14px 14px 4px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Answered, or a gap?</h1>
+
+  <p class="lead-line">A governance framework has six parts, and each can be checked before a deployment reaches production. A part counts as answered only when it is concrete enough for a team to act on. Anything less is a gap, and a gap needs a name.</p>
+
+  <p class="context">A manufacturer&rsquo;s quality organization has written a proposal for a supplier-quality document reader. The tool reads supplier documents and the quality management system, and surfaces exceptions for quality engineers. Figures in the proposal are illustrative.</p>
+
+  <section class="proposal" aria-labelledby="prop-h">
+    <h2 id="prop-h">The proposal, in eight statements</h2>
+    <ol id="proposal-list"></ol>
+  </section>
+
+  <div class="instruction">
+    <p>For each of the six parts, pick the statement that answers it, or say that no statement does. The line under each part says what counts as answered.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check the six parts</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="question-section" aria-labelledby="q-h" tabindex="-1" hidden>
+    <h2 id="q-h">The question underneath all six</h2>
+    <p>May this system be used in this workflow, by these people, with these controls, for this decision?</p>
+    <fieldset class="item" id="q-fieldset">
+      <legend class="item-text">Your answer</legend>
+      <div class="item-choices" id="q-choices"></div>
+    </fieldset>
+    <button type="button" class="check-btn" id="q-btn" disabled>Check my answer</button>
+    <div class="feedback" id="q-feedback" tabindex="-1" hidden>
+      <p class="fb-status" id="q-status"></p>
+      <div id="q-detail"></div>
+    </div>
+  </section>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: rewrite the monitoring statement</h2>
+    <p>Replace statement 4 with one of two rewrites and see what happens to the monitoring part. Nothing here is checked.</p>
+    <fieldset class="item" id="sp-fieldset">
+      <legend class="item-text">Choose a rewrite</legend>
+      <div id="sp-texts"></div>
+      <div class="item-choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var STATEMENTS = [
+    'The business case states an expected annual return and a payback period.',
+    'The tool reads supplier documents and surfaces exceptions for quality engineers at the plants. The quality organization lead owns it after launch.',
+    'Teams will use the tool responsibly and within company policy.',
+    'A dashboard will show how many exceptions the tool surfaces each week.',
+    'The tool reads supplier documents and the quality management system only. Its outputs and logs stay in the quality file, where quality engineers can see them. The tool’s provider may not train on submitted documents, and the quality organization audits the logs.',
+    'Colleagues who have seen the tool expect it to be reliable on supplier documents.',
+    'When the tool surfaces an exception that names a corrective-action commitment, the quality engineer escalates it within one working day. The quality organization lead decides whether to contact the supplier.',
+    'Rollout begins at the largest plants and extends to the rest once the quality organization is satisfied.'
+  ];
+
+  var PARTS = [
+    { name: 'Approved use',
+      need: 'Names the business purpose, the defined user group, and who owns the tool after launch.',
+      key: 2, decoy: null,
+      hint: 'A statement does answer this part. Look for the one that gives the purpose, the user group, and the owner together.' },
+    { name: 'Restricted use',
+      need: 'Names what may not proceed, or what proceeds only under tighter control.',
+      key: null, decoy: 3,
+      miss: 'Statement 3 sounds like a boundary and draws none. It names no use that is ruled out and no use that needs tighter control.' },
+    { name: 'Data boundary',
+      need: 'States what data the tool may use, where outputs go, who sees inputs, outputs, and logs, whether the tool’s provider may train on submitted material, and what is kept and audited.',
+      key: 5, decoy: null,
+      hint: 'A statement does answer this part. Look for the one that covers all five items: what data, where it goes, who sees it, whether the provider trains on it, and what is audited.' },
+    { name: 'Model-risk evidence',
+      need: 'Shows evidence that the tool is fit for this workflow.',
+      key: null, decoy: 6,
+      miss: 'Statement 6 is an expectation, not evidence. It names no sample, no measure, and no test in this workflow.' },
+    { name: 'Monitoring',
+      need: 'Names the signal, the threshold at which someone acts, and who responds.',
+      key: null, decoy: 4,
+      miss: 'Statement 4 names a signal and stops. It sets no threshold and names no one who responds, so it shows a problem without starting a response.' },
+    { name: 'Escalation',
+      need: 'Names the trigger, the owner, the expected response, and who decides.',
+      key: 7, decoy: null,
+      hint: 'A statement does answer this part. Look for the one that names a trigger, an owner, a response, and who decides.' }
+  ];
+
+  var REWRITES = [
+    { label: 'Rewrite A',
+      text: 'Each week the share of surfaced exceptions that quality engineers reject is checked against a ceiling of one in five, and any breach is noted in the weekly report.',
+      signal: true, threshold: true, responder: false,
+      result: 'Still a gap. The statement now names the signal and the threshold, but nobody is named to respond when the ceiling is passed. A breach is noted and nothing follows.' },
+    { label: 'Rewrite B',
+      text: 'Each week the share of surfaced exceptions that quality engineers reject is checked against a ceiling of one in five. If it is passed, the quality organization lead decides within two working days whether to pause the tool.',
+      signal: true, threshold: true, responder: true,
+      result: 'Answered. The statement names the signal, the threshold, and who responds, with a time limit. A breach now starts a response.' }
+  ];
+
+  var CRITERION_TEXT = 'A part is answered when one statement gives every item on its list. A statement that gives some of them, or gives them in general terms, leaves a gap. A reassuring statement is not an answer.';
+  var FIRST_MOVE_TEXT = 'Take one part at a time. Read the line under it, then look for a single statement that supplies every item. If none does, the part is a gap.';
+  var WRONG_NULL = 'That statement answers something else, or nothing. Check it against the line under this part.';
+
+  var NUM = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+  function word(n) { return NUM[n] !== undefined ? NUM[n] : n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+  function snippet(t) { var w = t.split(' '); return w.length > 9 ? w.slice(0, 9).join(' ') + '…' : t; }
+  function listJoin(a) {
+    if (a.length <= 1) { return a.join(''); }
+    if (a.length === 2) { return a[0] + ' and ' + a[1]; }
+    return a.slice(0, -1).join(', ') + ', and ' + a[a.length - 1];
+  }
+
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  function fill(statusEl, detailEl, box, state, status, paras) {
+    box.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    box.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    box.hidden = false;
+    box.focus();
+  }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  // Proposal
+  var listEl = document.getElementById('proposal-list');
+  STATEMENTS.forEach(function (s) {
+    var li = document.createElement('li');
+    li.textContent = s;
+    listEl.appendChild(li);
+  });
+
+  // Part rows
+  function allChosen() {
+    return PARTS.every(function (p, i) { return document.getElementById('part' + i).value !== ''; });
+  }
+  PARTS.forEach(function (p, i) {
+    var fs = document.createElement('fieldset');
+    fs.className = 'item';
+    var legend = document.createElement('legend');
+    legend.className = 'item-text';
+    legend.textContent = p.name;
+    fs.appendChild(legend);
+    var meta = document.createElement('p');
+    meta.className = 'item-meta';
+    meta.textContent = 'Answered when it: ' + p.need.charAt(0).toLowerCase() + p.need.slice(1);
+    fs.appendChild(meta);
+    var row = document.createElement('div');
+    row.className = 'select-row';
+    var label = document.createElement('label');
+    label.setAttribute('for', 'part' + i);
+    label.textContent = 'Which statement answers it?';
+    var sel = document.createElement('select');
+    sel.id = 'part' + i;
+    var opts = [['', 'Choose a statement']];
+    STATEMENTS.forEach(function (s, j) { opts.push([String(j + 1), 'Statement ' + (j + 1).toLocaleString('en-US') + ': ' + snippet(s)]); });
+    opts.push(['none', 'No statement answers it']);
+    opts.forEach(function (o) {
+      var op = document.createElement('option');
+      op.value = o[0];
+      op.textContent = o[1];
+      sel.appendChild(op);
+    });
+    sel.addEventListener('change', function () { checkBtn.disabled = !allChosen(); });
+    row.appendChild(label);
+    row.appendChild(sel);
+    fs.appendChild(row);
+    itemsEl.appendChild(fs);
+  });
+
+  function gradePart(p, pick) {
+    if (p.key === null) {
+      if (pick === 'none') { return 'ok'; }
+      if (pick === String(p.decoy)) { return 'near'; }
+      return 'wrong';
+    }
+    return pick === String(p.key) ? 'ok' : 'wrong';
+  }
+
+  var answered = PARTS.filter(function (p) { return p.key !== null; });
+  var gaps = PARTS.filter(function (p) { return p.key === null; });
+
+  checkBtn.addEventListener('click', function () {
+    var res = PARTS.map(function (p, i) { return gradePart(p, document.getElementById('part' + i).value); });
+    var off = [];
+    res.forEach(function (s, i) { if (s !== 'ok') { off.push(i); } });
+    if (off.length === 0) {
+      var decoyNums = gaps.map(function (p) { return p.decoy; });
+      fill(fbStatus, fbDetail, fb, 'fb-ok', 'Correct.', [
+        'Right. ' + Word(answered.length) + ' parts are answered: ' + listJoin(answered.map(function (p) { return p.name.toLowerCase(); })) + '. ' +
+        Word(gaps.length) + ' are gaps: ' + listJoin(gaps.map(function (p) { return p.name.toLowerCase(); })) + '.',
+        'Statements ' + listJoin(decoyNums.map(function (n) { return n.toLocaleString('en-US'); })) + ' sound like answers and are not. Each one gives part of what its part needs, or only the sound of it.'
+      ]);
+      document.getElementById('question-section').hidden = false;
+    } else if (off.length === 1) {
+      var p = PARTS[off[0]];
+      fill(fbStatus, fbDetail, fb, 'fb-near', 'Close.', ['Look again at: ' + p.name, res[off[0]] === 'near' ? p.miss : (p.key === null ? WRONG_NULL : p.hint)]);
+      document.getElementById('question-section').hidden = false;
+    } else {
+      fill(fbStatus, fbDetail, fb, 'fb-warn', 'Not yet.', [
+        off.length.toLocaleString('en-US') + ' of the six parts need another look.',
+        CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+  });
+
+  // Closing question
+  var QOPTS = [
+    { value: 'yes', label: 'Yes: it may proceed as written' },
+    { value: 'notyet', label: 'Not yet: close the named gaps first' },
+    { value: 'no', label: 'No: the use itself should not proceed' }
+  ];
+  var qChoices = document.getElementById('q-choices');
+  var qBtn = document.getElementById('q-btn');
+  QOPTS.forEach(function (o) {
+    qChoices.appendChild(makeChoice('q', o.value, o.label, function () { qBtn.disabled = false; }));
+  });
+  qBtn.addEventListener('click', function () {
+    var c = document.querySelector('input[name="q"]:checked');
+    if (!c) { return; }
+    var qs = document.getElementById('q-status');
+    var qd = document.getElementById('q-detail');
+    var qf = document.getElementById('q-feedback');
+    if (c.value === 'notyet') {
+      fill(qs, qd, qf, 'fb-ok', 'Correct.', [
+        'Right. ' + Word(gaps.length) + ' parts have no concrete answer, and each is something an owner can close: a boundary drawn, evidence shown, a responder named. Nothing in the proposal rules the use itself out, so the answer is not yet, rather than no.'
+      ]);
+    } else if (c.value === 'yes') {
+      fill(qs, qd, qf, 'fb-warn', 'Not yet.', [
+        'Count the parts that are answered. Every part has to be answered before the question can be yes. Here ' + word(gaps.length) + ' are not.'
+      ]);
+    } else {
+      fill(qs, qd, qf, 'fb-near', 'Close.', [
+        'A no needs a reason about the use itself, such as a use the framework rules out. Nothing in the proposal gives one. The gaps are things an owner can close, which makes the answer not yet.'
+      ]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // Second pass
+  var spTexts = document.getElementById('sp-texts');
+  var spChoices = document.getElementById('sp-choices');
+  REWRITES.forEach(function (r, i) {
+    var p = document.createElement('p');
+    p.className = 'item-meta';
+    p.textContent = r.label + ': “' + r.text + '”';
+    spTexts.appendChild(p);
+    spChoices.appendChild(makeChoice('sp', String(i), r.label, onRewrite));
+  });
+  function onRewrite() {
+    var c = document.querySelector('input[name="sp"]:checked');
+    if (!c) { return; }
+    var r = REWRITES[Number(c.value)];
+    var ok = r.signal && r.threshold && r.responder;
+    var open = gaps.length - (ok ? 1 : 0);
+    var panel = document.getElementById('sp-panel');
+    panel.innerHTML = '';
+    var q = document.createElement('p');
+    q.className = 'quote';
+    q.textContent = 'Statement 4, as rewritten: “' + r.text + '”';
+    var a = document.createElement('p');
+    a.textContent = r.result;
+    var b = document.createElement('p');
+    b.textContent = 'Parts still open: ' + open.toLocaleString('en-US') + '. The answer to the closing question is still not yet, because ' + word(open) + ' ' + (open === 1 ? 'part has' : 'parts have') + ' no concrete answer.';
+    panel.appendChild(q); panel.appendChild(a); panel.appendChild(b);
+    panel.hidden = false;
+  }
+
+})();
+</script>
+</body>
+</html>

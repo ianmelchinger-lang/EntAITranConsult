@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the process</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  .container.narrow { max-width: 640px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  h2:focus, h3:focus { outline: none; }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .scenario { border-left: 3px solid var(--accent); padding-left: 20px; margin: 0 0 28px; }
+  .scenario p { margin: 0 0 16px; }
+  .scenario p:last-child { margin-bottom: 0; }
+  .prompt-lead { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+
+  /* Orientation: checkbox group */
+  fieldset.group { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset.group > legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 1.05rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .counter { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 14px; }
+  .option { display: block; position: relative; margin-bottom: 12px; cursor: pointer; }
+  .option.is-disabled { cursor: not-allowed; }
+  .option-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .option-box { display: block; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 14px 18px; background: var(--white); }
+  .option-lead { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+  .option-detail { display: block; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; }
+  .option-input:checked + .option-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); }
+  .option-input:checked + .option-box .option-lead::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .option-input:disabled:not(:checked) + .option-box { opacity: 0.55; }
+  .option-input:focus-visible + .option-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  fieldset.group.locked .option { cursor: default; }
+  .reveal-btn { display: block; margin: 22px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .reveal-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .reveal-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .reveal-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal { margin-top: 32px; padding: 22px 24px; background: var(--highlight-bg); border-left: 4px solid var(--accent); border-radius: 4px; }
+  .reveal:focus { outline: none; }
+  .reveal-tag { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.82rem; color: var(--accent-deep); margin: 0 0 4px; }
+  .reveal-chosen { font-family: var(--font-sans); font-style: italic; color: var(--ink); margin: 14px 0 4px; }
+  .reveal-chosen:first-of-type { margin-top: 0; }
+  .reveal-body p { margin: 0 0 16px; }
+  .reveal-body p.back { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 4px; }
+  .reveal-body details { margin: 18px 0 18px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); }
+  .reveal-body summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+  .reveal-body summary:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal-body details p.other-lead { font-style: italic; color: var(--ink); margin: 12px 0 2px; }
+  .reveal-body details p.back { margin: 0; }
+  .reveal-body .asks { margin: 0 0 20px; }
+  .reveal-body .asks p.back:last-child { margin-bottom: 0; }
+  .reveal-body p:last-child { margin-bottom: 0; }
+
+  /* Skill practices: items, choices, buttons, feedback */
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 12px 0 0; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .sub-label { display: block; font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); margin: 14px 0 8px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:checked + .choice-box::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .choice-input:disabled + .choice-box { opacity: 0.7; cursor: default; }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .select-row { display: flex; flex-direction: column; gap: 6px; }
+  .select-row label { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); }
+  select { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--ink-soft); border-radius: 4px; padding: 10px 12px; width: 100%; max-width: 100%; }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p.quote { font-style: italic; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.data { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.data caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); padding: 0 0 8px; }
+  table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.data th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.data tr.moved td { background: var(--highlight-bg); }
+
+  /* Proposal text */
+  .proposal { margin: 0 0 24px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px 6px; }
+  .proposal h2 { font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 10px; }
+  .proposal ol { margin: 0; padding-left: 26px; font-family: var(--font-sans); font-size: 0.93rem; color: var(--ink); }
+  .proposal li { margin: 0 0 10px; }
+
+  /* Consolidation: ordering */
+  .order-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); padding: 12px 14px; margin-bottom: 10px; }
+  .order-badge { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 0.85rem; color: var(--ink-soft); }
+  .order-text { flex: 1 1 auto; min-width: 0; font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); }
+  .order-controls { flex: 0 0 auto; display: flex; gap: 4px; }
+  .move-btn { font-family: var(--font-sans); font-size: 1rem; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .move-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .move-btn:not(:disabled):hover { background: var(--highlight-bg); border-color: var(--accent); }
+  .move-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+    .proposal { padding: 14px 14px 4px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container narrow">
+
+  <h1>Assemble the process</h1>
+
+  <p class="lead-line">Eight pieces of one governance decision, shown out of order. Put them back in the order the work has to run.</p>
+
+  <p class="context">A manufacturer holds an approved responsible-AI policy and a proposed AI system that has not yet launched. The advisor has to produce one governance decision that an auditor could follow.</p>
+
+  <p class="instruction">Use the arrows to put the eight pieces in the sequence the work requires. Where more than one order works, any of them will pass.</p>
+
+  <div id="order-list"></div>
+
+  <button type="button" class="check-btn" id="check-btn">Check my order</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <p class="fb-detail" id="fb-detail"></p>
+  </div>
+
+</div>
+
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+  var ITEMS = {
+    PROB: { text: 'The problem: an approved policy and a one-page form, about 40 tools in use against 11 on the register, no deviation level that triggers a review, no named recipient for an alert, and no written boundary on uses. The document exists. The capacity to act on it does not.' },
+    CLASSIFY: { text: 'Classify the system against the enumerated conditions, and name the condition that triggers the category.' },
+    SCOPE: { text: 'Scope the obligations the classification carries, then run them against the six parts. Answer each with a named owner, or record it as a named gap.' },
+    TEST: { text: 'Test each oversight control that names a person: the volume that person faces, the cadence, and how detectable a wrong output is. Redesign or refuse any control that fails.' },
+    FAIR: { text: 'Define the fairness evaluation where outputs sort or score people, or name the data gap that prevents one.' },
+    RECORD: { text: 'Document the decision so a reviewer can follow the reasoning: the classification, the controls as tested, and every control changed or refused.' },
+    FUNC: { text: 'Read the governance function’s own signals: the share of approved initiatives that reach production, how long a decision takes, and what was declined and why.' },
+    SIGNAL: { text: 'The signal it worked: an auditor can follow the decision from classification to controls, every gap carries an owner, and the record shows a control that was changed or refused.' }
+  };
+
+  var CORRECT_TEXT = 'Right. This is the whole path. The problem comes first. The system is classified before anything is scoped, the controls are tested against the scoped obligations, and the fairness question is settled. The record follows from all of that. The function reads its own signals from decisions already on record, and the signal that it worked comes last.';
+  var SWAP_NOTE = 'Control testing and the fairness definition can swap. Each needs the scoped obligations, and both must close before the record.';
+  var CRITERION_TEXT = 'Each piece depends on something before it being settled first. The classification comes before the obligations it scopes, and the obligations come before the controls and the fairness question that follow from them. The record needs both. The function’s signals are read from the record. The signal comes last.';
+  var FIRST_MOVE_TEXT = 'Take any two pieces and ask which one supplies something the other needs before it can mean anything. The one supplying it goes first. If neither needs the other, either order is fine.';
+
+  var CONSTRAINTS = [
+    { a: 'PROB', b: 'CLASSIFY',
+      why: 'The problem has to be stated before any move. Start with the classification and you answer a question nobody has framed as an operating gap.' },
+    { a: 'CLASSIFY', b: 'SCOPE',
+      why: 'The classification sets the obligations. Scope them first and you scope by feel, with nothing to show where the scope came from.' },
+    { a: 'SCOPE', b: 'TEST',
+      why: 'The controls to test come out of the scoped obligations. Test a control first and you may test something nobody requires, or miss one somebody does.' },
+    { a: 'SCOPE', b: 'FAIR',
+      why: 'Whether a fairness evaluation is owed is settled when the obligations are scoped. Define it earlier and you define something nobody has said is required.' },
+    { a: 'TEST', b: 'RECORD',
+      why: 'The record has to show the controls as tested, including any that were changed or refused. Write it earlier and it records intentions.' },
+    { a: 'FAIR', b: 'RECORD',
+      why: 'The record has to show how the fairness question was answered, or which data gap blocked it. Write it earlier and that reasoning is missing.' },
+    { a: 'RECORD', b: 'FUNC',
+      why: 'The function’s own signals are read from decisions already on record: how many reached production, how long each took, what was declined and why. With no record, there is nothing to count.' },
+    { a: 'FUNC', b: 'SIGNAL',
+      why: 'The signal that it worked rests on a decision an auditor can follow and on a function that has shown it can say no. It cannot appear before either exists.' }
+  ];
+
+  // Every dependency the chain implies counts, not only adjacent ones, so a piece
+  // placed far from where it belongs breaks several dependencies at once.
+  var PAIRS = (function () {
+    var set = {};
+    CONSTRAINTS.forEach(function (c) { set[c.a + '>' + c.b] = true; });
+    var ids = Object.keys(ITEMS), changed = true;
+    while (changed) {
+      changed = false;
+      ids.forEach(function (x) { ids.forEach(function (y) { ids.forEach(function (z) {
+        if (set[x + '>' + y] && set[y + '>' + z] && !set[x + '>' + z]) { set[x + '>' + z] = true; changed = true; }
+      }); }); });
+    }
+    return Object.keys(set).map(function (k) { var p = k.split('>'); return { a: p[0], b: p[1] }; });
+  })();
+  function whyFor(a, b) {
+    var direct = CONSTRAINTS.filter(function (c) { return c.a === a && c.b === b; })[0];
+    return direct ? direct.why : CRITERION_TEXT;
+  }
+
+  var srStatus = document.getElementById('sr-status');
+  var containerEl = document.getElementById('order-list');
+  var checkBtnEl = document.getElementById('check-btn');
+  var feedbackEl = document.getElementById('feedback');
+  var statusEl = document.getElementById('fb-status');
+  var detailEl = document.getElementById('fb-detail');
+
+  var order = ['FUNC', 'TEST', 'SIGNAL', 'CLASSIFY', 'FAIR', 'PROB', 'RECORD', 'SCOPE'];
+  var pendingFocus = null;
+
+  function render() {
+    containerEl.innerHTML = '';
+    order.forEach(function (id, idx) {
+      var row = document.createElement('div');
+      row.className = 'order-row';
+
+      var badge = document.createElement('span');
+      badge.className = 'order-badge';
+      badge.setAttribute('aria-hidden', 'true');
+      badge.textContent = (idx + 1).toLocaleString('en-US');
+
+      var text = document.createElement('span');
+      text.className = 'order-text';
+      text.textContent = ITEMS[id].text;
+
+      var controls = document.createElement('div');
+      controls.className = 'order-controls';
+
+      var upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'move-btn';
+      upBtn.textContent = '↑';
+      upBtn.setAttribute('aria-label', 'Move “' + ITEMS[id].text + '” earlier');
+      upBtn.disabled = (idx === 0);
+      upBtn.addEventListener('click', function () { move(order.indexOf(id), -1, id); });
+
+      var downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.className = 'move-btn';
+      downBtn.textContent = '↓';
+      downBtn.setAttribute('aria-label', 'Move “' + ITEMS[id].text + '” later');
+      downBtn.disabled = (idx === order.length - 1);
+      downBtn.addEventListener('click', function () { move(order.indexOf(id), 1, id); });
+
+      controls.appendChild(upBtn);
+      controls.appendChild(downBtn);
+      row.appendChild(badge);
+      row.appendChild(text);
+      row.appendChild(controls);
+      containerEl.appendChild(row);
+    });
+
+    if (pendingFocus) {
+      var newIdx = order.indexOf(pendingFocus.id);
+      var row2 = containerEl.children[newIdx];
+      if (row2) {
+        var btns = row2.querySelectorAll('.move-btn');
+        var preferred = pendingFocus.dir === -1 ? btns[0] : btns[1];
+        if (preferred && !preferred.disabled) { preferred.focus(); }
+        else if (btns[0] && !btns[0].disabled) { btns[0].focus(); }
+        else if (btns[1] && !btns[1].disabled) { btns[1].focus(); }
+      }
+      pendingFocus = null;
+    }
+  }
+
+  function move(idx, delta, id) {
+    var newIdx = idx + delta;
+    if (newIdx < 0 || newIdx >= order.length) { return; }
+    var tmp = order[idx];
+    order[idx] = order[newIdx];
+    order[newIdx] = tmp;
+    srStatus.textContent = ITEMS[id].text + ' moved to position ' + (newIdx + 1).toLocaleString('en-US') + ' of ' + order.length.toLocaleString('en-US') + '.';
+    feedbackEl.hidden = true;
+    pendingFocus = { id: id, dir: delta };
+    render();
+  }
+
+  checkBtnEl.addEventListener('click', function () {
+    var pos = {};
+    order.forEach(function (id, idx) { pos[id] = idx; });
+    var violations = PAIRS.filter(function (c) { return !(pos[c.a] < pos[c.b]); });
+
+    feedbackEl.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    if (violations.length === 0) {
+      feedbackEl.classList.add('fb-ok');
+      statusEl.textContent = 'Correct.';
+      detailEl.textContent = CORRECT_TEXT + ' ' + SWAP_NOTE;
+    } else if (violations.length === 1) {
+      feedbackEl.classList.add('fb-near');
+      statusEl.textContent = 'Close.';
+      detailEl.textContent = whyFor(violations[0].a, violations[0].b);
+    } else {
+      feedbackEl.classList.add('fb-warn');
+      statusEl.textContent = 'Not yet.';
+      detailEl.textContent = CRITERION_TEXT + ' ' + FIRST_MOVE_TEXT;
+    }
+    feedbackEl.hidden = false;
+    feedbackEl.focus();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who would see the change?</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  .container.narrow { max-width: 640px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  h2:focus, h3:focus { outline: none; }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .scenario { border-left: 3px solid var(--accent); padding-left: 20px; margin: 0 0 28px; }
+  .scenario p { margin: 0 0 16px; }
+  .scenario p:last-child { margin-bottom: 0; }
+  .prompt-lead { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--ink-soft); margin: 0 0 20px; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .instruction b { color: var(--ink); font-weight: 600; }
+
+  /* Orientation: checkbox group */
+  fieldset.group { border: none; margin: 0; padding: 0; min-width: 0; }
+  fieldset.group > legend { display: block; width: 100%; font-family: var(--font-sans); font-weight: 600; font-size: 1.05rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .counter { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 14px; }
+  .option { display: block; position: relative; margin-bottom: 12px; cursor: pointer; }
+  .option.is-disabled { cursor: not-allowed; }
+  .option-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .option-box { display: block; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 14px 18px; background: var(--white); }
+  .option-lead { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+  .option-detail { display: block; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.5; }
+  .option-input:checked + .option-box { background: var(--highlight-bg); border-color: var(--accent); border-left-color: var(--accent); }
+  .option-input:checked + .option-box .option-lead::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .option-input:disabled:not(:checked) + .option-box { opacity: 0.55; }
+  .option-input:focus-visible + .option-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  fieldset.group.locked .option { cursor: default; }
+  .reveal-btn { display: block; margin: 22px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .reveal-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .reveal-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .reveal-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal { margin-top: 32px; padding: 22px 24px; background: var(--highlight-bg); border-left: 4px solid var(--accent); border-radius: 4px; }
+  .reveal:focus { outline: none; }
+  .reveal-tag { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.82rem; color: var(--accent-deep); margin: 0 0 4px; }
+  .reveal-chosen { font-family: var(--font-sans); font-style: italic; color: var(--ink); margin: 14px 0 4px; }
+  .reveal-chosen:first-of-type { margin-top: 0; }
+  .reveal-body p { margin: 0 0 16px; }
+  .reveal-body p.back { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 4px; }
+  .reveal-body details { margin: 18px 0 18px; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); }
+  .reveal-body summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+  .reveal-body summary:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .reveal-body details p.other-lead { font-style: italic; color: var(--ink); margin: 12px 0 2px; }
+  .reveal-body details p.back { margin: 0; }
+  .reveal-body .asks { margin: 0 0 20px; }
+  .reveal-body .asks p.back:last-child { margin-bottom: 0; }
+  .reveal-body p:last-child { margin-bottom: 0; }
+
+  /* Skill practices: items, choices, buttons, feedback */
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; min-width: 0; }
+  .item-text { display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 6px; }
+  .item-meta { font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .item-facts { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 12px; padding: 0; }
+  .item-facts div { margin: 0 0 3px; }
+  .item-facts b { color: var(--ink); font-weight: 600; }
+  .item-effect { font-family: var(--font-sans); font-size: 0.86rem; color: var(--accent-deep); margin: 12px 0 0; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .sub-label { display: block; font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); margin: 14px 0 8px; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:checked + .choice-box::before { content: "\2713\00a0"; color: var(--accent-deep); }
+  .choice-input:disabled + .choice-box { opacity: 0.7; cursor: default; }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .select-row { display: flex; flex-direction: column; gap: 6px; }
+  .select-row label { font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); }
+  select { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--ink-soft); border-radius: 4px; padding: 10px 12px; width: 100%; max-width: 100%; }
+  select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p.quote { font-style: italic; color: var(--ink); }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table.data { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.data caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--ink-soft); padding: 0 0 8px; }
+  table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.data th { font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.data tr.moved td { background: var(--highlight-bg); }
+
+  /* Proposal text */
+  .proposal { margin: 0 0 24px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px 6px; }
+  .proposal h2 { font-family: var(--font-sans); font-size: 0.92rem; margin: 0 0 10px; }
+  .proposal ol { margin: 0; padding-left: 26px; font-family: var(--font-sans); font-size: 0.93rem; color: var(--ink); }
+  .proposal li { margin: 0 0 10px; }
+
+  /* Consolidation: ordering */
+  .order-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); padding: 12px 14px; margin-bottom: 10px; }
+  .order-badge { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 0.85rem; color: var(--ink-soft); }
+  .order-text { flex: 1 1 auto; min-width: 0; font-family: var(--font-serif); font-size: 0.98rem; color: var(--ink); }
+  .order-controls { flex: 0 0 auto; display: flex; gap: 4px; }
+  .move-btn { font-family: var(--font-sans); font-size: 1rem; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .move-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .move-btn:not(:disabled):hover { background: var(--highlight-bg); border-color: var(--accent); }
+  .move-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    .order-row { padding: 10px 10px; gap: 8px; }
+    .proposal { padding: 14px 14px 4px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Who would see the change?</h1>
+
+  <p class="lead-line">Governance does not end at approval. After launch, data shifts, users change how they work with the tool, and operating conditions move. A launch approval reviewed the system as it stood on launch day, so only watching during operation can show what has changed since. A signal is a number or observation that someone checks on a schedule. A watcher is the named role who checks it and would act on a change.</p>
+
+  <p class="context">A manufacturer&rsquo;s demand-forecasting assistant went live at its Ohio plant and has now run for five months. The approval record covers the system as it stood on launch day. Seven things have changed since.</p>
+
+  <section class="panel" id="setup-panel" aria-labelledby="setup-h">
+    <h2 id="setup-h" tabindex="-1"></h2>
+    <p id="setup-intro"></p>
+    <div class="table-wrap">
+      <table class="data">
+        <caption>Signals that are watched</caption>
+        <thead><tr><th scope="col">Signal</th><th scope="col">What is checked</th><th scope="col">Watcher</th></tr></thead>
+        <tbody id="register-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="instruction" style="margin-top: 24px;">
+    <p>For each change, pick the signal that would show it had happened. A signal reveals a change only if the change itself moves it, and the watcher would take the movement as a reason to look. If no signal would, say so.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my answers</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: settle the watchers once</h2>
+    <p>Suppose the company settled its monitoring once, by type of change, and applied it to every deployment. Three more signals are now watched. Place the same seven changes again. Nothing here is scored.</p>
+    <button type="button" class="check-btn" id="again-btn">Place the seven changes again</button>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  var SIGNALS = {
+    S1: { name: 'Forecast error against actual orders', detail: 'Reviewed weekly. The planning lead looks into any rise.', watcher: 'Supply-chain planning lead' },
+    S2: { name: 'Active users, by plant', detail: 'From the platform’s usage log. Reviewed weekly.', watcher: 'IT and data lead' },
+    S3: { name: 'Records that fail to match', detail: 'Counted after each nightly copy, between the plant systems and the planning extract.', watcher: 'Data steward' },
+    S4: { name: 'Where forecast figures go next', detail: 'Walked through with the planners each quarter.', watcher: 'Governance and risk owner' },
+    S5: { name: 'Supply and ordering conditions', detail: 'The conditions the forecast assumes, reviewed monthly.', watcher: 'Operations sponsor' }
+  };
+
+  var SETUPS = {
+    A: {
+      title: 'How monitoring was set up',
+      intro: 'The team that deployed the assistant chose what to watch when it was approved. Two signals are watched.',
+      signals: ['S1', 'S2']
+    },
+    B: {
+      title: 'Monitoring settled once',
+      intro: 'The company settled its monitoring once for every deployment, by type of change: data, users, and operating conditions. Five signals are watched.',
+      signals: ['S1', 'S2', 'S3', 'S4', 'S5']
+    }
+  };
+
+  var CHANGES = [
+    { type: 'Users', short: 'the planning team’s move to a parallel spreadsheet',
+      text: 'The planning team stopped opening the forecast and works from a parallel spreadsheet.',
+      reveals: { A: ['S2'], B: ['S2'] },
+      why: { A: 'The usage log by plant would show the Ohio planners dropping away.',
+             B: 'The usage log by plant would show the Ohio planners dropping away.' } },
+    { type: 'Data', short: 'the part-numbering change',
+      text: 'The part numbering at the plant changed, and the change was never mapped into the planning extract the assistant reads.',
+      reveals: { A: ['S1'], B: ['S1', 'S3'] },
+      why: { A: 'Forecasts for the renumbered parts would drift from actual orders, so the weekly error review would show it.',
+             B: 'Forecast error would show it, and the count of records that fail to match would show it sooner, because it counts the very records that break.' } },
+    { type: 'Operating conditions', short: 'the longer lead time',
+      text: 'A key supplier’s lead time grew by several weeks.',
+      reveals: { A: [], B: ['S5'] },
+      why: { A: 'A longer supplier lead time does not change demand, so forecast error stays flat and no other signal here would move.',
+             B: 'The monthly review of supply and ordering conditions would show the new lead time, and the operations sponsor would hear of it.' } },
+    { type: 'Users', short: 'the second plant’s use of the forecast',
+      text: 'Planners at a second plant began reading the forecast to place their own orders.',
+      reveals: { A: ['S2'], B: ['S2'] },
+      why: { A: 'The usage log by plant would show a second plant appearing among the users.',
+             B: 'The usage log by plant would show a second plant appearing among the users.' } },
+    { type: 'Data', short: 'the replaced model',
+      text: 'The model behind the assistant was replaced with a retrained one that scores better on last quarter’s data.',
+      reveals: { A: [], B: [] },
+      why: { A: 'Nothing here watches the model itself. Forecast error would stay flat or fall, and a fall gives no one a reason to look.',
+             B: 'Even with standing monitoring, nothing watches the model itself. Forecast error would stay flat or fall, and a fall gives no one a reason to look. A change to the system, rather than to its data, users, or conditions, still needs a judgment about who watches.' } },
+    { type: 'Operating conditions', short: 'the change in a customer’s ordering',
+      text: 'A major customer moved from monthly to weekly ordering.',
+      reveals: { A: ['S1'], B: ['S1'] },
+      why: { A: 'Weekly orders would pull away from a forecast built on monthly patterns, so forecast error would rise.',
+             B: 'Weekly orders would pull away from a forecast built on monthly patterns, so forecast error would rise.' } },
+    { type: 'Users', short: 'the personal spreadsheet',
+      text: 'A planner started copying forecast figures into a personal spreadsheet that feeds purchase orders.',
+      reveals: { A: [], B: ['S4'] },
+      why: { A: 'The usage log would show the same users, and forecast error would not move. Nobody sees where the figures go next.',
+             B: 'The quarterly walk-through with the planners asks where the figures go next, so the governance and risk owner would hear of it.' } }
+  ];
+
+  var CRITERION_TEXT = 'A signal reveals a change only if the change itself moves it, and the watcher would take the movement as a reason to look. A signal that might move for other reasons, or that no one is told to act on, does not count.';
+  var FIRST_MOVE_TEXT = 'For each change, ask which number would look different the day after it happened. Then check whether any signal in the register measures that number.';
+
+  var NUM = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+  function word(n) { return NUM[n] !== undefined ? NUM[n] : n.toLocaleString('en-US'); }
+  function Word(n) { var w = word(n); return w.charAt(0).toUpperCase() + w.slice(1); }
+  function listJoin(a) {
+    if (a.length <= 1) { return a.join(''); }
+    if (a.length === 2) { return a[0] + ' and ' + a[1]; }
+    return a.slice(0, -1).join(', ') + ', and ' + a[a.length - 1];
+  }
+  function unwatched(s) { return CHANGES.filter(function (c) { return c.reveals[s].length === 0; }); }
+
+  var setup = 'A';
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var secondPass = document.getElementById('second-pass');
+  var againBtn = document.getElementById('again-btn');
+  var setupH = document.getElementById('setup-h');
+  var srStatus = document.getElementById('sr-status');
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      fbDetail.appendChild(p);
+    });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  function allChosen() {
+    return CHANGES.every(function (c, i) { return document.getElementById('sel' + i).value !== ''; });
+  }
+
+  function renderSetup() {
+    var S = SETUPS[setup];
+    setupH.textContent = S.title;
+    document.getElementById('setup-intro').textContent = S.intro;
+    var tb = document.getElementById('register-body');
+    tb.innerHTML = '';
+    S.signals.forEach(function (id) {
+      var tr = document.createElement('tr');
+      [SIGNALS[id].name, SIGNALS[id].detail, SIGNALS[id].watcher].forEach(function (t) {
+        var td = document.createElement('td');
+        td.textContent = t;
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+
+    itemsEl.innerHTML = '';
+    CHANGES.forEach(function (c, i) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = c.text;
+      fs.appendChild(legend);
+      var meta = document.createElement('p');
+      meta.className = 'item-meta';
+      meta.textContent = 'Change to: ' + c.type.toLowerCase();
+      fs.appendChild(meta);
+      var row = document.createElement('div');
+      row.className = 'select-row';
+      var label = document.createElement('label');
+      label.setAttribute('for', 'sel' + i);
+      label.textContent = 'Which signal would reveal it?';
+      var sel = document.createElement('select');
+      sel.id = 'sel' + i;
+      var opts = [['', 'Choose a signal']];
+      S.signals.forEach(function (id) { opts.push([id, SIGNALS[id].name + ' (' + SIGNALS[id].watcher + ')']); });
+      opts.push(['none', 'No signal here would reveal it']);
+      opts.forEach(function (o) {
+        var op = document.createElement('option');
+        op.value = o[0];
+        op.textContent = o[1];
+        sel.appendChild(op);
+      });
+      sel.addEventListener('change', function () { checkBtn.disabled = !allChosen(); });
+      row.appendChild(label);
+      row.appendChild(sel);
+      fs.appendChild(row);
+      itemsEl.appendChild(fs);
+    });
+    checkBtn.disabled = true;
+    fb.hidden = true;
+  }
+
+  function grade() {
+    var res = [];
+    CHANGES.forEach(function (c, i) {
+      var pick = document.getElementById('sel' + i).value;
+      var set = c.reveals[setup];
+      var st;
+      if (set.length === 0) { st = (pick === 'none') ? 'ok' : 'wrong'; }
+      else if (pick === 'none') { st = 'wrong'; }
+      else { st = (set.indexOf(pick) !== -1) ? 'ok' : 'near'; }
+      res.push(st);
+    });
+    return res;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var res = grade();
+    var off = [];
+    res.forEach(function (s, i) { if (s !== 'ok') { off.push(i); } });
+    if (off.length === 0) {
+      var unw = unwatched(setup);
+      var n = unw.length;
+      var names = listJoin(unw.map(function (c) { return c.short; }));
+      if (setup === 'A') {
+        showFeedback('fb-ok', 'Correct.', [
+          'Right. ' + Word(n) + ' of the seven changes have no watcher: ' + names + '. The launch approval covered none of the seven, and the two signals chosen at approval reach only ' + word(CHANGES.length - n) + ' of them.'
+        ]);
+      } else {
+        var before = unwatched('A').length;
+        showFeedback('fb-ok', 'Correct.', [
+          'Right. Under standing monitoring, ' + word(n) + ' of the seven ' + (n === 1 ? 'has' : 'have') + ' no watcher: ' + names + '. Under the first setup, ' + word(before) + ' had none.',
+          'Settling the watchers once, by type of change, reaches data, users, and operating conditions wherever they occur. It cannot reach a change to the system itself, and that kind of change still needs someone’s judgment about who watches.'
+        ]);
+      }
+    } else if (off.length === 1) {
+      var c = CHANGES[off[0]];
+      showFeedback('fb-near', 'Close.', ['Look again at: “' + c.text + '”', c.why[setup]]);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [
+        off.length.toLocaleString('en-US') + ' of the seven changes need another look.',
+        CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    if (setup === 'A') { secondPass.hidden = false; }
+  });
+
+  againBtn.addEventListener('click', function () {
+    setup = 'B';
+    secondPass.hidden = true;
+    renderSetup();
+    srStatus.textContent = 'Monitoring is now settled once for every deployment. The seven changes are ready to place again.';
+    setupH.focus();
+  });
+
+  renderSetup();
+})();
+</script>
+</body>
+</html>
