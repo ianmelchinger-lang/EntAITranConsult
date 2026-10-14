@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The one-sentence test</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 24px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+
+  .evidence { margin: 0 0 28px; }
+  table.facts { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.9rem; background: var(--white); border: 1px solid var(--line); }
+  table.facts caption { text-align: left; font-family: var(--font-sans); font-size: 0.86rem; color: var(--steel); padding: 0 0 8px; }
+  table.facts th, table.facts td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  table.facts th { width: 24%; font-weight: 600; color: var(--ink); background: var(--paper); }
+  table.facts td { font-variant-numeric: tabular-nums; }
+  table.facts tr.moved td, table.facts tr.moved th { background: var(--highlight-bg); }
+
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 8px; }
+  .item-text + * { clear: both; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .builder { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .builder-row { margin: 0 0 12px; }
+  .builder label { display: block; font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+  .builder select { width: 100%; font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink); background: var(--white); border: 1px solid var(--steel); border-radius: 4px; padding: 10px 12px; min-height: 44px; }
+  .builder select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .preview { font-family: var(--font-serif); font-size: 1.02rem; color: var(--ink); background: var(--highlight-bg); border-left: 4px solid var(--accent); border-radius: 4px; padding: 12px 16px; margin: 4px 0 0; min-height: 3.2em; }
+  .preview .slot { color: var(--steel); font-style: italic; }
+
+  .check-btn { display: block; margin: 14px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden], .step[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+
+  .panel { margin-top: 16px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p.panel-head { font-weight: 600; color: var(--ink); }
+  .panel .against { border-left: 3px solid var(--line); padding-left: 12px; margin: 0 0 10px; }
+  .panel .against p { margin: 0; }
+  .panel .against .against-label { font-weight: 600; color: var(--ink); font-size: 0.86rem; margin-bottom: 2px; }
+
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item, .builder { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+    table.facts th { width: 30%; }
+    table.facts th, table.facts td { padding: 8px 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>The one-sentence test</h1>
+
+  <p class="lead-line">Answer-first structure puts the decision requested at the opening of a communication, before any of the argument. A reader under time pressure decides within the first few seconds whether to give a document attention, and the writer who must produce that opening has to have resolved the recommendation first. An opening that cannot be written is a sign the position has not been settled.</p>
+
+  <div class="context">
+    <p>A manufacturer&rsquo;s executive committee will be asked whether to extend an automated maintenance-scheduling system from two plants to seven. You are the advisor, and the analysis is finished. The facts below are all you have, and they do not all lean one way.</p>
+  </div>
+
+  <div class="instruction">
+    <p>First, decide what you recommend. Then build the sentence you would say first to the committee. The decision goes in that sentence. The argument does not.</p>
+  </div>
+
+  <div class="evidence">
+    <table class="facts" id="facts-table">
+      <caption>What is known</caption>
+      <tbody id="facts-body"></tbody>
+    </table>
+  </div>
+
+  <fieldset class="item" id="commit-fieldset">
+    <legend class="item-text">Step 1. What do you recommend the committee do?</legend>
+    <div class="item-choices" id="commit-choices"></div>
+  </fieldset>
+
+  <div class="panel" id="against-panel" tabindex="-1" hidden></div>
+
+  <section class="step" id="build-step" aria-labelledby="build-h" hidden>
+    <h2 id="build-h">Step 2. Say it first</h2>
+    <div class="builder">
+      <div class="builder-row">
+        <label for="sel-verb">The committee should</label>
+        <select id="sel-verb"></select>
+      </div>
+      <div class="builder-row">
+        <label for="sel-object">Applied to</label>
+        <select id="sel-object"></select>
+      </div>
+      <div class="builder-row">
+        <label for="sel-clause">Then the sentence adds</label>
+        <select id="sel-clause"></select>
+      </div>
+      <p class="preview" id="preview" aria-live="polite"></p>
+    </div>
+    <button type="button" class="check-btn" id="check-btn" disabled>Check my sentence</button>
+
+    <div class="feedback" id="feedback" tabindex="-1" hidden>
+      <p class="fb-status" id="fb-status"></p>
+      <div id="fb-detail"></div>
+    </div>
+  </section>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change one assumption</h2>
+    <p id="sp-intro"></p>
+    <div class="evidence">
+      <table class="facts">
+        <caption>What changes</caption>
+        <tbody id="sp-facts-body"></tbody>
+      </table>
+    </div>
+    <fieldset class="item" id="sp-commit-fieldset">
+      <legend class="item-text">What do you recommend now?</legend>
+      <div class="item-choices" id="sp-commit-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  // Weekly work orders at the plants, and the review pace, as the activity supplies them.
+  var RUNNING = [340, 300];
+  var ADDED = [300, 290, 270, 320, 260];
+  var HOURS_PER_REVIEWER = 40;
+  var MINUTES_PER_REVIEW = 3.0;
+
+  function sum(a) { return a.reduce(function (s, x) { return s + x; }, 0); }
+  function fmt(n, digits) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 });
+  }
+  function pct(x) { return fmt(Math.round(x * 100)) + '%'; }
+
+  var VOL_NOW = sum(RUNNING);
+  var VOL_ADDED = sum(ADDED);
+  var VOL_SEVEN = VOL_NOW + VOL_ADDED;
+  var CAP_ONE = HOURS_PER_REVIEWER * 60 / MINUTES_PER_REVIEW;
+  var CAP_THREE = 3 * HOURS_PER_REVIEWER * 60 / MINUTES_PER_REVIEW;
+
+  var FACTS = [
+    { id: 'running', label: 'Running now',
+      text: 'The system runs at two plants, which together send ' + fmt(VOL_NOW) + ' work orders a week.' },
+    { id: 'benefit', label: 'Benefit',
+      text: 'The reported benefit is “fewer schedule conflicts,” with no figure attached, and it comes from the two plants.' },
+    { id: 'volume', label: 'Volume',
+      text: 'The extension adds five plants and ' + fmt(VOL_ADDED) + ' work orders a week, for ' + fmt(VOL_SEVEN) + ' in all.' },
+    { id: 'review', label: 'Review',
+      text: 'One named reviewer on one shift confirms each recommendation before a work order is scheduled.' },
+    { id: 'pace', label: 'Review pace',
+      text: 'A review that can catch an error takes about ' + fmt(MINUTES_PER_REVIEW, 1) + ' minutes per work order. Forty productive hours a week cover ' +
+            fmt(CAP_ONE) + ' work orders, and the two plants already use ' + pct(VOL_NOW / CAP_ONE) + ' of that.' },
+    { id: 'waiting', label: 'Waiting',
+      text: 'If the extension waits, the five other plants stay on their current scheduling methods.' }
+  ];
+
+  var DECISIONS = [
+    { value: 'approve', label: 'Approve the extension', verb: 'approve', gerund: 'approving the extension' },
+    { value: 'defer', label: 'Defer the extension', verb: 'defer', gerund: 'deferring the extension' },
+    { value: 'decline', label: 'Decline the extension', verb: 'decline', gerund: 'declining the extension' }
+  ];
+
+  // First pass: which facts a reader could use against each decision, and the argument they would make.
+  var AGAINST = {
+    approve: [
+      { id: 'benefit', why: 'The benefit has no figure and rests on two plants, so the case for seven is thin.' },
+      { id: 'volume', why: 'Seven plants send more than three times what two send.' },
+      { id: 'review', why: 'One reviewer on one shift is the same control facing the larger load.' },
+      { id: 'pace', why: 'At about ' + fmt(MINUTES_PER_REVIEW, 1) + ' minutes a check the ceiling is ' + fmt(CAP_ONE) + ' work orders a week, and seven plants send ' + fmt(VOL_SEVEN) + '.' }
+    ],
+    defer: [
+      { id: 'running', why: 'The system already runs at two plants, and a deferral treats the extension as untried.' },
+      { id: 'waiting', why: 'The five other plants stay on their current methods for as long as the extension waits.' }
+    ],
+    decline: [
+      { id: 'running', why: 'The system already runs at two plants, and a decline closes a question that a deferral would leave open.' },
+      { id: 'waiting', why: 'The five other plants stay on their current methods for as long as the answer is no.' }
+    ]
+  };
+
+  // Second pass: three reviewers across the shift. Capacity rises and the volume problem closes.
+  var USE_SEVEN_THREE = VOL_SEVEN / CAP_THREE;
+  var CLOSED_FACT = {
+    id: 'closed',
+    why: 'Three reviewers cover ' + fmt(CAP_THREE) + ' work orders a week against ' + fmt(VOL_SEVEN) + ', so the shortfall that justified waiting is closed.'
+  };
+  var AGAINST2 = {
+    approve: [
+      { id: 'benefit', why: AGAINST.approve[0].why }
+    ],
+    defer: [AGAINST.defer[0], AGAINST.defer[1], CLOSED_FACT],
+    decline: [AGAINST.decline[0], AGAINST.decline[1], CLOSED_FACT]
+  };
+  var SP_FACTS = [
+    { id: 'review', label: 'Review',
+      text: 'Three reviewers across the shift confirm each recommendation before a work order is scheduled.' },
+    { id: 'pace', label: 'Review pace',
+      text: 'The pace is unchanged at about ' + fmt(MINUTES_PER_REVIEW, 1) + ' minutes per work order. One hundred twenty productive hours a week now cover ' +
+            fmt(CAP_THREE) + ' work orders, and seven plants would use ' + pct(USE_SEVEN_THREE) + ' of that.' }
+  ];
+
+  // Sentence parts. Verbs and objects carry whether they are valid; clauses carry what they do.
+  var VERBS = [
+    { value: 'approve', label: 'approve', decision: true },
+    { value: 'note', label: 'note', decision: false },
+    { value: 'defer', label: 'defer', decision: true },
+    { value: 'discuss', label: 'discuss', decision: false },
+    { value: 'decline', label: 'decline', decision: true },
+    { value: 'consider', label: 'consider', decision: false }
+  ];
+  var OBJECTS = [
+    { value: 'matter', label: 'the matter before it', kind: 'vague' },
+    { value: 'ext', label: 'the extension from two plants to seven', kind: 'right' },
+    { value: 'steps', label: 'the next steps', kind: 'vague' },
+    { value: 'two', label: 'the system at the two plants where it runs', kind: 'wrong' }
+  ];
+  var CLAUSES = [
+    { value: 'because', label: 'because the reviewer’s hours may not cover the volume', text: ', because the reviewer’s hours may not cover the volume', none: false,
+      note: 'argues the case inside the opening, before the committee has been told what it is being asked' },
+    { value: 'although', label: 'although the two plants running it report fewer schedule conflicts', text: ', although the two plants running it report fewer schedule conflicts', none: false,
+      note: 'concedes a matter that belongs in the argument, and softens the decision before it lands' },
+    { value: 'none', label: 'nothing further; the sentence ends here', text: '', none: true, note: '' },
+    { value: 'provided', label: 'provided the review is staffed to fit', text: ', provided the review is staffed to fit', none: false,
+      note: 'turns a decision into an offer with conditions, and the conditions belong in the argument that follows' },
+    { value: 'unless', label: 'unless the committee prefers to wait', text: ', unless the committee prefers to wait', none: false,
+      note: 'hands the decision back to the committee, which is the thing the opening exists to prevent' }
+  ];
+
+  var CRITERION_TEXT = 'An opening that has resolved can be said aloud in one breath. It has a verb that is a decision, the specific thing the decision applies to, and no clause that argues, concedes, or sets conditions. If it names nothing the committee could approve, defer, or decline, it has asked the committee for nothing. If it carries a clause, it has started negotiating before the committee has heard the finding.';
+  var FIRST_MOVE_TEXT = 'Start from the decision you committed to in the first step and say it in the words the committee would use. Then read what you have built against that commitment, and take out anything that is not the decision itself.';
+  var CORRECT_TEXT = 'Right. The sentence names a decision and the thing it applies to, and nothing in it argues. The facts that cut against your decision have not gone missing. They move behind the sentence, where the evidence can carry them. Every decision on the table has facts that argue against it, so the existence of those facts is never a reason to blur the opening. The test is whether the committee knows, within the first few seconds, what it is being asked to do.';
+
+  // ---------- rendering helpers ----------
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+
+  function factRow(f, moved) {
+    var tr = document.createElement('tr');
+    if (moved) { tr.className = 'moved'; }
+    var th = document.createElement('th');
+    th.scope = 'row';
+    th.textContent = f.label;
+    var td = document.createElement('td');
+    td.textContent = f.text;
+    tr.appendChild(th);
+    tr.appendChild(td);
+    return tr;
+  }
+
+  function factById(id) {
+    for (var i = 0; i < FACTS.length; i++) { if (FACTS[i].id === id) { return FACTS[i]; } }
+    return null;
+  }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = el('span', 'choice-box', label);
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function fillSelect(sel, placeholder, options) {
+    sel.innerHTML = '';
+    var o0 = document.createElement('option');
+    o0.value = '';
+    o0.textContent = placeholder;
+    sel.appendChild(o0);
+    options.forEach(function (o) {
+      var op = document.createElement('option');
+      op.value = o.value;
+      op.textContent = o.label;
+      sel.appendChild(op);
+    });
+  }
+
+  function lookup(list, value) {
+    for (var i = 0; i < list.length; i++) { if (list[i].value === value) { return list[i]; } }
+    return null;
+  }
+
+  function decisionLabel(value) { return lookup(DECISIONS, value).label.toLowerCase(); }
+
+  function chosen(name) {
+    var c = document.querySelector('input[name="' + name + '"]:checked');
+    return c ? c.value : null;
+  }
+
+  function renderAgainst(panel, decision, list, headText, tailText) {
+    panel.innerHTML = '';
+    panel.appendChild(el('p', 'panel-head', headText));
+    list.forEach(function (a) {
+      var f = factById(a.id) || { label: 'Changed' };
+      var label = a.id === 'closed' ? 'New' : f.label;
+      var box = el('div', 'against');
+      box.appendChild(el('p', 'against-label', label));
+      box.appendChild(el('p', null, a.why));
+      panel.appendChild(box);
+    });
+    if (tailText) { panel.appendChild(el('p', null, tailText)); }
+    panel.hidden = false;
+  }
+
+  // ---------- first pass ----------
+  var factsBody = document.getElementById('facts-body');
+  FACTS.forEach(function (f) { factsBody.appendChild(factRow(f, false)); });
+
+  var commitChoices = document.getElementById('commit-choices');
+  var againstPanel = document.getElementById('against-panel');
+  var buildStep = document.getElementById('build-step');
+  var selVerb = document.getElementById('sel-verb');
+  var selObject = document.getElementById('sel-object');
+  var selClause = document.getElementById('sel-clause');
+  var preview = document.getElementById('preview');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+  var secondPass = document.getElementById('second-pass');
+
+  fillSelect(selVerb, 'Choose a verb', VERBS);
+  fillSelect(selObject, 'Choose what it applies to', OBJECTS);
+  fillSelect(selClause, 'Choose what, if anything, follows', CLAUSES);
+
+  function renderPreview() {
+    var v = lookup(VERBS, selVerb.value);
+    var o = lookup(OBJECTS, selObject.value);
+    var c = lookup(CLAUSES, selClause.value);
+    preview.innerHTML = '';
+    preview.appendChild(document.createTextNode('I recommend that the committee '));
+    if (v) { preview.appendChild(document.createTextNode(v.label)); } else { preview.appendChild(el('span', 'slot', '[verb]')); }
+    preview.appendChild(document.createTextNode(' '));
+    if (o) { preview.appendChild(document.createTextNode(o.label)); } else { preview.appendChild(el('span', 'slot', '[what it applies to]')); }
+    if (c) {
+      preview.appendChild(document.createTextNode(c.text + '.'));
+    } else {
+      preview.appendChild(el('span', 'slot', '[?]'));
+    }
+  }
+
+  function sentenceText() {
+    var v = lookup(VERBS, selVerb.value);
+    var o = lookup(OBJECTS, selObject.value);
+    var c = lookup(CLAUSES, selClause.value);
+    return 'I recommend that the committee ' + v.label + ' ' + o.label + c.text + '.';
+  }
+
+  function resetFeedback() { fb.hidden = true; }
+
+  function updateCheckState() {
+    checkBtn.disabled = !(selVerb.value && selObject.value && selClause.value);
+  }
+
+  function onBuilderChange() {
+    renderPreview();
+    updateCheckState();
+    resetFeedback();
+  }
+  selVerb.addEventListener('change', onBuilderChange);
+  selObject.addEventListener('change', onBuilderChange);
+  selClause.addEventListener('change', onBuilderChange);
+  renderPreview();
+
+  DECISIONS.forEach(function (d) {
+    commitChoices.appendChild(makeChoice('commit', d.value, d.label, function () {
+      var list = AGAINST[d.value];
+      renderAgainst(
+        againstPanel, d.value, list,
+        'Facts a reader could use against this decision: ' + list.length + '.',
+        'Every decision has facts that argue against it. Yours is no exception, and the sentence still has to be said.'
+      );
+      buildStep.hidden = false;
+      resetFeedback();
+    }));
+  });
+
+  function showFeedback(state, status, paras) {
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    fbStatus.textContent = status;
+    fbDetail.innerHTML = '';
+    paras.forEach(function (t) { fbDetail.appendChild(el('p', 'fb-detail', t)); });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  // The check tests the form of the sentence and its agreement with the learner's own commitment.
+  // It does not prefer one decision over another.
+  function issuesFor(commit, verbValue, objectValue, clauseValue) {
+    var issues = [];
+    var v = lookup(VERBS, verbValue);
+    var o = lookup(OBJECTS, objectValue);
+    var c = lookup(CLAUSES, clauseValue);
+
+    if (!v.decision) {
+      issues.push('“' + v.label + '” asks the committee to do nothing in particular. The opening names an approval, a deferral, or a decline, so that the committee knows what is being asked of it.');
+    } else if (v.value !== commit) {
+      issues.push('The sentence says “' + v.label + '”, but in the first step you committed to a different decision. Either the sentence or the commitment is wrong, and the opening has not resolved until the two agree.');
+    }
+
+    if (o.kind === 'vague') {
+      issues.push('“' + o.label + '” names nothing a committee could approve, defer, or decline. The opening names the thing itself, in the words the committee would use for it.');
+    } else if (o.kind === 'wrong') {
+      issues.push('The system already runs at those two plants, so they are not what the committee is being asked to decide. The opening names the decision that is actually before it.');
+    }
+
+    if (!c.none) {
+      issues.push('The clause “' + c.label + '” ' + c.note + '. It belongs behind the sentence, where the evidence can carry it.');
+    }
+    return issues;
+  }
+
+  checkBtn.addEventListener('click', function () {
+    var commit = chosen('commit');
+    if (!commit || !selVerb.value || !selObject.value || !selClause.value) { return; }
+    var issues = issuesFor(commit, selVerb.value, selObject.value, selClause.value);
+    if (issues.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [sentenceText(), CORRECT_TEXT]);
+    } else if (issues.length === 1) {
+      showFeedback('fb-near', 'Close.', [sentenceText(), issues[0], 'Everything else in the sentence holds.']);
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    secondPass.hidden = false;
+    renderSecondPassIntro();
+  });
+
+  // ---------- second pass ----------
+  var spFactsBody = document.getElementById('sp-facts-body');
+  var spChoices = document.getElementById('sp-commit-choices');
+  var spPanel = document.getElementById('sp-panel');
+  var spIntro = document.getElementById('sp-intro');
+
+  SP_FACTS.forEach(function (f) { spFactsBody.appendChild(factRow(f, true)); });
+
+  function renderSecondPassIntro() {
+    spIntro.textContent = 'Suppose the plan staffs three reviewers across the shift in place of one. Three is the whole number the review pace calls for at seven plants, rounded up from ' +
+      fmt(VOL_SEVEN * MINUTES_PER_REVIEW / 60 / HOURS_PER_REVIEWER, 1) + '. This is an assumption for the exercise, not a fact about the plants. The other facts stay as they were.';
+  }
+
+  DECISIONS.forEach(function (d) {
+    spChoices.appendChild(makeChoice('sp-commit', d.value, d.label, function () {
+      var before = AGAINST[d.value].length;
+      var now = AGAINST2[d.value];
+      var head = 'Facts a reader could use against ' + d.gerund + ': ' + before + ' before, ' + now.length + ' now.';
+      var takeaway;
+      if (d.value === 'approve') {
+        takeaway = 'The facts that made the opening hard to say have mostly gone, and the sentence you would say is the same sentence. What changed is the evidence behind it.';
+      } else {
+        takeaway = 'A new fact now argues against your decision: the shortfall that justified waiting has closed. The sentence you would say is the same sentence, with more weight against it.';
+      }
+      var tail = takeaway + ' Whatever you hold, the opening still names the decision and nothing else. The evidence moves how much the recommendation can bear. It does not change what the first sentence has to be.';
+      renderAgainst(spPanel, d.value, now, head, tail);
+    }));
+  });
+
+})();
+</script>
+</body>
+</html>

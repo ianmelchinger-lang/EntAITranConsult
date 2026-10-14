@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read this first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 24px;
+    color: var(--ink);
+  }
+
+  .scenario {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin: 0 0 28px;
+  }
+
+  .scenario p {
+    margin: 0 0 16px;
+  }
+
+  .scenario p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prompt-lead {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 16px;
+  }
+
+  .option {
+    display: block;
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .option-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .option-box {
+    display: block;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 18px;
+    background: var(--white);
+  }
+
+  .option-lead {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .option-detail {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .option-input:checked + .option-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .option-input:focus-visible + .option-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  fieldset.locked .option {
+    cursor: default;
+  }
+
+  fieldset.locked .option-box {
+    opacity: 0.9;
+  }
+
+  .reveal-btn {
+    display: block;
+    margin: 22px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .reveal-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .reveal-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .reveal-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .reveal {
+    margin-top: 32px;
+    padding: 22px 24px;
+    background: var(--highlight-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .reveal[hidden] {
+    display: none;
+  }
+
+  .reveal:focus {
+    outline: none;
+  }
+
+  .reveal-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--accent-deep);
+    margin: 0 0 4px;
+  }
+
+  .reveal-chosen {
+    font-family: var(--font-sans);
+    font-style: italic;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p {
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .desk {
+    margin: 18px 0 0;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px 6px;
+  }
+
+  .desk-title {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--steel);
+    margin: 0 0 8px;
+  }
+
+  .desk table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+  }
+
+  .desk th, .desk td {
+    text-align: left;
+    vertical-align: top;
+    padding: 8px 8px 8px 0;
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+
+  .desk th {
+    font-weight: 600;
+    color: var(--ink);
+    width: 34%;
+  }
+
+  .reveal-body { font-variant-numeric: tabular-nums; }
+  .desk td { font-variant-numeric: tabular-nums; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .desk { padding: 12px 12px 4px; }
+    .desk th { width: 38%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read this first</h1>
+
+  <div class="scenario">
+    <p>A manufacturer&rsquo;s executive committee meets in three weeks. It will be asked to extend an automated maintenance-scheduling system from two plants to seven. The system proposes which crew takes which work order and when, and a named reviewer confirms each recommendation before a work order is scheduled.</p>
+    <p>You are the advisor. The analyst who assembled the pack sits two levels below the committee, and the pack is now on your desk. An earlier draft carried the numbers behind the review. The final pack carries one sentence. Both are shown here.</p>
+    <div class="desk" role="group" aria-label="What the earlier draft and the final pack say about review">
+      <p class="desk-title">The pack, two versions</p>
+      <table>
+        <thead class="sr-only"><tr><th scope="col">Version</th><th scope="col">What it says about review</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Earlier draft</th><td id="draft-cell"></td></tr>
+          <tr><th scope="row">Final pack</th><td>Outputs are reviewed before a work order is scheduled.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="prompt-lead">Before reading on, choose the step that comes closest to your own first instinct.</p>
+
+  <fieldset id="reading-fieldset">
+    <legend>What would you do with the pack in the three weeks you have?</legend>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="a">
+      <span class="option-box">
+        <span class="option-lead">Send the fuller analysis.</span>
+        <span class="option-detail">Attach the technical annex and put every caveat in writing, so the committee has everything and nobody can say the concern was not mentioned.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="b">
+      <span class="option-box">
+        <span class="option-lead">Wait for firmer evidence.</span>
+        <span class="option-detail">Hold the concern until the plants already running produce results that settle it. A worry the numbers cannot yet prove would cost you credibility.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="c">
+      <span class="option-box">
+        <span class="option-lead">Soften the message so it lands.</span>
+        <span class="option-detail">The committee wants to extend. Frame the concern as a condition to be managed, so it is heard and not dismissed.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="d">
+      <span class="option-box">
+        <span class="option-lead">Restore the numbers to the review line.</span>
+        <span class="option-detail">Put the reviewer, the shift, and the weekly volumes back beside the sentence, so the committee can see what the line covers.</span>
+      </span>
+    </label>
+  </fieldset>
+
+  <button type="button" class="reveal-btn" id="reveal-btn" disabled>See what this misses</button>
+
+  <div class="reveal" id="reveal" role="region" aria-label="What this step misses" tabindex="-1" hidden>
+    <span class="reveal-tag">You chose:</span>
+    <p class="reveal-chosen" id="reveal-chosen"></p>
+    <div class="reveal-body" id="reveal-body"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // Weekly work orders at the plants, as the activity supplies them.
+  var RUNNING = [340, 300];
+  var ADDED = [300, 290, 270, 320, 260];
+
+  function sum(a) { return a.reduce(function (s, x) { return s + x; }, 0); }
+  var VOL_NOW = sum(RUNNING);
+  var VOL_SEVEN = VOL_NOW + sum(ADDED);
+  var RATIO = VOL_SEVEN / VOL_NOW;
+
+  function fmt(n, digits) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 });
+  }
+
+  document.getElementById('draft-cell').textContent =
+    'One reviewer, one shift. Two plants send ' + fmt(VOL_NOW) + ' work orders a week. Seven plants would send ' + fmt(VOL_SEVEN) + '.';
+
+  var ACK = 'Each of the four is a sensible thing for a careful professional to do. None is careless, and that is why the problem persists.';
+
+  var READINGS = {
+    a: {
+      lead: 'Send the fuller analysis.',
+      rebuttal: 'More pages travel the same route that took the numbers out. Each person who forwards a finding has more to lose from delivering bad news than from delaying it, so a longer pack gives every layer more to trim, and the one sentence that mattered ends up among many that did not. The people closest to the work already hold the finding. They weighed the cost of sending it and decided against. Volume does not change that arithmetic.'
+    },
+    b: {
+      lead: 'Wait for firmer evidence.',
+      rebuttal: 'The waiting is what destroys the finding’s value. By the time a metric moves or an incident makes the problem undeniable, the committee has approved, the five new plants have been scheduled around the system, and the cheaper options are gone. The same information then supports damage control and no longer supports a choice. In the meantime, “outputs are reviewed” stands in for evidence nobody has seen.'
+    },
+    c: {
+      lead: 'Soften the message so it lands.',
+      rebuttal: 'A recommendation that can only ever say proceed gives the committee no way to tell confidence from reluctance. A finding softened until it is welcome becomes a condition to be managed, which is easy to approve and easy to forget. If every hard finding arrives softened, a soft one carries no information.'
+    },
+    d: {
+      lead: 'Restore the numbers to the review line.',
+      rebuttal: 'This is the right instinct, and it stops short. With the numbers back, the committee reads that one reviewer on one shift faces ' + fmt(VOL_SEVEN) + ' work orders a week where today that reviewer faces ' + fmt(VOL_NOW) + '. That describes a load. It asks the committee for nothing, so each member must decide alone what it means and what to do about it. A figure beside a sentence is still a description, and a description is the form that is easiest to discount.'
+    }
+  };
+
+  function closing() {
+    var numbers = 'Here is what the earlier draft carried and the final pack did not. Two plants send ' + fmt(VOL_NOW) +
+      ' work orders a week to one reviewer on one shift. Seven plants would send ' + fmt(VOL_SEVEN) + ', which is ' + fmt(RATIO, 2) +
+      ' times as many, to the same reviewer on the same shift. The sentence in the pack is accurate about the review at two plants. It says nothing about the review at seven.';
+    var capability = 'Notice what the four have in common. Each treats the problem as one of how much to say, when to say it, or how gently. None puts the finding in front of the committee early, in a form that names a decision, so that the committee can act on it or argue with its evidence. That capability has to be in place before anyone can tell whether a recommendation is sound enough to check.';
+    return [numbers, capability];
+  }
+
+  var radios = document.querySelectorAll('input[name="reading"]');
+  var revealBtn = document.getElementById('reveal-btn');
+  var revealPanel = document.getElementById('reveal');
+  var revealChosen = document.getElementById('reveal-chosen');
+  var revealBody = document.getElementById('reveal-body');
+  var fieldset = document.getElementById('reading-fieldset');
+
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function () {
+      revealBtn.disabled = false;
+    });
+  }
+
+  revealBtn.addEventListener('click', function () {
+    var chosen = null;
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { chosen = radios[i].value; }
+    }
+    if (!chosen) { return; }
+
+    for (var j = 0; j < radios.length; j++) {
+      radios[j].disabled = true;
+    }
+    fieldset.classList.add('locked');
+    revealBtn.disabled = true;
+
+    var data = READINGS[chosen];
+    revealChosen.textContent = '“' + data.lead + '”';
+
+    revealBody.innerHTML = '';
+    var paras = [ACK, data.rebuttal].concat(closing());
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.textContent = t;
+      revealBody.appendChild(p);
+    });
+
+    revealPanel.hidden = false;
+    revealPanel.focus();
+  });
+})();
+</script>
+</body>
+</html>

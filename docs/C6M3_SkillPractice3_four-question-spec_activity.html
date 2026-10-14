@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Specifying an explanation</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .request { font-family: var(--font-serif); font-size: 1.02rem; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 22px; }
+  .request .request-label { display: block; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 700; color: var(--steel); margin: 0 0 4px; }
+  .request p { margin: 0 0 8px; font-variant-numeric: tabular-nums; }
+  .request p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .item-text + * { clear: both; }
+  label.item-text { float: none; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .item select { width: 100%; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--steel); border-radius: 4px; padding: 10px 12px; min-height: 44px; }
+  .item select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .step[hidden] { display: none; }
+  .step-note { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 14px; }
+  .fixed-slot { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); background: var(--paper); border: 1px dashed var(--steel); border-radius: 4px; padding: 12px 14px; margin: 0 0 14px; }
+  .fixed-slot b { color: var(--ink); }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Specifying an explanation</h1>
+
+  <p class="lead-line">Explainability is not a property a model has or lacks. It is a requirement someone specifies, and the specification has four parts: what explanation is required, who receives it, what evidence supports it, and the threshold below which an output cannot support the action it is being asked to support. Because audiences ask different questions, each audience needs its own specification. For some deployments the requirement is a legal obligation and not a preference.</p>
+
+  <div class="context">
+    <p>A manufacturer is extending an automated maintenance-scheduling system from two plants to seven. Its executive committee has asked for one thing about it, and the advisor has to turn that request into something a team could build to.</p>
+  </div>
+
+  <div class="request">
+    <span class="request-label">The client&rsquo;s request</span>
+    <p>&ldquo;The scheduling system must be explainable.&rdquo;</p>
+    <span class="request-label">What the governance record holds</span>
+    <p>No deviation threshold is defined that would trigger a review of the system&rsquo;s output, and no one is named to receive an alert if the output deviates.</p>
+    <span class="request-label">What the plan holds</span>
+    <p id="plan-line"></p>
+  </div>
+
+  <div class="instruction">
+    <p>Choose the audience you will specify for. Then place each of the ten statements: in one of the four questions it answers for that audience, or under <b>Not part of this specification</b>. Other audiences need their own specifications. A statement that serves someone else, or serves no one, does not belong in this one.</p>
+  </div>
+
+  <fieldset class="item" id="aud-fieldset">
+    <legend class="item-text">Which audience are you specifying for?</legend>
+    <div class="item-choices" id="aud-choices"></div>
+  </fieldset>
+
+  <section class="step" id="place-step" aria-label="Place the statements" hidden>
+    <div id="statements"></div>
+
+    <fieldset class="item" id="gap-fieldset">
+      <legend class="item-text">Looking at what the record holds, which of the four questions can it not yet answer?</legend>
+      <div class="item-choices" id="gap-choices"></div>
+    </fieldset>
+
+    <button type="button" class="check-btn" id="check-btn" disabled>Check my specification</button>
+
+    <div class="feedback" id="feedback" tabindex="-1" hidden>
+      <p class="fb-status" id="fb-status"></p>
+      <div id="fb-detail"></div>
+    </div>
+  </section>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: change the audience</h2>
+    <p id="sp-intro"></p>
+    <div id="sp-items"></div>
+    <div class="fixed-slot"><b>The threshold.</b> The record still defines none.</div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  // Weekly work orders at the seven plants, as the activity supplies them.
+  var VOLUMES = [340, 300, 300, 290, 270, 320, 260];
+  function fmt(n) { return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+  var VOL_SEVEN = VOLUMES.reduce(function (s, x) { return s + x; }, 0);
+  document.getElementById('plan-line').textContent =
+    'One named reviewer on one shift would confirm the system\u2019s output for ' + fmt(VOL_SEVEN) + ' work orders a week across the seven plants.';
+
+  var AUDIENCES = [
+    { value: 'exec', label: 'Sponsoring executive', phrase: 'the sponsoring executive', next: 'audit' },
+    { value: 'audit', label: 'Internal audit lead', phrase: 'the internal audit lead', next: 'it' },
+    { value: 'it', label: 'IT and data lead', phrase: 'the IT and data lead', next: 'exec' }
+  ];
+
+  // The four questions, plus the place for anything that does not answer one of them for this audience.
+  var SLOTS = [
+    { value: 'what', label: 'What explanation is required' },
+    { value: 'who', label: 'Who receives it' },
+    { value: 'evidence', label: 'What evidence supports it' },
+    { value: 'threshold', label: 'The threshold' },
+    { value: 'out', label: 'Not part of this specification' }
+  ];
+
+  // kind is the question a statement answers; aud is whose version it is. The last statement answers nothing.
+  var STATEMENTS = [
+    { id: 's5', kind: 'what', aud: 'audit', text: 'Why one work order was scheduled against one asset, in terms defensible to someone who was not in the room.' },
+    { id: 's2', kind: 'who', aud: 'audit', text: 'The internal audit lead, who may have to reconstruct a decision long after it was made, receives it.' },
+    { id: 's9', kind: 'evidence', aud: 'it', text: 'A log of the model’s inputs and outputs.' },
+    { id: 's10', kind: 'decoy', aud: null, text: 'The system will be monitored closely and issues escalated as needed.' },
+    { id: 's4', kind: 'what', aud: 'exec', text: 'Whether the system’s recommendations are reliable enough to act on, and who answers for them if they are wrong.' },
+    { id: 's1', kind: 'who', aud: 'exec', text: 'The sponsoring executive, who must decide whether to extend the system, receives it.' },
+    { id: 's7', kind: 'evidence', aud: 'exec', text: 'The volume the reviewer faces and the minutes a real check takes.' },
+    { id: 's3', kind: 'who', aud: 'it', text: 'The IT and data lead, who owns the platform the system runs on, receives it.' },
+    { id: 's8', kind: 'evidence', aud: 'audit', text: 'The source data and the basis of the recommendation, saved with each work order.' },
+    { id: 's6', kind: 'what', aud: 'it', text: 'Which inputs drove a given output, so a fault can be traced through the model.' }
+  ];
+
+  var QUESTION_FOR_SLOT = {
+    what: 'what explanation is required',
+    who: 'who receives it',
+    evidence: 'what evidence supports it'
+  };
+
+  var CRITERION_TEXT = 'An explanation is specified by four answers: what it must account for, who receives it, what evidence backs it, and the threshold below which an output cannot support the action. Each audience has its own four answers, because each asks a different question. A statement belongs in a specification only if it answers one of the four for the audience you chose. A statement that serves another audience does not, and neither does a promise of attention that names no trigger and no person.';
+  var FIRST_MOVE_TEXT = 'Start with the audience you chose and ask what that person would have to do with an output. Test each statement against that, and give any statement that fails the test the last place.';
+  var CORRECT_TEXT = 'Right. For this audience, three statements answer three of the four questions, and the other seven serve someone else or no one. The fourth question is the one the record cannot answer. No deviation threshold is defined and no one is named to receive an alert, and the statement about monitoring closely and escalating as needed names neither a trigger nor a person, so it cannot stand in for one. A specification with an empty fourth part is not finished, and it is better to find that now than after the architecture is chosen. One more consideration sits beside the craft: for some AI systems, European law requires that the system be transparent enough for the people responsible for it to oversee it meaningfully — so explanation is not always a matter of professional judgment. Whether this system is one of them is a question for counsel.';
+  var GAP_WHY = 'A question is answered only when something in the record fills it. Three of the four have statements written for your audience. The fourth has nothing but a promise: the record defines no deviation threshold, and it names no one to receive an alert.';
+  var DECOY_WHY = 'It sounds like a threshold, but it names no trigger, no figure, and no person to receive the alert. A promise to monitor closely and escalate as needed commits no one, and it is not part of any of the four.';
+
+  // ---------- helpers ----------
+  function lookup(list, value) {
+    for (var i = 0; i < list.length; i++) { if (list[i].value === value) { return list[i]; } }
+    return null;
+  }
+  function audLabel(value) { return lookup(AUDIENCES, value).label; }
+  function audPhrase(value) { return lookup(AUDIENCES, value).phrase; }
+  function slotLabel(value) { return lookup(SLOTS, value).label; }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    wrap.appendChild(input);
+    wrap.appendChild(el('span', 'choice-box', label));
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function checkedValue(name) {
+    var c = document.querySelector('input[name="' + name + '"]:checked');
+    return c ? c.value : null;
+  }
+
+  // Where a statement belongs for a given audience. This is the whole key, and it does not prefer an audience.
+  function expectedSlot(st, aud) {
+    if (st.kind === 'decoy') { return 'out'; }
+    return st.aud === aud ? st.kind : 'out';
+  }
+
+  function whyFor(st, aud) {
+    if (st.kind === 'decoy') { return DECOY_WHY; }
+    if (st.aud === aud) {
+      return 'This is the version written for ' + audPhrase(aud) + ', and it answers the question “' + QUESTION_FOR_SLOT[st.kind] + '”.';
+    }
+    return 'This one serves ' + audPhrase(st.aud) + ', who asks a different question. It belongs in that audience’s specification and not in this one.';
+  }
+
+  function showFeedback(state, status, paras) {
+    var fb = document.getElementById('feedback');
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    document.getElementById('fb-status').textContent = status;
+    var d = document.getElementById('fb-detail');
+    d.innerHTML = '';
+    paras.forEach(function (t) { d.appendChild(el('p', 'fb-detail', t)); });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  // ---------- first pass ----------
+  var audChoices = document.getElementById('aud-choices');
+  var placeStep = document.getElementById('place-step');
+  var statementsEl = document.getElementById('statements');
+  var gapChoices = document.getElementById('gap-choices');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var secondPass = document.getElementById('second-pass');
+
+  function readPlacements() {
+    return STATEMENTS.map(function (st) {
+      var sel = document.getElementById('place-' + st.id);
+      return sel.value || null;
+    });
+  }
+
+  function refreshCheck() {
+    var complete = checkedValue('aud') !== null && checkedValue('gap') !== null && readPlacements().indexOf(null) === -1;
+    checkBtn.disabled = !complete;
+    fb.hidden = true;
+  }
+
+  AUDIENCES.forEach(function (a) {
+    audChoices.appendChild(makeChoice('aud', a.value, a.label, function () {
+      placeStep.hidden = false;
+      refreshCheck();
+    }));
+  });
+
+  STATEMENTS.forEach(function (st) {
+    var card = el('div', 'item');
+    var lab = el('label', 'item-text', st.text);
+    lab.setAttribute('for', 'place-' + st.id);
+    var sel = document.createElement('select');
+    sel.id = 'place-' + st.id;
+    var o0 = document.createElement('option');
+    o0.value = '';
+    o0.textContent = 'Choose where this belongs';
+    sel.appendChild(o0);
+    SLOTS.forEach(function (s) {
+      var op = document.createElement('option');
+      op.value = s.value;
+      op.textContent = s.label;
+      sel.appendChild(op);
+    });
+    sel.addEventListener('change', refreshCheck);
+    card.appendChild(lab);
+    card.appendChild(sel);
+    statementsEl.appendChild(card);
+  });
+
+  SLOTS.slice(0, 4).forEach(function (s) {
+    gapChoices.appendChild(makeChoice('gap', s.value, s.label, refreshCheck));
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var aud = checkedValue('aud');
+    var gap = checkedValue('gap');
+    var placements = readPlacements();
+    if (!aud || !gap || placements.indexOf(null) !== -1) { return; }
+
+    // Each error is one misplaced statement, or a wrong answer to the gap question.
+    var errors = [];
+    STATEMENTS.forEach(function (st, i) {
+      if (placements[i] !== expectedSlot(st, aud)) { errors.push({ type: 'place', st: st }); }
+    });
+    if (gap !== 'threshold') { errors.push({ type: 'gap' }); }
+
+    if (errors.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (errors.length === 1) {
+      var e = errors[0];
+      if (e.type === 'place') {
+        showFeedback('fb-near', 'Close.', ['Look again at: “' + e.st.text + '”', whyFor(e.st, aud)]);
+      } else {
+        showFeedback('fb-near', 'Close.', ['Your statements are placed correctly, but look again at which question the record cannot answer.', GAP_WHY]);
+      }
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    secondPass.hidden = false;
+    renderSecondPass(lookup(AUDIENCES, aud).next);
+  });
+
+  // ---------- second pass ----------
+  var spItems = document.getElementById('sp-items');
+  var spPanel = document.getElementById('sp-panel');
+  var spIntro = document.getElementById('sp-intro');
+  var spAudience = null;
+
+  function variantsFor(kind) {
+    return STATEMENTS.filter(function (st) { return st.kind === kind; });
+  }
+
+  function renderSecondPass(aud) {
+    spAudience = aud;
+    spIntro.textContent = 'Now the same system is being specified for ' + audPhrase(aud) + '. Nothing about the system has changed. For each question, choose the statement written for this audience.';
+    spItems.innerHTML = '';
+    spPanel.hidden = true;
+    ['what', 'who', 'evidence'].forEach(function (kind) {
+      var card = el('div', 'item');
+      var lab = el('label', 'item-text', slotLabel(kind));
+      lab.setAttribute('for', 'sp-' + kind);
+      var sel = document.createElement('select');
+      sel.id = 'sp-' + kind;
+      var o0 = document.createElement('option');
+      o0.value = '';
+      o0.textContent = 'Choose a statement';
+      sel.appendChild(o0);
+      variantsFor(kind).forEach(function (st) {
+        var op = document.createElement('option');
+        op.value = st.id;
+        op.textContent = st.text;
+        sel.appendChild(op);
+      });
+      sel.addEventListener('change', onSecondChange);
+      card.appendChild(lab);
+      card.appendChild(sel);
+      spItems.appendChild(card);
+    });
+  }
+
+  function onSecondChange() {
+    var kinds = ['what', 'who', 'evidence'];
+    var picks = kinds.map(function (k) { return document.getElementById('sp-' + k).value; });
+    if (picks.indexOf('') !== -1) { spPanel.hidden = true; return; }
+    var wrong = [];
+    kinds.forEach(function (k, i) {
+      var st = null;
+      STATEMENTS.forEach(function (s) { if (s.id === picks[i]) { st = s; } });
+      if (st.aud !== spAudience) { wrong.push(slotLabel(k)); }
+    });
+    spPanel.innerHTML = '';
+    if (wrong.length === 0) {
+      spPanel.appendChild(el('p', null, 'Right. Three of the four answers changed because the audience changed, and the system did not. The fourth is still empty. No audience supplies a threshold, because the gap is in the record and not in the reader. Setting one is a decision for the client. The advisor’s part is to see that the question exists, and to put it to the client before the architecture is chosen, when it costs a line in the design and not a crisis in the executive conversation.'));
+    } else {
+      spPanel.appendChild(el('p', null, 'Look again at: ' + wrong.join('; ') + '.'));
+      spPanel.appendChild(el('p', null, 'Each question has three versions, one written for each audience. Ask what ' + audPhrase(spAudience) + ' would have to do with an output, and choose the version that serves that.'));
+    }
+    spPanel.hidden = false;
+  }
+
+})();
+</script>
+</body>
+</html>

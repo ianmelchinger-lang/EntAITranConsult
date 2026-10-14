@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finding the seam</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .item-text + * { clear: both; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .join { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .join[hidden] { display: none; }
+  .join label { display: block; font-family: var(--font-sans); font-size: 0.86rem; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+  .join select { width: 100%; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink); background: var(--white); border: 1px solid var(--steel); border-radius: 4px; padding: 10px 12px; min-height: 44px; }
+  .join select:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; font-variant-numeric: tabular-nums; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Finding the seam</h1>
+
+  <p class="lead-line">A recommendation can be checked only to the degree that a reader can trace each claim to a piece of evidence and see where the advisor added inference. The seam between the two has to stay visible. A sentence that fuses them is not more persuasive than one that separates them. It is unverifiable, which is a different thing, and a finding the reader cannot trace can only be accepted or rejected on the advisor&rsquo;s authority.</p>
+
+  <div class="context">
+    <p>An analyst has drafted the opening of a recommendation to an executive committee on extending an automated maintenance-scheduling system from two plants to seven. The draft is welcome news. Before it goes up, you are marking up each sentence.</p>
+  </div>
+
+  <div class="instruction">
+    <p><b>The data shows:</b> a record could contain this sentence today.</p>
+    <p><b>I concluded:</b> the sentence is the advisor&rsquo;s judgment or prediction, and no record could contain it today.</p>
+    <p><b>Does both:</b> the sentence states data and a conclusion in one breath. Choose it, then name the assumption that joins them.</p>
+  </div>
+
+  <div id="items"></div>
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my markup</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: the unwelcome draft</h2>
+    <p>Now the draft carries the unwelcome finding. The seam does not care whether the news is welcome, so the same markup applies. Mark up the three sentences below.</p>
+    <div id="sp-items"></div>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  // Figures the activity supplies, kept in one place so the sentences and the explanation agree.
+  var RUNNING = [340, 300];
+  var ADDED = [300, 290, 270, 320, 260];
+  function sum(a) { return a.reduce(function (s, x) { return s + x; }, 0); }
+  function fmt(n, digits) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 });
+  }
+  var VOL_NOW = sum(RUNNING);
+  var VOL_ADDED = sum(ADDED);
+  var VOL_SEVEN = VOL_NOW + VOL_ADDED;
+  var MINUTES = 3.0;
+
+  var BUCKETS = [
+    { value: 'shows', label: 'The data shows' },
+    { value: 'concluded', label: 'I concluded' },
+    { value: 'both', label: 'Does both' }
+  ];
+
+  // kind: what the sentence really is. assumptions: offered if the learner marks it "Does both";
+  // ok marks the assumption that actually joins data to conclusion (only on true "both" sentences).
+  var ITEMS = [
+    { text: 'The extension to seven plants should be approved.',
+      kind: 'concluded',
+      why: 'No record could contain this sentence today. It is a recommendation, which makes it the advisor’s conclusion.',
+      assumptions: [
+        { text: 'The committee wants to extend.', ok: false },
+        { text: 'The system has run without incident.', ok: false },
+        { text: 'Seven plants is the plan on the table.', ok: false }
+      ] },
+    { text: 'At the two plants running today, the reviewer reads ' + fmt(VOL_NOW) + ' work orders a week.',
+      kind: 'shows',
+      why: 'It counts what the reviewer reads. A record could contain this sentence today, and it asserts no conclusion.',
+      assumptions: [
+        { text: 'The same volume arrives every week.', ok: false },
+        { text: 'The reviewer reads thoroughly.', ok: false },
+        { text: 'The count is accurate.', ok: false }
+      ] },
+    { text: 'The reviewer handles ' + fmt(VOL_NOW) + ' work orders a week at two plants, so the control will hold at seven.',
+      kind: 'both',
+      why: 'The first half is a count a record could contain. The second half is a prediction no record could contain. The word “so” joins them.',
+      assumptions: [
+        { text: 'The control will hold at seven plants.', ok: false },
+        { text: 'The conditions that let one reviewer cope at two plants still hold when the volume is more than three times larger.', ok: true },
+        { text: 'The reviewer takes the work seriously.', ok: false }
+      ] },
+    { text: 'The sponsor reports fewer schedule conflicts at the two plants.',
+      kind: 'shows',
+      why: 'It reports what the sponsor says, and a record can contain what someone reports. The sentence does not itself claim that conflicts fell.',
+      assumptions: [
+        { text: 'The reported reduction is real.', ok: false },
+        { text: 'Conflicts were counted the same way before and after.', ok: false },
+        { text: 'The sponsor has no stake in the result.', ok: false }
+      ] },
+    { text: 'Fewer schedule conflicts at the two plants show the system is ready for the other five.',
+      kind: 'both',
+      why: 'The first half is a reported result a record could contain. The second half is a judgment about five other plants. The word “show” joins them.',
+      assumptions: [
+        { text: 'Fewer schedule conflicts are a good thing.', ok: false },
+        { text: 'The system is ready for the other five plants.', ok: false },
+        { text: 'The other five plants resemble the two in how their data reaches the system.', ok: true }
+      ] },
+    { text: 'The five plants proposed for the extension together send ' + fmt(VOL_ADDED) + ' work orders a week.',
+      kind: 'shows',
+      why: 'It counts what the five plants send. A record could contain this sentence today.',
+      assumptions: [
+        { text: 'The five plants will keep sending the same volume.', ok: false },
+        { text: 'The five plants are similar in size.', ok: false },
+        { text: 'The figure includes the two plants running today.', ok: false }
+      ] },
+    { text: 'The extension will deliver its benefit at all seven plants.',
+      kind: 'concluded',
+      why: 'It is a prediction, and no record can contain a prediction today. It is the advisor’s conclusion.',
+      assumptions: [
+        { text: 'The benefit seen at two plants is real.', ok: false },
+        { text: 'Plants adopt a new system at the same speed.', ok: false },
+        { text: 'The benefit is large enough to notice.', ok: false }
+      ] }
+  ];
+
+  var SP_ITEMS = [
+    { text: 'Taken together, the seven plants send ' + fmt(VOL_SEVEN) + ' work orders a week, and the plan names one reviewer.',
+      kind: 'shows',
+      assumptions: [
+        { text: 'One reviewer is enough.', ok: false },
+        { text: 'The plan will not change.', ok: false },
+        { text: 'The volume is spread evenly across the week.', ok: false }
+      ] },
+    { text: 'A real check takes about ' + fmt(MINUTES, 1) + ' minutes per work order, so one reviewer cannot keep up at seven plants.',
+      kind: 'both',
+      assumptions: [
+        { text: 'One reviewer cannot keep up at seven plants.', ok: false },
+        { text: 'Reviewers would prefer a lighter workload.', ok: false },
+        { text: 'The minutes a real check takes do not fall when the volume rises.', ok: true }
+      ] },
+    { text: 'The extension should wait until the review is staffed to fit the volume.',
+      kind: 'concluded',
+      assumptions: [
+        { text: 'Staffing the review is possible.', ok: false },
+        { text: 'The committee will accept a delay.', ok: false },
+        { text: 'The review is the only open question.', ok: false }
+      ] }
+  ];
+
+  var CRITERION_TEXT = 'Ask of each sentence whether a record could contain it today. A measurement, a count, or a report of what someone says can sit in a record. A prediction, a judgment, or a recommendation cannot. A sentence that holds both has fused them: the data and the conclusion come in one confident breath. Pull the two apart, and name the assumption that has to be true for the data to support the conclusion.';
+  var FIRST_MOVE_TEXT = 'Look for the words that join a record to a conclusion, such as so, show, prove, or therefore. Split the sentence at that word and ask of each half separately whether a record could contain it.';
+  var ASSUMPTION_TEXT = 'The assumption is what has to be true for the data to carry the conclusion. It does not restate the conclusion, and it does not add another good thing about the data.';
+  var CORRECT_TEXT = 'Right. Three sentences are evidence, two are conclusions, and two fuse the one into the other with an assumption between them. The assumptions are what the committee can now argue with. Whether conditions at seven plants resemble conditions at two is a question a sponsor can dispute on its merits, which is a far better position for any finding than a flat assertion that the control will hold.';
+
+  // ---------- helpers ----------
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    var box = document.createElement('span');
+    box.className = 'choice-box';
+    box.textContent = label;
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderItems(container, items, prefix, onChange) {
+    items.forEach(function (item, idx) {
+      var fs = document.createElement('fieldset');
+      fs.className = 'item';
+      var legend = document.createElement('legend');
+      legend.className = 'item-text';
+      legend.textContent = item.text;
+      fs.appendChild(legend);
+
+      var choices = document.createElement('div');
+      choices.className = 'item-choices';
+
+      var join = document.createElement('div');
+      join.className = 'join';
+      join.hidden = true;
+      var sid = prefix + '-join-' + idx;
+      var lab = document.createElement('label');
+      lab.setAttribute('for', sid);
+      lab.textContent = 'What has to be true for the data to support the conclusion?';
+      var sel = document.createElement('select');
+      sel.id = sid;
+      sel.name = sid;
+      var o0 = document.createElement('option');
+      o0.value = '';
+      o0.textContent = 'Choose the assumption';
+      sel.appendChild(o0);
+      item.assumptions.forEach(function (a, ai) {
+        var op = document.createElement('option');
+        op.value = String(ai);
+        op.textContent = a.text;
+        sel.appendChild(op);
+      });
+      sel.addEventListener('change', onChange);
+      join.appendChild(lab);
+      join.appendChild(sel);
+
+      BUCKETS.forEach(function (b) {
+        choices.appendChild(makeChoice(prefix + idx, b.value, b.label, function () {
+          join.hidden = (b.value !== 'both');
+          onChange();
+        }));
+      });
+
+      fs.appendChild(choices);
+      fs.appendChild(join);
+      container.appendChild(fs);
+    });
+  }
+
+  function readMarks(items, prefix) {
+    return items.map(function (item, idx) {
+      var c = document.querySelector('input[name="' + prefix + idx + '"]:checked');
+      var sel = document.getElementById(prefix + '-join-' + idx);
+      return { bucket: c ? c.value : null, assumption: sel && sel.value !== '' ? Number(sel.value) : null };
+    });
+  }
+
+  function isComplete(marks) {
+    return marks.every(function (m) {
+      if (m.bucket === null) { return false; }
+      if (m.bucket === 'both' && m.assumption === null) { return false; }
+      return true;
+    });
+  }
+
+  // Each error is one thing the learner got wrong: a misplaced sentence, or a wrong joining assumption on a true "both" sentence.
+  function findErrors(items, marks) {
+    var errs = [];
+    items.forEach(function (item, i) {
+      var m = marks[i];
+      if (m.bucket !== item.kind) {
+        errs.push({ type: 'place', index: i });
+      } else if (item.kind === 'both' && !item.assumptions[m.assumption].ok) {
+        errs.push({ type: 'join', index: i });
+      }
+    });
+    return errs;
+  }
+
+  function showFeedback(el, statusEl, detailEl, state, status, paras) {
+    el.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    el.classList.add(state);
+    statusEl.textContent = status;
+    detailEl.innerHTML = '';
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.className = 'fb-detail';
+      p.textContent = t;
+      detailEl.appendChild(p);
+    });
+    el.hidden = false;
+    el.focus();
+  }
+
+  // ---------- first pass ----------
+  var itemsEl = document.getElementById('items');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+  var fbStatus = document.getElementById('fb-status');
+  var fbDetail = document.getElementById('fb-detail');
+
+  function onFirstChange() {
+    checkBtn.disabled = !isComplete(readMarks(ITEMS, 'item'));
+    fb.hidden = true;
+  }
+  renderItems(itemsEl, ITEMS, 'item', onFirstChange);
+
+  checkBtn.addEventListener('click', function () {
+    var marks = readMarks(ITEMS, 'item');
+    if (!isComplete(marks)) { return; }
+    var errs = findErrors(ITEMS, marks);
+    if (errs.length === 0) {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (errs.length === 1) {
+      var e = errs[0];
+      var it = ITEMS[e.index];
+      if (e.type === 'place') {
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', ['Look again at: “' + it.text + '”', it.why]);
+      } else {
+        showFeedback(fb, fbStatus, fbDetail, 'fb-near', 'Close.', [
+          'You split “' + it.text + '” correctly, but the assumption you chose does not join its two halves.',
+          ASSUMPTION_TEXT
+        ]);
+      }
+    } else {
+      showFeedback(fb, fbStatus, fbDetail, 'fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // ---------- second pass ----------
+  var spPanel = document.getElementById('sp-panel');
+  renderItems(document.getElementById('sp-items'), SP_ITEMS, 'sp', function () {
+    var marks = readMarks(SP_ITEMS, 'sp');
+    if (!isComplete(marks)) { spPanel.hidden = true; return; }
+    var errs = findErrors(SP_ITEMS, marks);
+    spPanel.innerHTML = '';
+    var p1 = document.createElement('p');
+    if (errs.length === 0) {
+      p1.textContent = 'Right. The first sentence is data, the last is the conclusion, and the middle one fuses the two.';
+      var p2 = document.createElement('p');
+      p2.textContent = 'The markup has the same shape as before, and the news being unwelcome did not change it. What changed is who needs the seam. A sponsor who dislikes this finding can now argue with it on its evidence, by asking whether a reviewer could check faster, rather than on the advisor’s authority. Here the record answers that question: a review at about 3.0 minutes catches 70% of the plausible errors, and a review at 69 seconds catches 25%. An advisor who fused the sentence would have left the sponsor with nothing to test.';
+      spPanel.appendChild(p1);
+      spPanel.appendChild(p2);
+    } else {
+      p1.textContent = 'Look again. Ask of each sentence whether a record could contain it today. A sentence that holds both needs the assumption that joins its halves, and that assumption neither restates the conclusion nor adds another good thing about the data.';
+      spPanel.appendChild(p1);
+    }
+    spPanel.hidden = false;
+  });
+
+})();
+</script>
+</body>
+</html>
