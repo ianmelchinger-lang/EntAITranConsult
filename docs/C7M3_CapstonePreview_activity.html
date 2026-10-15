@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Integrate, document, and present</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --slate-1: #1C2B33;
+    --slate-2: #2E434D;
+    --slate-3: #43606C;
+    --slate-4: #5C7D89;
+    --ghost: #DCE3E5;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 720px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  .eyebrow { font-family: var(--font-sans); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-deep); margin: 0 0 10px; }
+  h1 { font-weight: 700; font-size: clamp(1.6rem, 4.6vw, 2.3rem); line-height: 1.2; margin: 0 0 14px; text-wrap: balance; }
+  .dek { font-size: 1.12rem; color: var(--ink-soft); margin: 0 0 24px; max-width: 60ch; }
+  h2 { font-family: var(--font-sans); font-weight: 700; font-size: 1.05rem; margin: 0 0 6px; color: var(--ink); }
+  .section { margin: 40px 0 0; }
+  .section-lead { font-size: 1rem; color: var(--ink-soft); margin: 0 0 18px; max-width: 62ch; }
+  p { margin: 0 0 14px; }
+
+  .notice { display: flex; gap: 14px; align-items: flex-start; background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 4px; padding: 16px 18px; font-family: var(--font-sans); font-size: 0.93rem; color: var(--ink-soft); line-height: 1.55; }
+  .notice svg { flex: 0 0 auto; margin-top: 2px; }
+  .notice strong { color: var(--ink); }
+
+  /* Path strip */
+  .path { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; position: relative; }
+  .path::before { content: ""; position: absolute; top: 15px; left: 16.66%; right: 16.66%; height: 2px; background: var(--line); }
+  .stage { text-align: center; padding: 0 8px; position: relative; }
+  .dot { width: 32px; height: 32px; border-radius: 50%; margin: 0 auto 10px; background: var(--paper); border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
+  .stage.current .dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 5px var(--highlight-bg); }
+  .stage.current .dot::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--white); }
+  .stage-name { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.9rem; color: var(--steel); line-height: 1.3; }
+  .stage.current .stage-name { color: var(--ink); }
+  .stage-items { display: block; font-family: var(--font-sans); font-size: 0.78rem; color: var(--steel); margin-top: 4px; line-height: 1.4; }
+  .here { display: inline-block; white-space: nowrap; margin-top: 8px; font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-deep); background: var(--highlight-bg); border-radius: 999px; padding: 2px 9px; }
+  .graded { display: inline-block; margin-top: 8px; font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--white); background: var(--ink); border-radius: 999px; padding: 2px 9px; }
+  .path-note { font-family: var(--font-sans); font-size: 0.85rem; color: var(--steel); text-align: center; margin: 18px 0 0; }
+
+  /* Stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 16px; }
+  .stat { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 12px 12px; }
+  .stat-num { display: block; font-family: var(--font-serif); font-weight: 700; font-size: 1.7rem; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stat-label { display: block; font-family: var(--font-sans); font-size: 0.8rem; color: var(--steel); margin-top: 4px; }
+
+  /* Data room shelf */
+  .shelf { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 10px; margin: 8px 0 14px; padding-top: 8px; }
+  .folder { position: relative; background: var(--white); border: 1px solid var(--line); border-radius: 0 4px 4px 4px; padding: 12px 10px 10px; font-family: var(--font-sans); font-size: 0.8rem; line-height: 1.35; color: var(--ink); min-height: 58px; }
+  .folder::before { content: ""; position: absolute; top: -8px; left: -1px; width: 42%; height: 8px; background: var(--white); border: 1px solid var(--line); border-bottom: none; border-radius: 4px 4px 0 0; }
+  .folder.key { background: var(--highlight-bg); border-color: var(--accent); }
+  .folder.key::before { background: var(--highlight-bg); border-color: var(--accent); }
+  .folder.dashed { background: transparent; border-style: dashed; color: var(--ink-soft); }
+  .folder.dashed::before { background: var(--paper); border-style: dashed; }
+  .caption { font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); line-height: 1.55; }
+
+  .carry { display: flex; gap: 16px; align-items: center; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; }
+  .carry svg { flex: 0 0 auto; }
+  .carry p { margin: 0; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; }
+
+  /* Feature panel */
+  .panel { background: var(--white); border: 1px solid var(--line); border-radius: 6px; padding: 22px 22px 20px; }
+  .panel-title { font-family: var(--font-sans); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--steel); margin: 0 0 16px; }
+
+  /* Funnel */
+  .funnel { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .funnel-stage { color: var(--white); font-family: var(--font-sans); font-size: 0.88rem; font-weight: 600; text-align: center; padding: 11px 14px; border-radius: 3px; line-height: 1.3; }
+  .funnel-stage small { display: block; font-weight: 400; font-size: 0.76rem; opacity: 0.85; margin-top: 2px; }
+  .f1 { width: 100%; background: var(--slate-1); }
+  .f2 { width: 86%; background: var(--slate-2); }
+  .f3 { width: 72%; background: var(--slate-3); }
+  .f4 { width: 58%; background: var(--accent); color: var(--white); }
+  .gate { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 16px 0 0; font-family: var(--font-sans); font-size: 0.85rem; color: var(--ink-soft); }
+  .gate-chip { font-weight: 700; font-size: 0.74rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+
+  /* Readiness trio */
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0 4px; }
+  .gauge { text-align: center; font-family: var(--font-sans); }
+  .gauge svg { display: block; margin: 0 auto 6px; }
+  .gauge span { font-size: 0.84rem; font-weight: 600; color: var(--ink); }
+
+  /* Horizons */
+  .horizons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .hz { background: var(--paper); border-radius: 4px; padding: 10px 10px 12px; }
+  .hz-head { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700; color: var(--ink-soft); margin: 0 0 10px; font-variant-numeric: tabular-nums; }
+  .block { height: 26px; border-radius: 3px; margin-bottom: 7px; background: repeating-linear-gradient(135deg, var(--ghost) 0 6px, #E7ECEE 6px 12px); border: 1px solid var(--line); }
+  .block.w1 { width: 92%; } .block.w2 { width: 74%; } .block.w3 { width: 84%; }
+  .hz-axis { display: flex; justify-content: space-between; font-family: var(--font-sans); font-size: 0.74rem; color: var(--steel); margin: 8px 2px 0; font-variant-numeric: tabular-nums; }
+  .stamp { display: inline-block; margin: 14px 0 0; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--accent-deep); border: 1.5px solid var(--accent); border-radius: 3px; padding: 3px 10px; }
+
+  /* Ledger */
+  .ledger { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; }
+  .ledger-card { border-radius: 4px; padding: 14px 14px 12px; font-family: var(--font-sans); }
+  .ledger-card h3 { font-size: 0.88rem; margin: 0 0 6px; }
+  .ledger-card p { font-size: 0.84rem; margin: 0; line-height: 1.5; color: var(--ink-soft); }
+  .lc-gain { background: var(--ok-bg); border-left: 4px solid var(--ok); }
+  .lc-gain h3 { color: var(--ok); }
+  .lc-res { background: var(--highlight-bg); border-left: 4px solid var(--accent); }
+  .lc-res h3 { color: var(--accent-deep); }
+  .ledger-mid { display: flex; align-items: center; justify-content: center; }
+
+  /* Assembly */
+  .parts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .part { background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 8px; text-align: center; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--ink); line-height: 1.3; }
+  .part svg { display: block; margin: 0 auto 6px; }
+  .merge { display: flex; justify-content: center; margin: 10px 0; }
+  .package { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pkg { border-radius: 4px; padding: 14px; font-family: var(--font-sans); color: var(--white); }
+  .pkg h3 { font-size: 0.95rem; margin: 0 0 4px; }
+  .pkg p { font-size: 0.82rem; margin: 0; opacity: 0.9; line-height: 1.45; }
+  .pkg-doc { background: var(--ink); }
+  .pkg-deck { background: var(--accent-deep); }
+
+  /* Hardest finding */
+  .finding { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .rule { border-top: 3px solid var(--accent); background: var(--paper); border-radius: 0 0 4px 4px; padding: 12px 12px 10px; font-family: var(--font-sans); }
+  .rule h3 { font-size: 0.9rem; margin: 0 0 4px; color: var(--ink); }
+  .rule p { font-size: 0.82rem; margin: 0; color: var(--ink-soft); line-height: 1.45; }
+
+  /* Deliverables */
+  .deliverables { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .deliv { background: var(--white); border: 1px solid var(--line); border-radius: 6px; padding: 16px 14px 14px; }
+  .deliv svg { display: block; width: 100%; height: auto; max-width: 140px; margin: 0 0 12px; }
+  .deliv h3 { font-family: var(--font-sans); font-size: 0.95rem; margin: 0 0 6px; }
+  .deliv p { font-family: var(--font-sans); font-size: 0.85rem; color: var(--ink-soft); line-height: 1.5; margin: 0; }
+
+  /* Rubric */
+  .rubric { display: grid; gap: 8px; }
+  .dim { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 11px 14px; font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); }
+  .dim.em { border-color: var(--accent); background: var(--highlight-bg); color: var(--ink); font-weight: 600; }
+  .dim-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-deep); }
+  .credits { margin: 16px 0 0; padding: 16px 18px; background: var(--white); border-left: 4px solid var(--ok); border-radius: 4px; }
+  .credits h3 { font-family: var(--font-sans); font-size: 0.88rem; margin: 0 0 8px; color: var(--ok); }
+  .credits ul { margin: 0; padding-left: 18px; font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); line-height: 1.55; }
+  .credits li { margin-bottom: 4px; }
+
+  /* Self-check */
+  .check-list { display: grid; gap: 10px; }
+  .check-row { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 13px 14px; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
+  .check-text { font-size: 0.97rem; color: var(--ink); line-height: 1.45; }
+  .toggle { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .toggle button { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; padding: 8px 12px; border: none; background: var(--paper); color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
+  .toggle button + button { border-left: 1px solid var(--line); }
+  .toggle button[aria-pressed="true"].yes { background: var(--ok); color: var(--white); }
+  .toggle button[aria-pressed="true"].no { background: var(--accent); color: var(--white); }
+  .toggle button:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: -3px; }
+  .verdict { margin: 16px 0 0; padding: 14px 16px; border-radius: 4px; font-family: var(--font-sans); font-size: 0.92rem; line-height: 1.55; background: var(--white); border-left: 4px solid var(--line); color: var(--ink-soft); }
+  .verdict.v-ok { border-left-color: var(--ok); background: var(--ok-bg); color: var(--ink); }
+  .verdict.v-go { border-left-color: var(--accent); background: var(--highlight-bg); color: var(--ink); }
+
+  /* Courses */
+  .courses { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .course { position: relative; background: var(--white); border: 1px solid var(--line); border-radius: 6px; padding: 14px 14px 12px; transition: border-color 0.2s, box-shadow 0.2s; }
+  .course h3 { font-family: var(--font-serif); font-size: 1rem; margin: 0 0 4px; line-height: 1.3; padding-right: 92px; }
+  .course p { font-family: var(--font-sans); font-size: 0.83rem; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+  .course .badge { position: absolute; top: 12px; right: 12px; font-family: var(--font-sans); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 999px; padding: 2px 8px; }
+  .course .used { color: var(--steel); background: var(--paper); border: 1px solid var(--line); }
+  .course .start { display: none; color: var(--white); background: var(--accent); }
+  .course.relevant { border-color: var(--slate-4); }
+  .course.flag { border-color: var(--accent); box-shadow: 0 0 0 3px var(--highlight-bg); }
+  .course.flag .used { display: none; }
+  .course.flag .start { display: inline-block; }
+  .course:not(.relevant) { opacity: 0.78; }
+
+  .closing { margin: 36px 0 0; padding: 22px 22px; background: var(--ink); color: var(--white); border-radius: 6px; }
+  .closing p { margin: 0; font-size: 1.05rem; line-height: 1.6; }
+  .closing p + p { margin-top: 10px; font-family: var(--font-sans); font-size: 0.88rem; opacity: 0.8; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .shelf { grid-template-columns: repeat(2, 1fr); }
+    .deliverables { grid-template-columns: 1fr; }
+    .deliv { display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: start; }
+    .deliv svg { margin: 0; }
+    .courses { grid-template-columns: 1fr; }
+    .finding { grid-template-columns: 1fr; }
+    .parts { grid-template-columns: repeat(2, 1fr); }
+    .ledger { grid-template-columns: 1fr; }
+    .ledger-mid svg { transform: rotate(90deg); }
+  }
+  @media (max-width: 480px) {
+    .container { padding: 28px 16px 48px; }
+    .panel { padding: 18px 14px 16px; }
+    .check-row { grid-template-columns: 1fr; gap: 10px; }
+    .toggle { justify-self: start; }
+    .stage-items { display: none; }
+    .stage-name { font-size: 0.8rem; }
+    .package { grid-template-columns: 1fr; }
+    .horizons { gap: 5px; }
+    .hz { padding: 8px 6px 10px; }
+    .funnel-stage { font-size: 0.82rem; }
+    .f4 { width: 66%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="container">
+
+  <p class="eyebrow">Capstone preview</p>
+  <h1>Integrate, document, and present</h1>
+  <p class="dek">You assemble everything into one advisory package and an executive presentation, and decide how to put its hardest finding in front of the executive who least wants to hear it.</p>
+
+  <div class="notice" role="note"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="#B8862B" stroke-width="2"/><path d="M12 6v6l4 2" fill="none" stroke="#B8862B" stroke-width="2" stroke-linecap="round"/></svg><div><strong>The guided materials for this module are being finalized.</strong> When they open, the module begins with an experienced advisor showing how to assemble a package that holds together, and how to deliver its hardest finding without hedging and without theatre. Until then, this page shows what you will do here, what you will hand in, and which courses build the skills you need.</div></div>
+
+  <section class="section" aria-labelledby="h-path">
+    <h2 id="h-path">Where this module sits</h2>
+    <p class="section-lead">The capstone follows one client from first read of the evidence to a presentation in front of its leaders.</p>
+    <ol class="path"><li class="stage"><span class="dot" aria-hidden="true"></span><span class="stage-name">Assemble the foundation</span><span class="stage-items">Opportunity assessment, portfolio, readiness summary</span></li><li class="stage"><span class="dot" aria-hidden="true"></span><span class="stage-name">Build the core advisory work</span><span class="stage-items">Roadmap, business case, governance and risk plan</span></li><li class="stage current" aria-current="step"><span class="dot" aria-hidden="true"></span><span class="stage-name">Integrate and present</span><span class="stage-items">One advisory package and an executive presentation</span><span class="here">You are here</span><br><span class="graded">Graded</span></li></ol>
+    <p class="path-note">Three modules, about three to four hours of focused work in all, graded once on the finished package.</p>
+  </section>
+
+  <section class="section" aria-labelledby="h-carry">
+    <h2 id="h-carry">Everything you have built comes together here</h2>
+    <div class="carry"><svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><rect x="4" y="12" width="28" height="26" rx="3" fill="#FFFFFF" stroke="#6B7C84" stroke-width="1.5"/><path d="M4 15 a3 3 0 0 1 3-3 h8 l3 3" fill="none" stroke="#6B7C84" stroke-width="1.5"/><path d="M26 22h14M35 17l5 5-5 5" fill="none" stroke="#B8862B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><p>You arrive with the six working pieces you built earlier in the capstone. Here they stop being separate documents and become one argument, with the reasoning written down so the work stands on its own.</p></div>
+  </section>
+
+  <section class="section" aria-labelledby="h-feat">
+    <h2 id="h-feat">The judgment at the heart of this module</h2>
+    <p class="section-lead">Integration is the work. The pieces must agree with one another, and every recommendation must trace back to the evidence beneath it.</p>
+    <div class="panel">
+      <p class="panel-title">Six pieces, one package</p>
+      <div class="parts" role="list" aria-label="The six working pieces">
+        <div class="part" role="listitem"><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="4" width="26" height="4" fill="#1C2B33"/><rect x="3" y="11" width="26" height="3" fill="#C9D3D6"/><rect x="3" y="17" width="26" height="3" fill="#C9D3D6"/><rect x="3" y="23" width="26" height="3" fill="#C9D3D6"/></svg>Opportunity assessment</div>
+        <div class="part" role="listitem"><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><line x1="16" y1="3" x2="16" y2="29" stroke="#C9D3D6"/><line x1="3" y1="16" x2="29" y2="16" stroke="#C9D3D6"/><circle cx="22" cy="9" r="3" fill="#B8862B"/><circle cx="9" cy="22" r="3" fill="#5C7D89"/></svg>Opportunity portfolio</div>
+        <div class="part" role="listitem"><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="6" width="14" height="4" fill="#5C7D89"/><rect x="3" y="14" width="22" height="4" fill="#5C7D89"/><rect x="3" y="22" width="18" height="4" fill="#5C7D89"/></svg>Readiness summary</div>
+        <div class="part" role="listitem"><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="6" width="10" height="5" fill="#1C2B33"/><rect x="11" y="14" width="12" height="5" fill="#43606C"/><rect x="19" y="22" width="10" height="5" fill="#B8862B"/></svg>Transformation roadmap</div>
+        <div class="part" role="listitem"><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="18" width="5" height="9" fill="#9C3B1E"/><rect x="12" y="13" width="5" height="9" fill="#2F6B4C"/><rect x="20" y="5" width="5" height="17" fill="#2F6B4C"/></svg>ROI business case</div>
+        <div class="part" role="listitem"><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 L27 7 L27 16 C27 23 22 27 16 29 C10 27 5 23 5 16 L5 7 Z" fill="none" stroke="#1C2B33" stroke-width="1.6"/><path d="M11 16 l3 3 l7 -7" fill="none" stroke="#2F6B4C" stroke-width="2"/></svg>Governance and risk plan</div>
+      </div>
+      <div class="merge"><svg width="20" height="30" viewBox="0 0 20 30" aria-hidden="true"><path d="M10 2v22M4 18l6 7 6-7" fill="none" stroke="#B8862B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="package">
+        <div class="pkg pkg-doc"><h3>The advisory package</h3><p>One coherent document. The roadmap funds what the portfolio chose; the business case prices what the roadmap schedules; the governance plan covers what the roadmap deploys.</p></div>
+        <div class="pkg pkg-deck"><h3>The executive presentation</h3><p>The same argument, shaped for senior leaders who will decide in the room.</p></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <p class="panel-title">The hardest finding, delivered to the person who least wants it</p>
+      <div class="finding">
+        <div class="rule"><h3>Early</h3><p>While there is still time to act on it, not after the plan is committed.</p></div>
+        <div class="rule"><h3>Without hedging</h3><p>Stated plainly enough that it cannot be read as a caveat and set aside.</p></div>
+        <div class="rule"><h3>Without theatre</h3><p>Framed as a decision the executive can make, not a crisis to react to.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="h-deliv">
+    <h2 id="h-deliv">What you will produce here</h2>
+    <p class="section-lead">Each piece becomes part of the advisory package you hand in at the end.</p>
+    <div class="deliverables"><div class="deliv"><svg viewBox="0 0 140 92" aria-hidden="true"><rect x="1" y="1" width="138" height="90" rx="4" fill="#EEF1F2" stroke="#C9D3D6"/><rect x="34" y="18" width="62" height="64" rx="2" fill="#FFFFFF" stroke="#C9D3D6"/><rect x="28" y="13" width="62" height="64" rx="2" fill="#FFFFFF" stroke="#C9D3D6"/><rect x="22" y="8" width="62" height="64" rx="2" fill="#FFFFFF" stroke="#1C2B33"/><rect x="28" y="15" width="40" height="5" fill="#1C2B33"/><rect x="28" y="25" width="50" height="3" fill="#C9D3D6"/><rect x="28" y="31" width="46" height="3" fill="#C9D3D6"/><rect x="28" y="37" width="50" height="3" fill="#C9D3D6"/><rect x="28" y="47" width="22" height="16" fill="#FBF1DC" stroke="#B8862B"/><rect x="54" y="47" width="24" height="16" fill="#EEF1F2" stroke="#C9D3D6"/><rect x="84" y="14" width="7" height="6" fill="#1C2B33"/><rect x="84" y="22" width="7" height="6" fill="#2E434D"/><rect x="84" y="30" width="7" height="6" fill="#43606C"/><rect x="84" y="38" width="7" height="6" fill="#5C7D89"/><rect x="84" y="46" width="7" height="6" fill="#B8862B"/><rect x="84" y="54" width="7" height="6" fill="#7C5C1E"/></svg><div><h3>Integrated advisory package</h3><p>Your six pieces as one document, with the reasoning visible, so a reader can follow each recommendation to its evidence.</p></div></div><div class="deliv"><svg viewBox="0 0 140 92" aria-hidden="true"><rect x="1" y="1" width="138" height="90" rx="4" fill="#EEF1F2" stroke="#C9D3D6"/><rect x="18" y="12" width="104" height="62" rx="3" fill="#1C2B33"/><rect x="28" y="22" width="52" height="7" fill="#FFFFFF"/><rect x="28" y="35" width="40" height="3" fill="#6B7C84"/><rect x="28" y="42" width="44" height="3" fill="#6B7C84"/><rect x="86" y="30" width="26" height="30" fill="#B8862B"/><rect x="60" y="74" width="20" height="8" fill="#6B7C84"/></svg><div><h3>Executive presentation</h3><p>The argument for the room: what you recommend, what you recommend against, and what it will take.</p></div></div><div class="deliv"><svg viewBox="0 0 140 92" aria-hidden="true"><rect x="1" y="1" width="138" height="90" rx="4" fill="#EEF1F2" stroke="#C9D3D6"/><circle cx="70" cy="40" r="22" fill="#FBF1DC" stroke="#B8862B" stroke-width="1.5"/><path d="M59 40 l8 8 l15 -16" fill="none" stroke="#7C5C1E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect x="40" y="70" width="60" height="4" fill="#6B7C84"/><rect x="50" y="78" width="40" height="3" fill="#C9D3D6"/></svg><div><h3>A portfolio piece</h3><p>A documented, end-to-end work sample that shows your reasoning, not only your conclusions.</p></div></div></div>
+  </section>
+
+  <section class="section" aria-labelledby="h-rubric">
+    <h2 id="h-rubric">How the work is judged</h2>
+    <p class="section-lead">This package and presentation are the single graded deliverable of the capstone, scored on one rubric across four dimensions. This module carries the two highlighted ones.</p>
+    <div class="rubric"><div class="dim"><span>Application of course frameworks</span><span></span></div><div class="dim"><span>Quality of advisory reasoning</span><span></span></div><div class="dim em"><span>Integration across program themes</span><span class="dim-tag">Weighted here</span></div><div class="dim em"><span>Clarity and executive appropriateness</span><span class="dim-tag">Weighted here</span></div></div>
+  </section>
+
+  <section class="section" aria-labelledby="h-check">
+    <h2 id="h-check">Can you already do what this module asks?</h2>
+    <p class="section-lead">A quick check for your own planning. Mark each line honestly; the courses that build the skills you mark &ldquo;not yet&rdquo; will light up below. Nothing is recorded.</p>
+    <div class="check-list"><div class="check-row" role="group" aria-labelledby="st-0">
+        <span class="check-text" id="st-0">Pull opportunity, readiness, roadmap, ROI, and governance into one story an executive can follow.</span>
+        <span class="toggle"><button type="button" class="yes" data-i="0" data-v="yes" aria-pressed="false">I can do this</button><button type="button" class="no" data-i="0" data-v="no" aria-pressed="false">Not yet</button></span>
+      </div><div class="check-row" role="group" aria-labelledby="st-1">
+        <span class="check-text" id="st-1">Deliver an unwelcome finding early, plainly, and in a form an executive can act on.</span>
+        <span class="toggle"><button type="button" class="yes" data-i="1" data-v="yes" aria-pressed="false">I can do this</button><button type="button" class="no" data-i="1" data-v="no" aria-pressed="false">Not yet</button></span>
+      </div><div class="check-row" role="group" aria-labelledby="st-2">
+        <span class="check-text" id="st-2">Frame an engagement so its objectives, stakeholders, and boundaries are clear from the start.</span>
+        <span class="toggle"><button type="button" class="yes" data-i="2" data-v="yes" aria-pressed="false">I can do this</button><button type="button" class="no" data-i="2" data-v="no" aria-pressed="false">Not yet</button></span>
+      </div><div class="check-row" role="group" aria-labelledby="st-3">
+        <span class="check-text" id="st-3">Name the artifacts an advisor produces across an engagement, and what each one is for.</span>
+        <span class="toggle"><button type="button" class="yes" data-i="3" data-v="yes" aria-pressed="false">I can do this</button><button type="button" class="no" data-i="3" data-v="no" aria-pressed="false">Not yet</button></span>
+      </div></div>
+    <div class="verdict" id="verdict" aria-live="polite">Mark each line to see where to start.</div>
+  </section>
+
+  <section class="section" aria-labelledby="h-courses">
+    <h2 id="h-courses">The six courses behind this capstone</h2>
+    <p class="section-lead">The capstone teaches no new method. It asks you to use the ones these courses teach, on one client, with nobody telling you which method fits which problem. Take them in whatever order suits you.</p>
+    <div class="courses"><div class="course relevant" data-course="advisor"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>The AI Transformation Advisor</h3><p>The advisor's role, the artifacts of an engagement, and the diligence to test claims, vendors, and market signals before a plan depends on them.</p></div><div class="course relevant" data-course="opps"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>Identifying and Prioritizing AI Opportunities</h3><p>Finding use cases in how work actually gets done, screening them honestly, and ranking them into a balanced portfolio.</p></div><div class="course relevant" data-course="ready"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>Assessing AI Readiness</h3><p>Judging data, technology, and organizational readiness, and reporting it so leaders know what to fix before they invest.</p></div><div class="course relevant" data-course="roadmap"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>Designing AI Transformation Roadmaps</h3><p>Phasing initiatives, sequencing investment across horizons, and pressure-testing a plan until it can survive the organization.</p></div><div class="course relevant" data-course="roi"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>AI Business Cases and ROI Models</h3><p>Structuring the case, modeling return at advisory depth, and defining metrics that would expose a gain that isn't real.</p></div><div class="course relevant" data-course="gov"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>AI Governance, Risk, and Executive Communication</h3><p>Applying governance frameworks, testing whether oversight can be performed, and putting a hard finding in front of senior leaders.</p></div></div>
+  </section>
+
+  <div class="closing">
+    <p>The finished package is evidence of judgment you can show: what you recommended, what you recommended against, and why.</p>
+    <p>The full module opens here when its materials are ready. The client and the data room will not change.</p>
+  </div>
+
+</main>
+<script>
+(function () {
+  var STATEMENTS = [{"course": "gov"}, {"course": "gov"}, {"course": "advisor"}, {"course": "advisor"}];
+  var TITLES = {"advisor": "The AI Transformation Advisor", "opps": "Identifying and Prioritizing AI Opportunities", "ready": "Assessing AI Readiness", "roadmap": "Designing AI Transformation Roadmaps", "roi": "AI Business Cases and ROI Models", "gov": "AI Governance, Risk, and Executive Communication"};
+  var state = STATEMENTS.map(function () { return null; });
+  var verdict = document.getElementById('verdict');
+  var cards = document.querySelectorAll('.course');
+
+  function update() {
+    var flagged = {};
+    var answered = 0;
+    state.forEach(function (v, i) {
+      if (v !== null) { answered++; }
+      if (v === 'no') { flagged[STATEMENTS[i].course] = true; }
+    });
+    for (var c = 0; c < cards.length; c++) {
+      var key = cards[c].getAttribute('data-course');
+      cards[c].classList.toggle('flag', !!flagged[key]);
+    }
+    var keys = Object.keys(flagged);
+    verdict.classList.remove('v-ok', 'v-go');
+    if (answered === 0) {
+      verdict.textContent = 'Mark each line to see where to start.';
+    } else if (keys.length > 0) {
+      verdict.classList.add('v-go');
+      var names = keys.map(function (k) { return TITLES[k]; });
+      var list = names.length === 1 ? names[0]
+        : names.slice(0, -1).join(', ') + (names.length > 2 ? ',' : '') + ' and ' + names[names.length - 1];
+      verdict.textContent = 'Start with ' + list + '. ' +
+        (names.length === 1 ? 'It builds' : 'Each builds') +
+        ' a skill this module will ask you to use without help. Then come back; the client and the data room will be here.';
+    } else if (answered < STATEMENTS.length) {
+      verdict.textContent = 'So far, so good. Mark the remaining lines.';
+    } else {
+      verdict.classList.add('v-ok');
+      verdict.textContent = 'By your own reading, you are ready for this module. The courses below are still the quickest way to check that reading against the methods the rubric expects.';
+    }
+  }
+
+  var buttons = document.querySelectorAll('.toggle button');
+  for (var b = 0; b < buttons.length; b++) {
+    buttons[b].addEventListener('click', function () {
+      var i = parseInt(this.getAttribute('data-i'), 10);
+      var v = this.getAttribute('data-v');
+      state[i] = (state[i] === v) ? null : v;
+      var pair = this.parentNode.querySelectorAll('button');
+      for (var p = 0; p < pair.length; p++) {
+        pair[p].setAttribute('aria-pressed', String(state[i] === pair[p].getAttribute('data-v')));
+      }
+      update();
+    });
+  }
+})();
+</script>
+</body>
+</html>

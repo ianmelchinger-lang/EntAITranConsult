@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build the core advisory work</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --slate-1: #1C2B33;
+    --slate-2: #2E434D;
+    --slate-3: #43606C;
+    --slate-4: #5C7D89;
+    --ghost: #DCE3E5;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 720px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  .eyebrow { font-family: var(--font-sans); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-deep); margin: 0 0 10px; }
+  h1 { font-weight: 700; font-size: clamp(1.6rem, 4.6vw, 2.3rem); line-height: 1.2; margin: 0 0 14px; text-wrap: balance; }
+  .dek { font-size: 1.12rem; color: var(--ink-soft); margin: 0 0 24px; max-width: 60ch; }
+  h2 { font-family: var(--font-sans); font-weight: 700; font-size: 1.05rem; margin: 0 0 6px; color: var(--ink); }
+  .section { margin: 40px 0 0; }
+  .section-lead { font-size: 1rem; color: var(--ink-soft); margin: 0 0 18px; max-width: 62ch; }
+  p { margin: 0 0 14px; }
+
+  .notice { display: flex; gap: 14px; align-items: flex-start; background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 4px; padding: 16px 18px; font-family: var(--font-sans); font-size: 0.93rem; color: var(--ink-soft); line-height: 1.55; }
+  .notice svg { flex: 0 0 auto; margin-top: 2px; }
+  .notice strong { color: var(--ink); }
+
+  /* Path strip */
+  .path { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; position: relative; }
+  .path::before { content: ""; position: absolute; top: 15px; left: 16.66%; right: 16.66%; height: 2px; background: var(--line); }
+  .stage { text-align: center; padding: 0 8px; position: relative; }
+  .dot { width: 32px; height: 32px; border-radius: 50%; margin: 0 auto 10px; background: var(--paper); border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
+  .stage.current .dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 5px var(--highlight-bg); }
+  .stage.current .dot::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--white); }
+  .stage-name { display: block; font-family: var(--font-sans); font-weight: 600; font-size: 0.9rem; color: var(--steel); line-height: 1.3; }
+  .stage.current .stage-name { color: var(--ink); }
+  .stage-items { display: block; font-family: var(--font-sans); font-size: 0.78rem; color: var(--steel); margin-top: 4px; line-height: 1.4; }
+  .here { display: inline-block; white-space: nowrap; margin-top: 8px; font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-deep); background: var(--highlight-bg); border-radius: 999px; padding: 2px 9px; }
+  .graded { display: inline-block; margin-top: 8px; font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--white); background: var(--ink); border-radius: 999px; padding: 2px 9px; }
+  .path-note { font-family: var(--font-sans); font-size: 0.85rem; color: var(--steel); text-align: center; margin: 18px 0 0; }
+
+  /* Stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 16px; }
+  .stat { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 12px 12px; }
+  .stat-num { display: block; font-family: var(--font-serif); font-weight: 700; font-size: 1.7rem; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stat-label { display: block; font-family: var(--font-sans); font-size: 0.8rem; color: var(--steel); margin-top: 4px; }
+
+  /* Data room shelf */
+  .shelf { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 10px; margin: 8px 0 14px; padding-top: 8px; }
+  .folder { position: relative; background: var(--white); border: 1px solid var(--line); border-radius: 0 4px 4px 4px; padding: 12px 10px 10px; font-family: var(--font-sans); font-size: 0.8rem; line-height: 1.35; color: var(--ink); min-height: 58px; }
+  .folder::before { content: ""; position: absolute; top: -8px; left: -1px; width: 42%; height: 8px; background: var(--white); border: 1px solid var(--line); border-bottom: none; border-radius: 4px 4px 0 0; }
+  .folder.key { background: var(--highlight-bg); border-color: var(--accent); }
+  .folder.key::before { background: var(--highlight-bg); border-color: var(--accent); }
+  .folder.dashed { background: transparent; border-style: dashed; color: var(--ink-soft); }
+  .folder.dashed::before { background: var(--paper); border-style: dashed; }
+  .caption { font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); line-height: 1.55; }
+
+  .carry { display: flex; gap: 16px; align-items: center; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; }
+  .carry svg { flex: 0 0 auto; }
+  .carry p { margin: 0; font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; }
+
+  /* Feature panel */
+  .panel { background: var(--white); border: 1px solid var(--line); border-radius: 6px; padding: 22px 22px 20px; }
+  .panel-title { font-family: var(--font-sans); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--steel); margin: 0 0 16px; }
+
+  /* Funnel */
+  .funnel { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .funnel-stage { color: var(--white); font-family: var(--font-sans); font-size: 0.88rem; font-weight: 600; text-align: center; padding: 11px 14px; border-radius: 3px; line-height: 1.3; }
+  .funnel-stage small { display: block; font-weight: 400; font-size: 0.76rem; opacity: 0.85; margin-top: 2px; }
+  .f1 { width: 100%; background: var(--slate-1); }
+  .f2 { width: 86%; background: var(--slate-2); }
+  .f3 { width: 72%; background: var(--slate-3); }
+  .f4 { width: 58%; background: var(--accent); color: var(--white); }
+  .gate { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 16px 0 0; font-family: var(--font-sans); font-size: 0.85rem; color: var(--ink-soft); }
+  .gate-chip { font-weight: 700; font-size: 0.74rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+
+  /* Readiness trio */
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0 4px; }
+  .gauge { text-align: center; font-family: var(--font-sans); }
+  .gauge svg { display: block; margin: 0 auto 6px; }
+  .gauge span { font-size: 0.84rem; font-weight: 600; color: var(--ink); }
+
+  /* Horizons */
+  .horizons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .hz { background: var(--paper); border-radius: 4px; padding: 10px 10px 12px; }
+  .hz-head { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700; color: var(--ink-soft); margin: 0 0 10px; font-variant-numeric: tabular-nums; }
+  .block { height: 26px; border-radius: 3px; margin-bottom: 7px; background: repeating-linear-gradient(135deg, var(--ghost) 0 6px, #E7ECEE 6px 12px); border: 1px solid var(--line); }
+  .block.w1 { width: 92%; } .block.w2 { width: 74%; } .block.w3 { width: 84%; }
+  .hz-axis { display: flex; justify-content: space-between; font-family: var(--font-sans); font-size: 0.74rem; color: var(--steel); margin: 8px 2px 0; font-variant-numeric: tabular-nums; }
+  .stamp { display: inline-block; margin: 14px 0 0; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--accent-deep); border: 1.5px solid var(--accent); border-radius: 3px; padding: 3px 10px; }
+
+  /* Ledger */
+  .ledger { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; }
+  .ledger-card { border-radius: 4px; padding: 14px 14px 12px; font-family: var(--font-sans); }
+  .ledger-card h3 { font-size: 0.88rem; margin: 0 0 6px; }
+  .ledger-card p { font-size: 0.84rem; margin: 0; line-height: 1.5; color: var(--ink-soft); }
+  .lc-gain { background: var(--ok-bg); border-left: 4px solid var(--ok); }
+  .lc-gain h3 { color: var(--ok); }
+  .lc-res { background: var(--highlight-bg); border-left: 4px solid var(--accent); }
+  .lc-res h3 { color: var(--accent-deep); }
+  .ledger-mid { display: flex; align-items: center; justify-content: center; }
+
+  /* Assembly */
+  .parts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .part { background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 8px; text-align: center; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--ink); line-height: 1.3; }
+  .part svg { display: block; margin: 0 auto 6px; }
+  .merge { display: flex; justify-content: center; margin: 10px 0; }
+  .package { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pkg { border-radius: 4px; padding: 14px; font-family: var(--font-sans); color: var(--white); }
+  .pkg h3 { font-size: 0.95rem; margin: 0 0 4px; }
+  .pkg p { font-size: 0.82rem; margin: 0; opacity: 0.9; line-height: 1.45; }
+  .pkg-doc { background: var(--ink); }
+  .pkg-deck { background: var(--accent-deep); }
+
+  /* Hardest finding */
+  .finding { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .rule { border-top: 3px solid var(--accent); background: var(--paper); border-radius: 0 0 4px 4px; padding: 12px 12px 10px; font-family: var(--font-sans); }
+  .rule h3 { font-size: 0.9rem; margin: 0 0 4px; color: var(--ink); }
+  .rule p { font-size: 0.82rem; margin: 0; color: var(--ink-soft); line-height: 1.45; }
+
+  /* Deliverables */
+  .deliverables { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .deliv { background: var(--white); border: 1px solid var(--line); border-radius: 6px; padding: 16px 14px 14px; }
+  .deliv svg { display: block; width: 100%; height: auto; max-width: 140px; margin: 0 0 12px; }
+  .deliv h3 { font-family: var(--font-sans); font-size: 0.95rem; margin: 0 0 6px; }
+  .deliv p { font-family: var(--font-sans); font-size: 0.85rem; color: var(--ink-soft); line-height: 1.5; margin: 0; }
+
+  /* Rubric */
+  .rubric { display: grid; gap: 8px; }
+  .dim { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 11px 14px; font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); }
+  .dim.em { border-color: var(--accent); background: var(--highlight-bg); color: var(--ink); font-weight: 600; }
+  .dim-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-deep); }
+  .credits { margin: 16px 0 0; padding: 16px 18px; background: var(--white); border-left: 4px solid var(--ok); border-radius: 4px; }
+  .credits h3 { font-family: var(--font-sans); font-size: 0.88rem; margin: 0 0 8px; color: var(--ok); }
+  .credits ul { margin: 0; padding-left: 18px; font-family: var(--font-sans); font-size: 0.88rem; color: var(--ink-soft); line-height: 1.55; }
+  .credits li { margin-bottom: 4px; }
+
+  /* Self-check */
+  .check-list { display: grid; gap: 10px; }
+  .check-row { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 13px 14px; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
+  .check-text { font-size: 0.97rem; color: var(--ink); line-height: 1.45; }
+  .toggle { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .toggle button { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; padding: 8px 12px; border: none; background: var(--paper); color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
+  .toggle button + button { border-left: 1px solid var(--line); }
+  .toggle button[aria-pressed="true"].yes { background: var(--ok); color: var(--white); }
+  .toggle button[aria-pressed="true"].no { background: var(--accent); color: var(--white); }
+  .toggle button:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: -3px; }
+  .verdict { margin: 16px 0 0; padding: 14px 16px; border-radius: 4px; font-family: var(--font-sans); font-size: 0.92rem; line-height: 1.55; background: var(--white); border-left: 4px solid var(--line); color: var(--ink-soft); }
+  .verdict.v-ok { border-left-color: var(--ok); background: var(--ok-bg); color: var(--ink); }
+  .verdict.v-go { border-left-color: var(--accent); background: var(--highlight-bg); color: var(--ink); }
+
+  /* Courses */
+  .courses { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .course { position: relative; background: var(--white); border: 1px solid var(--line); border-radius: 6px; padding: 14px 14px 12px; transition: border-color 0.2s, box-shadow 0.2s; }
+  .course h3 { font-family: var(--font-serif); font-size: 1rem; margin: 0 0 4px; line-height: 1.3; padding-right: 92px; }
+  .course p { font-family: var(--font-sans); font-size: 0.83rem; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+  .course .badge { position: absolute; top: 12px; right: 12px; font-family: var(--font-sans); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 999px; padding: 2px 8px; }
+  .course .used { color: var(--steel); background: var(--paper); border: 1px solid var(--line); }
+  .course .start { display: none; color: var(--white); background: var(--accent); }
+  .course.relevant { border-color: var(--slate-4); }
+  .course.flag { border-color: var(--accent); box-shadow: 0 0 0 3px var(--highlight-bg); }
+  .course.flag .used { display: none; }
+  .course.flag .start { display: inline-block; }
+  .course:not(.relevant) { opacity: 0.78; }
+
+  .closing { margin: 36px 0 0; padding: 22px 22px; background: var(--ink); color: var(--white); border-radius: 6px; }
+  .closing p { margin: 0; font-size: 1.05rem; line-height: 1.6; }
+  .closing p + p { margin-top: 10px; font-family: var(--font-sans); font-size: 0.88rem; opacity: 0.8; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .shelf { grid-template-columns: repeat(2, 1fr); }
+    .deliverables { grid-template-columns: 1fr; }
+    .deliv { display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: start; }
+    .deliv svg { margin: 0; }
+    .courses { grid-template-columns: 1fr; }
+    .finding { grid-template-columns: 1fr; }
+    .parts { grid-template-columns: repeat(2, 1fr); }
+    .ledger { grid-template-columns: 1fr; }
+    .ledger-mid svg { transform: rotate(90deg); }
+  }
+  @media (max-width: 480px) {
+    .container { padding: 28px 16px 48px; }
+    .panel { padding: 18px 14px 16px; }
+    .check-row { grid-template-columns: 1fr; gap: 10px; }
+    .toggle { justify-self: start; }
+    .stage-items { display: none; }
+    .stage-name { font-size: 0.8rem; }
+    .package { grid-template-columns: 1fr; }
+    .horizons { gap: 5px; }
+    .hz { padding: 8px 6px 10px; }
+    .funnel-stage { font-size: 0.82rem; }
+    .f4 { width: 66%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="container">
+
+  <p class="eyebrow">Capstone preview</p>
+  <h1>Build the core advisory work</h1>
+  <p class="dek">You turn the foundation into decisions: a roadmap the organization can execute, a business case finance will believe, and a governance plan whose controls a person can actually perform.</p>
+
+  <div class="notice" role="note"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="#B8862B" stroke-width="2"/><path d="M12 6v6l4 2" fill="none" stroke="#B8862B" stroke-width="2" stroke-linecap="round"/></svg><div><strong>The guided materials for this module are being finalized.</strong> When they open, the module begins with an experienced advisor showing how analysis becomes a decision, including a decision against. Until then, this page shows what you will do here, what you will hand in, and which courses build the skills you need.</div></div>
+
+  <section class="section" aria-labelledby="h-path">
+    <h2 id="h-path">Where this module sits</h2>
+    <p class="section-lead">The capstone follows one client from first read of the evidence to a presentation in front of its leaders.</p>
+    <ol class="path"><li class="stage"><span class="dot" aria-hidden="true"></span><span class="stage-name">Assemble the foundation</span><span class="stage-items">Opportunity assessment, portfolio, readiness summary</span></li><li class="stage current" aria-current="step"><span class="dot" aria-hidden="true"></span><span class="stage-name">Build the core advisory work</span><span class="stage-items">Roadmap, business case, governance and risk plan</span><span class="here">You are here</span></li><li class="stage"><span class="dot" aria-hidden="true"></span><span class="stage-name">Integrate and present</span><span class="stage-items">One advisory package and an executive presentation</span><span class="graded">Graded</span></li></ol>
+    <p class="path-note">Three modules, about three to four hours of focused work in all, graded once on the finished package.</p>
+  </section>
+
+  <section class="section" aria-labelledby="h-carry">
+    <h2 id="h-carry">Same client, same data room</h2>
+    <div class="carry"><svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><rect x="4" y="12" width="28" height="26" rx="3" fill="#FFFFFF" stroke="#6B7C84" stroke-width="1.5"/><path d="M4 15 a3 3 0 0 1 3-3 h8 l3 3" fill="none" stroke="#6B7C84" stroke-width="1.5"/><path d="M26 22h14M35 17l5 5-5 5" fill="none" stroke="#B8862B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><p>You bring forward the portfolio and readiness summary you built earlier in the capstone. The data room still holds everything you read there, including the company&rsquo;s own eighteen-month roadmap of record and the labor rate card your business case will price against.</p></div>
+  </section>
+
+  <section class="section" aria-labelledby="h-feat">
+    <h2 id="h-feat">The judgment at the heart of this module</h2>
+    <p class="section-lead">The company already has a plan. Before you write a better one, you test the one it has.</p>
+    <div class="panel">
+      <p class="panel-title">The roadmap of record, before you touch it</p>
+      <div class="horizons" role="img" aria-label="An eighteen-month roadmap in three horizons of six months each, holding eight initiatives in total, shown as unlabeled blocks.">
+        <div class="hz"><p class="hz-head">Months 1&ndash;6</p><div class="block w1"></div><div class="block w2"></div><div class="block w3"></div></div>
+        <div class="hz"><p class="hz-head">Months 7&ndash;12</p><div class="block w3"></div><div class="block w1"></div><div class="block w2"></div></div>
+        <div class="hz"><p class="hz-head">Months 13&ndash;18</p><div class="block w2"></div><div class="block w1"></div></div>
+      </div>
+      <p class="caption" style="margin:12px 0 0;">Eight initiatives across three horizons, approved in outline. You test it for feasibility, sequencing, and value, then rebuild it. A roadmap improved by cutting or deferring an initiative is a stronger roadmap.</p>
+      <span class="stamp">Pressure-test first</span>
+    </div>
+
+    <div class="panel" style="margin-top:14px;">
+      <p class="panel-title">Every claimed benefit has two addresses</p>
+      <div class="ledger">
+        <div class="ledger-card lc-gain"><h3>Where the benefit lands</h3><p>The function that books the saving, the faster cycle, the shorter queue.</p></div>
+        <div class="ledger-mid"><svg width="34" height="20" viewBox="0 0 34 20" aria-hidden="true"><path d="M2 10h26M22 4l7 6-7 6" fill="none" stroke="#6B7C84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="ledger-card lc-res"><h3>Where the residual work lands</h3><p>Whoever now verifies, corrects, escalates, or waits, wherever they sit.</p></div>
+      </div>
+      <p class="caption" style="margin:14px 0 0;">A business case that reads only where the benefit lands is arithmetic, not analysis. Your model names both.</p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="h-deliv">
+    <h2 id="h-deliv">What you will produce here</h2>
+    <p class="section-lead">Each piece becomes part of the advisory package you hand in at the end.</p>
+    <div class="deliverables"><div class="deliv"><svg viewBox="0 0 140 92" aria-hidden="true"><rect x="1" y="1" width="138" height="90" rx="4" fill="#EEF1F2" stroke="#C9D3D6"/><line x1="12" y1="78" x2="128" y2="78" stroke="#6B7C84"/><line x1="50" y1="12" x2="50" y2="80" stroke="#C9D3D6" stroke-dasharray="2 2"/><line x1="89" y1="12" x2="89" y2="80" stroke="#C9D3D6" stroke-dasharray="2 2"/><rect x="14" y="16" width="32" height="9" rx="2" fill="#1C2B33"/><rect x="14" y="30" width="24" height="9" rx="2" fill="#1C2B33"/><rect x="40" y="44" width="40" height="9" rx="2" fill="#43606C"/><rect x="54" y="58" width="30" height="9" rx="2" fill="#43606C"/><rect x="92" y="30" width="32" height="9" rx="2" fill="#B8862B"/><path d="M46 20 C 50 20, 50 48, 40 48" fill="none" stroke="#B8862B" stroke-width="1.2"/></svg><div><h3>Transformation roadmap</h3><p>Phased, with milestones and dependencies, sequenced by value and readiness rather than by enthusiasm or vendor pressure.</p></div></div><div class="deliv"><svg viewBox="0 0 140 92" aria-hidden="true"><rect x="1" y="1" width="138" height="90" rx="4" fill="#EEF1F2" stroke="#C9D3D6"/><line x1="14" y1="54" x2="128" y2="54" stroke="#6B7C84"/><rect x="18" y="54" width="14" height="22" fill="#9C3B1E"/><rect x="38" y="54" width="14" height="12" fill="#9C3B1E"/><rect x="58" y="44" width="14" height="10" fill="#2F6B4C"/><rect x="78" y="30" width="14" height="24" fill="#2F6B4C"/><rect x="98" y="18" width="14" height="36" fill="#2F6B4C"/><path d="M18 80 L 112 14" stroke="#B8862B" stroke-width="1.2" stroke-dasharray="3 2"/></svg><div><h3>ROI business case</h3><p>Costs, benefits, timing, and the assumptions finance will challenge, built so its honest conclusion could be &ldquo;not on these numbers.&rdquo;</p></div></div><div class="deliv"><svg viewBox="0 0 140 92" aria-hidden="true"><rect x="1" y="1" width="138" height="90" rx="4" fill="#EEF1F2" stroke="#C9D3D6"/><path d="M38 14 L58 20 L58 42 C58 56, 48 64, 38 70 C28 64, 18 56, 18 42 L18 20 Z" fill="#FFFFFF" stroke="#1C2B33" stroke-width="1.5"/><path d="M29 41 l6 6 l11 -12" fill="none" stroke="#2F6B4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="70" y="18" width="8" height="8" rx="1" fill="#FFFFFF" stroke="#6B7C84"/><rect x="84" y="20" width="38" height="4" rx="1" fill="#6B7C84"/><rect x="70" y="32" width="8" height="8" rx="1" fill="#FFFFFF" stroke="#6B7C84"/><rect x="84" y="34" width="31" height="4" rx="1" fill="#6B7C84"/><rect x="70" y="46" width="8" height="8" rx="1" fill="#FFFFFF" stroke="#6B7C84"/><rect x="84" y="48" width="24" height="4" rx="1" fill="#6B7C84"/><rect x="70" y="60" width="8" height="8" rx="1" fill="#FFFFFF" stroke="#6B7C84"/><rect x="84" y="62" width="37" height="4" rx="1" fill="#6B7C84"/></svg><div><h3>Governance and risk plan</h3><p>Risks named and mitigated, with each human-review control tested against the volume the reviewer will actually face.</p></div></div></div>
+  </section>
+
+  <section class="section" aria-labelledby="h-rubric">
+    <h2 id="h-rubric">How the work is judged</h2>
+    <p class="section-lead">One rubric, four dimensions, applied to the finished package. This module's work shows up most in the highlighted dimension.</p>
+    <div class="rubric"><div class="dim"><span>Application of course frameworks</span><span></span></div><div class="dim em"><span>Quality of advisory reasoning</span><span class="dim-tag">Weighted here</span></div><div class="dim"><span>Integration across program themes</span><span></span></div><div class="dim"><span>Clarity and executive appropriateness</span><span></span></div></div><div class="credits"><h3>What the rubric explicitly credits</h3><ul><li>A well-evidenced recommendation against, de-scope, or defer, scored as a correct and high-scoring outcome.</li><li>Naming where value lands and where the residual cost lands.</li><li>Testing an oversight control rather than asserting it.</li><li>Surfacing an unwelcome finding early and constructively.</li></ul></div>
+  </section>
+
+  <section class="section" aria-labelledby="h-check">
+    <h2 id="h-check">Can you already do what this module asks?</h2>
+    <p class="section-lead">A quick check for your own planning. Mark each line honestly; the courses that build the skills you mark &ldquo;not yet&rdquo; will light up below. Nothing is recorded.</p>
+    <div class="check-list"><div class="check-row" role="group" aria-labelledby="st-0">
+        <span class="check-text" id="st-0">Sequence initiatives into a phased roadmap, and cut or defer the ones that will not survive contact with the organization.</span>
+        <span class="toggle"><button type="button" class="yes" data-i="0" data-v="yes" aria-pressed="false">I can do this</button><button type="button" class="no" data-i="0" data-v="no" aria-pressed="false">Not yet</button></span>
+      </div><div class="check-row" role="group" aria-labelledby="st-1">
+        <span class="check-text" id="st-1">Build an ROI model that carries the cost of getting it wrong alongside the cost of doing it.</span>
+        <span class="toggle"><button type="button" class="yes" data-i="1" data-v="yes" aria-pressed="false">I can do this</button><button type="button" class="no" data-i="1" data-v="no" aria-pressed="false">Not yet</button></span>
+      </div><div class="check-row" role="group" aria-labelledby="st-2">
+        <span class="check-text" id="st-2">Set value metrics and baselines that are measured before the tool arrives, not reported afterward.</span>
+        <span class="toggle"><button type="button" class="yes" data-i="2" data-v="yes" aria-pressed="false">I can do this</button><button type="button" class="no" data-i="2" data-v="no" aria-pressed="false">Not yet</button></span>
+      </div><div class="check-row" role="group" aria-labelledby="st-3">
+        <span class="check-text" id="st-3">Test whether a human review can actually be performed at the volume a system will produce.</span>
+        <span class="toggle"><button type="button" class="yes" data-i="3" data-v="yes" aria-pressed="false">I can do this</button><button type="button" class="no" data-i="3" data-v="no" aria-pressed="false">Not yet</button></span>
+      </div></div>
+    <div class="verdict" id="verdict" aria-live="polite">Mark each line to see where to start.</div>
+  </section>
+
+  <section class="section" aria-labelledby="h-courses">
+    <h2 id="h-courses">The six courses behind this capstone</h2>
+    <p class="section-lead">The capstone teaches no new method. It asks you to use the ones these courses teach, on one client, with nobody telling you which method fits which problem. Take them in whatever order suits you.</p>
+    <div class="courses"><div class="course relevant" data-course="advisor"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>The AI Transformation Advisor</h3><p>The advisor's role, the artifacts of an engagement, and the diligence to test claims, vendors, and market signals before a plan depends on them.</p></div><div class="course" data-course="opps"><span class="badge start">Start here</span><h3>Identifying and Prioritizing AI Opportunities</h3><p>Finding use cases in how work actually gets done, screening them honestly, and ranking them into a balanced portfolio.</p></div><div class="course" data-course="ready"><span class="badge start">Start here</span><h3>Assessing AI Readiness</h3><p>Judging data, technology, and organizational readiness, and reporting it so leaders know what to fix before they invest.</p></div><div class="course relevant" data-course="roadmap"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>Designing AI Transformation Roadmaps</h3><p>Phasing initiatives, sequencing investment across horizons, and pressure-testing a plan until it can survive the organization.</p></div><div class="course relevant" data-course="roi"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>AI Business Cases and ROI Models</h3><p>Structuring the case, modeling return at advisory depth, and defining metrics that would expose a gain that isn't real.</p></div><div class="course relevant" data-course="gov"><span class="badge used">Used here</span><span class="badge start">Start here</span><h3>AI Governance, Risk, and Executive Communication</h3><p>Applying governance frameworks, testing whether oversight can be performed, and putting a hard finding in front of senior leaders.</p></div></div>
+  </section>
+
+  <div class="closing">
+    <p>The most valuable sentence in this module may be the one that says &ldquo;not this, not yet.&rdquo; The rubric is written to reward it when the evidence supports it.</p>
+    <p>The full module opens here when its materials are ready. The client and the data room will not change.</p>
+  </div>
+
+</main>
+<script>
+(function () {
+  var STATEMENTS = [{"course": "roadmap"}, {"course": "roi"}, {"course": "roi"}, {"course": "gov"}];
+  var TITLES = {"advisor": "The AI Transformation Advisor", "opps": "Identifying and Prioritizing AI Opportunities", "ready": "Assessing AI Readiness", "roadmap": "Designing AI Transformation Roadmaps", "roi": "AI Business Cases and ROI Models", "gov": "AI Governance, Risk, and Executive Communication"};
+  var state = STATEMENTS.map(function () { return null; });
+  var verdict = document.getElementById('verdict');
+  var cards = document.querySelectorAll('.course');
+
+  function update() {
+    var flagged = {};
+    var answered = 0;
+    state.forEach(function (v, i) {
+      if (v !== null) { answered++; }
+      if (v === 'no') { flagged[STATEMENTS[i].course] = true; }
+    });
+    for (var c = 0; c < cards.length; c++) {
+      var key = cards[c].getAttribute('data-course');
+      cards[c].classList.toggle('flag', !!flagged[key]);
+    }
+    var keys = Object.keys(flagged);
+    verdict.classList.remove('v-ok', 'v-go');
+    if (answered === 0) {
+      verdict.textContent = 'Mark each line to see where to start.';
+    } else if (keys.length > 0) {
+      verdict.classList.add('v-go');
+      var names = keys.map(function (k) { return TITLES[k]; });
+      var list = names.length === 1 ? names[0]
+        : names.slice(0, -1).join(', ') + (names.length > 2 ? ',' : '') + ' and ' + names[names.length - 1];
+      verdict.textContent = 'Start with ' + list + '. ' +
+        (names.length === 1 ? 'It builds' : 'Each builds') +
+        ' a skill this module will ask you to use without help. Then come back; the client and the data room will be here.';
+    } else if (answered < STATEMENTS.length) {
+      verdict.textContent = 'So far, so good. Mark the remaining lines.';
+    } else {
+      verdict.classList.add('v-ok');
+      verdict.textContent = 'By your own reading, you are ready for this module. The courses below are still the quickest way to check that reading against the methods the rubric expects.';
+    }
+  }
+
+  var buttons = document.querySelectorAll('.toggle button');
+  for (var b = 0; b < buttons.length; b++) {
+    buttons[b].addEventListener('click', function () {
+      var i = parseInt(this.getAttribute('data-i'), 10);
+      var v = this.getAttribute('data-v');
+      state[i] = (state[i] === v) ? null : v;
+      var pair = this.parentNode.querySelectorAll('button');
+      for (var p = 0; p < pair.length; p++) {
+        pair[p].setAttribute('aria-pressed', String(state[i] === pair[p].getAttribute('data-v')));
+      }
+      update();
+    });
+  }
+})();
+</script>
+</body>
+</html>
