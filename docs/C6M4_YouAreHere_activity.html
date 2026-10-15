@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read this first</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-serif);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 24px;
+    color: var(--ink);
+  }
+
+  .scenario {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin: 0 0 28px;
+  }
+
+  .scenario p {
+    margin: 0 0 16px;
+  }
+
+  .scenario p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prompt-lead {
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--steel);
+    margin: 0 0 20px;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    display: block;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    padding: 0;
+    margin: 0 0 16px;
+  }
+
+  .option {
+    display: block;
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .option-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .option-box {
+    display: block;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 18px;
+    background: var(--white);
+  }
+
+  .option-lead {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .option-detail {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .option-input:checked + .option-box {
+    background: var(--highlight-bg);
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .option-input:focus-visible + .option-box {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  fieldset.locked .option {
+    cursor: default;
+  }
+
+  fieldset.locked .option-box {
+    opacity: 0.9;
+  }
+
+  .reveal-btn {
+    display: block;
+    margin: 22px 0 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .reveal-btn:disabled {
+    background: var(--line);
+    color: var(--steel);
+    cursor: not-allowed;
+  }
+
+  .reveal-btn:not(:disabled):hover {
+    background: var(--accent-deep);
+  }
+
+  .reveal-btn:focus-visible {
+    outline: 3px solid var(--accent-deep);
+    outline-offset: 2px;
+  }
+
+  .reveal {
+    margin-top: 32px;
+    padding: 22px 24px;
+    background: var(--highlight-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .reveal[hidden] {
+    display: none;
+  }
+
+  .reveal:focus {
+    outline: none;
+  }
+
+  .reveal-tag {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--accent-deep);
+    margin: 0 0 4px;
+  }
+
+  .reveal-chosen {
+    font-family: var(--font-sans);
+    font-style: italic;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p {
+    margin: 0 0 16px;
+  }
+
+  .reveal-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .option-box { padding: 12px 14px; }
+    .reveal { padding: 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .desk {
+    margin: 18px 0 0;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 16px 6px;
+  }
+
+  .desk-title {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--steel);
+    margin: 0 0 8px;
+  }
+
+  .desk table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+  }
+
+  .desk th, .desk td {
+    text-align: left;
+    vertical-align: top;
+    padding: 8px 8px 8px 0;
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+
+  .desk th {
+    font-weight: 600;
+    color: var(--ink);
+    width: 34%;
+  }
+
+  .reveal-body { font-variant-numeric: tabular-nums; }
+  .desk td { font-variant-numeric: tabular-nums; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .desk { padding: 12px 12px 4px; }
+    .desk th { width: 38%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Read this first</h1>
+
+  <div class="scenario">
+    <p>A manufacturer&rsquo;s steering committee met to approve its AI transformation plan. It had five documents in front of it: an opportunity assessment, a readiness report, a roadmap, an ROI case, and a governance and risk plan. Each was written inside its own workstream and signed off on its own terms. The chair asked which single action the committee was being asked to authorize first. Ninety minutes later the meeting closed without a vote, and the committee asked for the documents to come back as one story.</p>
+    <p>You are the advisor, and you have eight working days. The line from each document that bears on the first year is shown here. None of them contains an error.</p>
+    <div class="desk" role="group" aria-label="One line from each of the five documents">
+      <p class="desk-title">The package, one line from each document</p>
+      <table>
+        <thead class="sr-only"><tr><th scope="col">Document</th><th scope="col">What it says</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Opportunity assessment</th><td id="cell-opp"></td></tr>
+          <tr><th scope="row">Readiness report</th><td>Three of the four plants that hold inspection records have recorded them differently for years.</td></tr>
+          <tr><th scope="row">Roadmap</th><td>Months 1 to 6: inspection at the Ohio plant, and nonconformance drafting at the three European plants with quality engineers at current headcount. Months 7 to 12: inspection extends to the three European plants.</td></tr>
+          <tr><th scope="row">ROI case</th><td id="cell-roi"></td></tr>
+          <tr><th scope="row">Governance and risk plan</th><td id="cell-gov"></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="prompt-lead">Before reading on, choose the step that comes closest to your own first instinct.</p>
+
+  <fieldset id="reading-fieldset">
+    <legend>What would you do with the package in the eight days you have?</legend>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="a">
+      <span class="option-box">
+        <span class="option-lead">Send the documents back for another review.</span>
+        <span class="option-detail">Ask each workstream to tighten its document, so the committee receives stronger work and fewer questions.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="b">
+      <span class="option-box">
+        <span class="option-lead">Bind them under one cover.</span>
+        <span class="option-detail">Write an executive summary, add a contents page, and present the five as a single package so the committee can find what it needs.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="c">
+      <span class="option-box">
+        <span class="option-lead">Lay out the options.</span>
+        <span class="option-detail">Present the first-year choices side by side, with the case for each, so the committee can weigh them and decide.</span>
+      </span>
+    </label>
+
+    <label class="option">
+      <input class="option-input" type="radio" name="reading" value="d">
+      <span class="option-box">
+        <span class="option-lead">Lead with the answer.</span>
+        <span class="option-detail">Open with the opportunity assessment&rsquo;s recommendation, inspection first, and let the other four documents support it.</span>
+      </span>
+    </label>
+  </fieldset>
+
+  <button type="button" class="reveal-btn" id="reveal-btn" disabled>See what this misses</button>
+
+  <div class="reveal" id="reveal" role="region" aria-label="What this step misses" tabindex="-1" hidden>
+    <span class="reveal-tag">You chose:</span>
+    <p class="reveal-chosen" id="reveal-chosen"></p>
+    <div class="reveal-body" id="reveal-body"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // Figures the activity supplies, drawn from the case.
+  var UNITS = 1900000;          // units inspected a year at the Ohio plant
+  var ESCAPES_NOW = 340;        // escapes per million today
+  var ESCAPES_TARGET = 210;     // escapes per million targeted
+  var WRITEUPS = 9600;          // nonconformance write-ups a year, three plants
+  var MIN_BEFORE = 38;          // minutes per write-up by hand
+  var MIN_AFTER = 22;           // minutes per write-up, assisted draft plus review
+  var CLAUSE_SHARE = 0.14;      // share carrying a corrective-action commitment or customer clause
+  var READBACK_MIN = 15;        // minutes per read-back
+
+  function fmt(n, digits) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 });
+  }
+
+  var AVOIDED = UNITS * (ESCAPES_NOW - ESCAPES_TARGET) / 1000000;
+  var HOURS_RETURNED = WRITEUPS * (MIN_BEFORE - MIN_AFTER) / 60;
+  var CLAUSE_DRAFTS = Math.round(WRITEUPS * CLAUSE_SHARE);
+  var READBACK_HOURS = CLAUSE_DRAFTS * READBACK_MIN / 60;
+
+  document.getElementById('cell-opp').textContent =
+    'Inspection ranks first. Cutting escapes from ' + fmt(ESCAPES_NOW) + ' to ' + fmt(ESCAPES_TARGET) + ' per million on ' + fmt(UNITS) +
+    ' units a year at the Ohio plant avoids about ' + fmt(AVOIDED) + ' escapes a year, and the case grows as the three European plants follow.';
+  document.getElementById('cell-roi').textContent =
+    'Nonconformance drafting falls from ' + fmt(MIN_BEFORE) + ' to ' + fmt(MIN_AFTER) + ' minutes per write-up across ' + fmt(WRITEUPS) +
+    ' write-ups a year, returning ' + fmt(HOURS_RETURNED) + ' quality-engineer hours.';
+  document.getElementById('cell-gov').textContent =
+    'A quality engineer reads back every draft carrying a corrective-action commitment or customer-specific clause against its source before it enters the quality file. A read-back takes about ' + fmt(READBACK_MIN) + ' minutes.';
+
+  var ACK = 'Each of the four is a sensible thing for a careful professional to do. None is careless, and that is why the problem survives all of them.';
+
+  var READINGS = {
+    a: {
+      lead: 'Send the documents back for another review.',
+      rebuttal: 'Each document has already passed a review that looked for internal error, and there is none to find. The trouble does not sit inside any of the five. It sits between them, at a boundary no author was asked to check. Another round of review returns five sound documents and the same gap between them.'
+    },
+    b: {
+      lead: 'Bind them under one cover.',
+      rebuttal: 'Putting five documents side by side does not settle which conclusion survives contact with which other conclusion. It moves that work onto the reader, who has the least time and the least access to how any of it was produced. A summary that does not reconcile the documents is a more confident version of the same problem.'
+    },
+    c: {
+      lead: 'Lay out the options.',
+      rebuttal: 'The chair asked for one action and would receive a menu. A set of options hands the committee the job of finding where the documents disagree, which is the job it reconvened to avoid. The options also look equally available on paper when they are not, because one of them depends on records that the readiness report says do not yet agree.'
+    },
+    d: {
+      lead: 'Lead with the answer.',
+      rebuttal: 'This is the right instinct about form, and it stops short. Opening with the assessment’s recommendation makes the package clearer and more persuasive, and it carries the contradictions forward intact. The committee approves inspection first and learns in the second half of the year that the extension rests on records that do not agree. A clear answer drawn from one document is still one document’s answer.'
+    }
+  };
+
+  function closing() {
+    var numbers = 'Here is what reading across the documents shows. The assessment’s case of about ' + fmt(AVOIDED) +
+      ' avoided escapes a year grows only as inspection reaches the three European plants, and the readiness report says three of the four plants holding inspection records have recorded them differently for years. Separately, the governance plan’s read-back covers about ' +
+      fmt(CLAUSE_DRAFTS) + ' drafts a year, or ' + fmt(READBACK_HOURS) + ' hours of quality-engineer time. The ROI case does not cost those hours, and the roadmap staffs the drafting at current headcount. Every line in the package is accurate. Together they describe a plan that cannot run in the order it was handed over.';
+    var capability = 'Notice what the four have in common. Each works on the documents as they stand: improving them, packaging them, presenting them, or ordering them. None reads them against one another to find what one requires and another denies, and settles it, before a line of the story is written. That capability has to be in place before any account built from these documents can be told in the right order or trusted to hold.';
+    return [numbers, capability];
+  }
+
+  var radios = document.querySelectorAll('input[name="reading"]');
+  var revealBtn = document.getElementById('reveal-btn');
+  var revealPanel = document.getElementById('reveal');
+  var revealChosen = document.getElementById('reveal-chosen');
+  var revealBody = document.getElementById('reveal-body');
+  var fieldset = document.getElementById('reading-fieldset');
+
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function () {
+      revealBtn.disabled = false;
+    });
+  }
+
+  revealBtn.addEventListener('click', function () {
+    var chosen = null;
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { chosen = radios[i].value; }
+    }
+    if (!chosen) { return; }
+
+    for (var j = 0; j < radios.length; j++) {
+      radios[j].disabled = true;
+    }
+    fieldset.classList.add('locked');
+    revealBtn.disabled = true;
+
+    var data = READINGS[chosen];
+    revealChosen.textContent = '“' + data.lead + '”';
+
+    revealBody.innerHTML = '';
+    var paras = [ACK, data.rebuttal].concat(closing());
+    paras.forEach(function (t) {
+      var p = document.createElement('p');
+      p.textContent = t;
+      revealBody.appendChild(p);
+    });
+
+    revealPanel.hidden = false;
+    revealPanel.focus();
+  });
+})();
+</script>
+</body>
+</html>

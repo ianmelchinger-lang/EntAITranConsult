@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trace the control</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+
+  .doc { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 12px; }
+  .doc-name { font-family: var(--font-sans); font-weight: 700; font-size: 0.9rem; color: var(--ink); margin: 0; }
+  .doc-question { font-family: var(--font-sans); font-style: italic; font-size: 0.86rem; color: var(--steel); margin: 0 0 8px; }
+  .doc ol { margin: 0; padding-left: 0; list-style: none; }
+  .doc li { font-family: var(--font-sans); font-size: 0.9rem; color: var(--ink-soft); border-top: 1px solid var(--line); padding: 8px 0; font-variant-numeric: tabular-nums; }
+  .doc li .tag { display: inline-block; min-width: 2.2em; font-weight: 700; color: var(--ink); }
+  .doc li.added { background: var(--highlight-bg); padding-left: 6px; }
+  .docs { margin: 0 0 28px; }
+
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 10px; }
+  .item-text + * { clear: both; }
+  .sub-label { display: block; font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--ink); margin: 10px 0 6px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .stack .item-choices { flex-direction: column; }
+  .stack .choice-box { display: block; font-weight: 400; line-height: 1.45; }
+
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; font-variant-numeric: tabular-nums; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item, .doc { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Trace the control</h1>
+
+  <p class="lead-line">Integration means reconciling separately written documents into one account that ends in one recommendation. You can check one document against another only once you know the question each exists to answer. What you are looking for is a cross-document contradiction: something one document requires to be true that another denies or leaves out, even though each document holds up on its own. A human control written into a governance plan is the sharpest case. Its minutes are real, so the business case has to cost them and the roadmap has to staff them.</p>
+
+  <div class="context">
+    <p>A manufacturer is putting a drafting assistant into its supplier-nonconformance process at three European plants. Three documents in the advisory package bear on it. Each is shown with the question it exists to answer.</p>
+  </div>
+
+  <div class="docs" id="docs"></div>
+
+  <div class="instruction">
+    <p>For each control in the governance plan, mark whether the ROI case costs its time and whether the roadmap staffs it. Then judge the control. A control is <b>resolved</b> only when all three documents carry it. If it is missing from either, it is an <b>unresolved contradiction</b>.</p>
+  </div>
+
+  <div id="controls"></div>
+
+  <fieldset class="item stack" id="stmt-fieldset">
+    <legend class="item-text">Which sentence states the contradiction in the read-back control so that someone can act on it?</legend>
+    <div class="item-choices" id="stmt-choices"></div>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my trace</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: the case is revised</h2>
+    <p id="sp-intro"></p>
+    <div class="doc"><p class="doc-name">ROI case, revised</p><p class="doc-question">What does it return, and what does it cost?</p><ol id="sp-roi"></ol></div>
+    <fieldset class="item" id="sp-verdict-fs">
+      <legend class="item-text">Is the read-back control resolved now?</legend>
+      <div class="item-choices" id="sp-verdict"></div>
+    </fieldset>
+    <fieldset class="item" id="sp-doc-fs">
+      <legend class="item-text">Which document still has to say something before it is?</legend>
+      <div class="item-choices" id="sp-doc"></div>
+    </fieldset>
+    <button type="button" class="check-btn" id="sp-check-btn" disabled>Check</button>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  // Figures the activity supplies, drawn from the case. Every total below is computed from these.
+  var WRITEUPS = 9600;           // nonconformance write-ups a year, three plants
+  var MIN_BEFORE = 38;           // minutes per write-up by hand
+  var MIN_AFTER = 22;            // minutes per write-up, assisted draft plus review
+  var CLAUSE_SHARE = 0.14;       // share carrying a corrective-action commitment or customer clause
+  var RETURN_RATE = 1 / 6;       // drafts returned by the revision loop
+  var READBACK_MIN = 15;         // minutes per read-back
+  var REREVIEW_MIN = 6;          // minutes per re-review of a returned draft
+  var AUDIT_PER_MONTH = 40;      // filed write-ups sampled each month
+  var AUDIT_MIN = 12;            // minutes per sampled write-up
+  var RATE_QE = 78;              // quality engineer, per hour
+  var RATE_SUP = 68;             // plant supervisor, per hour
+  var RATE_MGR = 110;            // manager, per hour
+
+  function fmt(n, digits) {
+    return n.toLocaleString('en-US', { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 });
+  }
+  function usd(n) { return '$' + fmt(n); }
+
+  var HOURS_RETURNED = WRITEUPS * (MIN_BEFORE - MIN_AFTER) / 60;
+  var VALUE_RETURNED = HOURS_RETURNED * RATE_QE;
+  var CLAUSE_DRAFTS = Math.round(WRITEUPS * CLAUSE_SHARE);
+  var READBACK_HOURS = CLAUSE_DRAFTS * READBACK_MIN / 60;
+  var READBACK_COST = READBACK_HOURS * RATE_QE;
+  var RETURNED = Math.round(WRITEUPS * RETURN_RATE);
+  var REREVIEW_HOURS = RETURNED * REREVIEW_MIN / 60;
+  var REREVIEW_COST = REREVIEW_HOURS * RATE_SUP;
+  var AUDITED = AUDIT_PER_MONTH * 12;
+  var AUDIT_HOURS = AUDITED * AUDIT_MIN / 60;
+  var AUDIT_COST = AUDIT_HOURS * RATE_MGR;
+
+  var DOCS = [
+    { name: 'Governance and risk plan', question: 'Who is accountable, and how is the work monitored?', lines: [
+      { tag: 'G1', text: 'A quality engineer reads back every draft carrying a corrective-action commitment or customer-specific clause against its source before it enters the quality file. That is ' + fmt(CLAUSE_SHARE * 100) + '% of write-ups, and a read-back takes about ' + fmt(READBACK_MIN) + ' minutes.' },
+      { tag: 'G2', text: 'Every draft the revision loop returns, about one in six, is re-reviewed by the plant supervisor before it is refiled. A re-review takes about ' + fmt(REREVIEW_MIN) + ' minutes.' },
+      { tag: 'G3', text: 'The quality organization lead audits a sample of ' + fmt(AUDIT_PER_MONTH) + ' filed write-ups each month, at about ' + fmt(AUDIT_MIN) + ' minutes each.' }
+    ] },
+    { name: 'ROI case', question: 'What does it return, and what does it cost?', id: 'roi', lines: [
+      { tag: 'R1', text: 'Drafting falls from ' + fmt(MIN_BEFORE) + ' to ' + fmt(MIN_AFTER) + ' minutes per write-up across ' + fmt(WRITEUPS) + ' write-ups a year, returning ' + fmt(HOURS_RETURNED) + ' quality-engineer hours, valued at ' + usd(VALUE_RETURNED) + '.' },
+      { tag: 'R2', text: 'Re-review of returned drafts: ' + fmt(RETURNED) + ' a year at ' + fmt(REREVIEW_MIN) + ' minutes, ' + fmt(REREVIEW_HOURS) + ' supervisor hours, ' + usd(REREVIEW_COST) + ', netted against the return.' },
+      { tag: 'R3', text: 'Sample audit: ' + fmt(AUDITED) + ' write-ups a year at ' + fmt(AUDIT_MIN) + ' minutes, ' + fmt(AUDIT_HOURS) + ' hours, ' + usd(AUDIT_COST) + ', netted against the return.' }
+    ] },
+    { name: 'Roadmap', question: 'What happens, in what order, and with whose hours?', lines: [
+      { tag: 'M1', text: 'Months 1 to 6: drafting goes live at the three European plants. Quality engineers move to assisted drafting at current headcount.' },
+      { tag: 'M2', text: 'Quality organization lead: one day a month reserved for the sample audit.' }
+    ] }
+  ];
+
+  // The key: where each control appears, and the verdict that follows.
+  var CONTROLS = [
+    { id: 'G1', name: 'G1, the read-back of clause-bearing drafts', costed: false, staffed: false,
+      why: 'The read-back has no line in the ROI case and no hours in the roadmap. It exists in one document only, so it is unresolved.' },
+    { id: 'G2', name: 'G2, the re-review of returned drafts', costed: true, staffed: false,
+      why: 'The ROI case costs the re-review in R2, but nothing in the roadmap makes room for the supervisor’s hours. Being costed is not being staffed, so it is still unresolved.' },
+    { id: 'G3', name: 'G3, the monthly sample audit', costed: true, staffed: true,
+      why: 'The audit is costed in R3 and staffed in M2. All three documents carry it, so it is resolved.' }
+  ];
+
+  var STATEMENTS = [
+    { value: 'feel', text: 'The governance plan and the roadmap seem inconsistent about review.',
+      why: 'This notes that something feels off without saying what. No one can act on it, because it names no quantity and no proposition either document could be checked against.' },
+    { value: 'two', text: 'The governance plan requires ' + fmt(READBACK_HOURS) + ' quality-engineer hours a year for read-back. The roadmap staffs the first six months with no hours for it.',
+      why: '' },
+    { value: 'risk', text: 'The read-back control is a governance risk that should be monitored.',
+      why: 'This files the problem under a category. It does not say what one document requires and the other denies, so it leaves the contradiction in place.' },
+    { value: 'roi', text: 'The ROI case is wrong because it leaves out the read-back.',
+      why: 'The ROI case was sound when it was signed, and so was every other document. The contradiction lives between documents, and blaming one of them points the fix at the wrong place.' }
+  ];
+
+  var CRITERION_TEXT = 'A control is resolved only when three documents agree about it: the governance plan names it, the ROI case costs its minutes, and the roadmap staffs its hours. Each document answers a different question, so each has to answer it for the control. A control missing from either the cost case or the staffing is an unresolved contradiction, however well it is written.';
+  var FIRST_MOVE_TEXT = 'Take one control at a time. Look for a line in the ROI case that names its minutes, and then for a line in the roadmap that names whose hours it uses. Mark only what you actually find.';
+  var CORRECT_TEXT = 'Right. One control is carried by all three documents. The other two are not, and the one that is costed but not staffed is the easier one to miss, because a cost line looks like a resolution. The read-back is the starkest: about ' + fmt(CLAUSE_DRAFTS) + ' drafts a year at ' + fmt(READBACK_MIN) + ' minutes is ' + fmt(READBACK_HOURS) + ' hours of quality-engineer time, about ' + usd(READBACK_COST) + ', that appears in neither the money nor the schedule. Stated as two propositions with two documents named, it becomes something the people who own those documents can settle.';
+
+  // ---------- helpers ----------
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    wrap.appendChild(input);
+    wrap.appendChild(el('span', 'choice-box', label));
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function checkedValue(name) {
+    var c = document.querySelector('input[name="' + name + '"]:checked');
+    return c ? c.value : null;
+  }
+
+  function lookup(list, value) {
+    for (var i = 0; i < list.length; i++) { if (list[i].value === value) { return list[i]; } }
+    return null;
+  }
+
+  function showFeedback(state, status, paras) {
+    var fb = document.getElementById('feedback');
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    document.getElementById('fb-status').textContent = status;
+    var d = document.getElementById('fb-detail');
+    d.innerHTML = '';
+    paras.forEach(function (t) { d.appendChild(el('p', 'fb-detail', t)); });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  // ---------- the documents ----------
+  var docsEl = document.getElementById('docs');
+  DOCS.forEach(function (d) {
+    var box = el('div', 'doc');
+    box.appendChild(el('p', 'doc-name', d.name));
+    box.appendChild(el('p', 'doc-question', d.question));
+    var ol = document.createElement('ol');
+    d.lines.forEach(function (l) {
+      var li = document.createElement('li');
+      li.appendChild(el('span', 'tag', l.tag));
+      li.appendChild(document.createTextNode(' ' + l.text));
+      ol.appendChild(li);
+    });
+    box.appendChild(ol);
+    docsEl.appendChild(box);
+  });
+
+  // ---------- first pass ----------
+  var controlsEl = document.getElementById('controls');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+
+  var QUESTIONS = [
+    { key: 'costed', label: 'Does the ROI case cost its time?', options: [{ value: 'yes', label: 'Costed' }, { value: 'no', label: 'Not costed' }] },
+    { key: 'staffed', label: 'Does the roadmap staff its hours?', options: [{ value: 'yes', label: 'Staffed' }, { value: 'no', label: 'Not staffed' }] },
+    { key: 'verdict', label: 'Your judgment', options: [{ value: 'resolved', label: 'Resolved' }, { value: 'unresolved', label: 'Unresolved contradiction' }] }
+  ];
+
+  function refresh() {
+    var complete = checkedValue('stmt') !== null;
+    CONTROLS.forEach(function (c) {
+      QUESTIONS.forEach(function (q) { if (checkedValue(c.id + '-' + q.key) === null) { complete = false; } });
+    });
+    checkBtn.disabled = !complete;
+    fb.hidden = true;
+  }
+
+  CONTROLS.forEach(function (c) {
+    var fs = el('fieldset', 'item');
+    var legend = el('legend', 'item-text', 'Control ' + c.name);
+    fs.appendChild(legend);
+    QUESTIONS.forEach(function (q) {
+      var group = el('div');
+      group.setAttribute('role', 'radiogroup');
+      var labId = c.id + '-' + q.key + '-label';
+      var lab = el('span', 'sub-label', q.label);
+      lab.id = labId;
+      group.setAttribute('aria-labelledby', labId);
+      var choices = el('div', 'item-choices');
+      q.options.forEach(function (o) { choices.appendChild(makeChoice(c.id + '-' + q.key, o.value, o.label, refresh)); });
+      group.appendChild(lab);
+      group.appendChild(choices);
+      fs.appendChild(group);
+    });
+    controlsEl.appendChild(fs);
+  });
+
+  var stmtChoices = document.getElementById('stmt-choices');
+  STATEMENTS.forEach(function (s) { stmtChoices.appendChild(makeChoice('stmt', s.value, s.text, refresh)); });
+
+  checkBtn.addEventListener('click', function () {
+    var errs = [];
+    CONTROLS.forEach(function (c) {
+      var costed = checkedValue(c.id + '-costed') === 'yes';
+      var staffed = checkedValue(c.id + '-staffed') === 'yes';
+      var verdict = checkedValue(c.id + '-verdict');
+      var expected = (c.costed && c.staffed) ? 'resolved' : 'unresolved';
+      if (costed !== c.costed || staffed !== c.staffed || verdict !== expected) { errs.push({ type: 'control', c: c }); }
+    });
+    var stmt = checkedValue('stmt');
+    if (stmt !== 'two') { errs.push({ type: 'stmt', value: stmt }); }
+
+    if (errs.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (errs.length === 1) {
+      var e = errs[0];
+      if (e.type === 'control') {
+        showFeedback('fb-near', 'Close.', ['Look again at control ' + e.c.name + '.', e.c.why]);
+      } else {
+        showFeedback('fb-near', 'Close.', ['Your trace is right. Look again at how the read-back contradiction is stated.', lookup(STATEMENTS, e.value).why]);
+      }
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    showSecondPass();
+  });
+
+  // ---------- second pass ----------
+  var secondPass = document.getElementById('second-pass');
+  var spPanel = document.getElementById('sp-panel');
+  var spCheck = document.getElementById('sp-check-btn');
+  var R4_TEXT = 'Read-back of clause-bearing drafts: ' + fmt(CLAUSE_DRAFTS) + ' a year at ' + fmt(READBACK_MIN) + ' minutes, ' + fmt(READBACK_HOURS) + ' quality-engineer hours, ' + usd(READBACK_COST) + ', netted against the return.';
+  var shown = false;
+
+  function showSecondPass() {
+    if (shown) { secondPass.hidden = false; return; }
+    shown = true;
+    document.getElementById('sp-intro').textContent = 'Suppose the finance partner revises the ROI case and adds the line below, R4, alongside R1 to R3. This is an assumption for the exercise. The governance plan and the roadmap have not changed.';
+    var li = document.createElement('li');
+    li.className = 'added';
+    li.appendChild(el('span', 'tag', 'R4'));
+    li.appendChild(document.createTextNode(' ' + R4_TEXT));
+    document.getElementById('sp-roi').appendChild(li);
+    secondPass.hidden = false;
+  }
+
+  function spRefresh() {
+    spCheck.disabled = !(checkedValue('sp-verdict') && checkedValue('sp-doc'));
+    spPanel.hidden = true;
+  }
+
+  [{ value: 'resolved', label: 'Resolved' }, { value: 'unresolved', label: 'Still unresolved' }].forEach(function (o) {
+    document.getElementById('sp-verdict').appendChild(makeChoice('sp-verdict', o.value, o.label, spRefresh));
+  });
+  [{ value: 'gov', label: 'Governance and risk plan' }, { value: 'roi', label: 'ROI case' }, { value: 'map', label: 'Roadmap' }, { value: 'none', label: 'None' }].forEach(function (o) {
+    document.getElementById('sp-doc').appendChild(makeChoice('sp-doc', o.value, o.label, spRefresh));
+  });
+
+  spCheck.addEventListener('click', function () {
+    var v = checkedValue('sp-verdict');
+    var d = checkedValue('sp-doc');
+    spPanel.innerHTML = '';
+    if (v === 'unresolved' && d === 'map') {
+      spPanel.appendChild(el('p', null, 'Right. The read-back is now where the re-review was: costed and not staffed. The ROI case says what the ' + fmt(READBACK_HOURS) + ' hours cost. The roadmap still moves the quality engineers to assisted drafting at current headcount and says nothing about whose week those hours come from.'));
+      spPanel.appendChild(el('p', null, 'A cost line makes a control look settled because it puts a number beside it. The number answers the ROI case’s question, what it costs, and leaves the roadmap’s question, with whose hours, unanswered. Whether the ' + fmt(HOURS_RETURNED) + ' drafting hours the case returns can carry the read-back is a real option, and it is resolved only when the roadmap says so in writing.'));
+    } else if (v === 'resolved') {
+      spPanel.appendChild(el('p', null, 'Look again. The ROI case now costs the read-back, but the roadmap has not changed. A control is resolved only when all three documents carry it, and this one is in two.'));
+    } else {
+      spPanel.appendChild(el('p', null, 'You are right that it is unresolved. Look again at which document is still silent. The governance plan names the control and the ROI case now costs it. Ask which document answers the question “with whose hours.”'));
+    }
+    spPanel.hidden = false;
+    spPanel.focus();
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One answer slot</title>
+<style>
+  :root {
+    --paper: #EEF1F2;
+    --white: #FFFFFF;
+    --ink: #1C2B33;
+    --ink-soft: #46585F;
+    --steel: #6B7C84;
+    --line: #C9D3D6;
+    --accent: #B8862B;
+    --accent-deep: #7C5C1E;
+    --highlight-bg: #FBF1DC;
+    --ok: #2F6B4C;
+    --ok-bg: #E6F0EA;
+    --warn: #9C3B1E;
+    --warn-bg: #F5E6E1;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-serif); line-height: 1.6; font-size: 1.05rem; }
+  .container { max-width: 680px; margin: 0 auto; padding: 48px 24px 64px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.4rem, 4vw, 1.9rem); margin: 0 0 20px; color: var(--ink); }
+  h2 { font-family: var(--font-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 12px; color: var(--ink); }
+  .lead-line { font-family: var(--font-sans); font-style: italic; font-size: 0.98rem; color: var(--steel); margin: 0 0 20px; }
+  .context { border-left: 3px solid var(--accent); padding-left: 18px; margin: 0 0 22px; }
+  .context p { margin: 0 0 10px; }
+  .context p:last-child { margin-bottom: 0; }
+  .instruction { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; margin: 0 0 28px; }
+  .instruction p { margin: 0 0 8px; }
+  .instruction p:last-child { margin-bottom: 0; }
+  .item { margin: 0 0 14px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; }
+  .item-text { float: left; display: block; width: 100%; font-family: var(--font-serif); font-size: 1rem; color: var(--ink); padding: 0; margin: 0 0 10px; font-variant-numeric: tabular-nums; }
+  .item-text + * { clear: both; }
+  .item-source { display: block; font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700; color: var(--steel); margin: 0 0 2px; }
+  .item-choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice { display: block; position: relative; cursor: pointer; }
+  .choice-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+  .choice-box { display: inline-block; font-family: var(--font-sans); font-weight: 600; font-size: 0.88rem; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px; }
+  .choice-input:checked + .choice-box { background: var(--highlight-bg); border-color: var(--accent); color: var(--ink); }
+  .choice-input:focus-visible + .choice-box { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .stack .item-choices { flex-direction: column; }
+  .stack .choice-box { display: block; font-weight: 400; line-height: 1.45; }
+  .slot-alert { background: var(--highlight-bg); border-color: var(--accent); }
+  .slot-alert[hidden] { display: none; }
+  .check-btn { display: block; margin: 10px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 0.95rem; padding: 12px 22px; background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer; }
+  .check-btn:disabled { background: var(--line); color: var(--steel); cursor: not-allowed; }
+  .check-btn:not(:disabled):hover { background: var(--accent-deep); }
+  .check-btn:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+  .feedback { margin-top: 24px; padding: 18px 20px; background: var(--white); border-left: 4px solid var(--line); border-radius: 4px; }
+  .feedback[hidden], .second-pass[hidden], .panel[hidden] { display: none; }
+  .feedback:focus, .panel:focus, .second-pass:focus { outline: none; }
+  .feedback.fb-ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .feedback.fb-near { border-left-color: var(--accent); background: var(--highlight-bg); }
+  .feedback.fb-warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .fb-status { font-family: var(--font-sans); font-weight: 700; font-size: 1rem; margin: 0 0 8px; }
+  .fb-ok .fb-status { color: var(--ok); }
+  .fb-near .fb-status { color: var(--accent-deep); }
+  .fb-warn .fb-status { color: var(--warn); }
+  .fb-detail { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55; margin: 0 0 8px; }
+  .fb-detail:last-child { margin-bottom: 0; }
+  .panel { margin-top: 24px; padding: 18px 20px; background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
+  .panel p { font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .revised { font-family: var(--font-serif); font-size: 1rem; color: var(--ink); background: var(--highlight-bg); border-left: 4px solid var(--accent); border-radius: 4px; padding: 12px 16px; margin: 0 0 16px; }
+  .second-pass { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .second-pass > p { font-family: var(--font-sans); font-size: 0.95rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 480px) {
+    .container { padding: 32px 16px 48px; }
+    .item { padding: 14px 14px; }
+    .feedback, .panel { padding: 14px 16px; }
+    .item-choices { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>One answer slot</h1>
+
+  <p class="lead-line">The narrative spine is a four-part sequence that carries an executive account from the present to one recommendation: what is true now, what has changed to make that a problem, what question the change raises, and the single answer. Every source document has to serve one of the four, so no document argues its own case alongside the others. The answer slot holds exactly one answer. If two documents each demand a different action, the spine has not failed. It has found a disagreement the documents still carry.</p>
+
+  <div class="context">
+    <p>A manufacturer&rsquo;s steering committee has asked for its AI transformation plan as one story. Below are the sentences from five advisory documents that bear on the first year, each tagged with the document it came from, plus the committee&rsquo;s own question.</p>
+  </div>
+
+  <div class="instruction">
+    <p>Place each sentence in one part of the spine.</p>
+    <p><b>True now:</b> a standing fact about the present. <b>What changed:</b> a new development that makes the present a problem. <b>The question:</b> what the change asks of the committee. <b>The answer:</b> an action the committee could authorize.</p>
+  </div>
+
+  <div id="items"></div>
+
+  <fieldset class="item stack slot-alert" id="interp-fieldset" hidden>
+    <legend class="item-text">The answer slot now holds two sentences, from two different documents. What does that tell you?</legend>
+    <div class="item-choices" id="interp-choices"></div>
+  </fieldset>
+
+  <button type="button" class="check-btn" id="check-btn" disabled>Check my spine</button>
+
+  <div class="feedback" id="feedback" tabindex="-1" hidden>
+    <p class="fb-status" id="fb-status"></p>
+    <div id="fb-detail"></div>
+  </div>
+
+  <section class="second-pass" id="second-pass" aria-labelledby="sp-h" tabindex="-1" hidden>
+    <h2 id="sp-h">Second pass: revise one document</h2>
+    <p>Suppose the readiness report is revised, and its action sentence is replaced by the one below. This is an assumption for the exercise, not a fact about the plants. Everything else stays as it was.</p>
+    <div class="revised" id="sp-revised"></div>
+    <fieldset class="item stack" id="sp-fieldset">
+      <legend class="item-text">What fills the answer slot now?</legend>
+      <div class="item-choices" id="sp-choices"></div>
+    </fieldset>
+    <div class="panel" id="sp-panel" tabindex="-1" hidden></div>
+  </section>
+
+</div>
+<div id="sr-status" class="sr-only" aria-live="polite"></div>
+<script>
+(function () {
+
+  // Figures the activity supplies, drawn from the case.
+  var UNITS = 1900000;          // units inspected a year at the Ohio plant
+  var ESCAPES_NOW = 340;        // escapes per million
+  var WRITEUPS = 9600;          // nonconformance write-ups a year, three European plants
+  var MIN_SAVED = 38 - 22;      // minutes saved per write-up
+  function fmt(n) { return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+  var HOURS_RETURNED = WRITEUPS * MIN_SAVED / 60;
+
+  var SLOTS = [
+    { value: 'now', label: 'True now' },
+    { value: 'changed', label: 'What changed' },
+    { value: 'question', label: 'The question' },
+    { value: 'answer', label: 'The answer' }
+  ];
+
+  var SENTENCES = [
+    { id: 'a', source: 'Opportunity assessment', kind: 'now',
+      text: 'The Ohio plant inspects ' + fmt(UNITS) + ' units a year, and ' + fmt(ESCAPES_NOW) + ' per million escape.',
+      why: 'A count of what the plant does today. It is a standing fact about the present.' },
+    { id: 'e', source: 'Opportunity assessment', kind: 'answer',
+      text: 'Authorize inspection first, at the Ohio plant and then at the three European plants.',
+      why: 'It asks the committee to authorize something, so it is an answer.' },
+    { id: 'c', source: 'Roadmap', kind: 'changed',
+      text: 'Since the steering group asked for one prioritized plan, the roadmap has extended inspection from the Ohio plant to the three European plants in months 7 to 12.',
+      why: 'The word “since” marks a new development, and this one is what turns the present into a problem: the plan now depends on the European plants.' },
+    { id: 'b', source: 'Readiness report', kind: 'now',
+      text: 'Three of the four plants that hold inspection records have recorded them differently for years.',
+      why: 'It has been true “for years,” so it is a standing fact, not a new development. It matters because of what changed, but it is not the change.' },
+    { id: 'g', source: 'ROI case', kind: 'now',
+      text: 'Nonconformance drafting at the three European plants returns ' + fmt(HOURS_RETURNED) + ' quality-engineer hours a year.',
+      why: 'A figure the case states about the present plan. It is a standing fact, not a change and not an action.' },
+    { id: 'd', source: 'The committee', kind: 'question',
+      text: 'Which single action should the committee authorize first?',
+      why: 'This is what the change asks of the committee. It is the question.' },
+    { id: 'h', source: 'Governance and risk plan', kind: 'now',
+      text: 'A quality engineer reads back every draft carrying a corrective-action commitment or customer clause against its source before it enters the quality file.',
+      why: 'A control that stands in the plan today. It is a standing fact about the present.' },
+    { id: 'f', source: 'Readiness report', kind: 'answer',
+      text: 'Authorize nonconformance drafting first, and hold the inspection extension until the European inspection records are reconciled.',
+      why: 'It asks the committee to authorize something, so it is an answer, even though it comes from a different document than the other answer.' }
+  ];
+
+  var INTERP = [
+    { value: 'pick', text: 'Keep the inspection sentence. It has the larger payback, so it should win.',
+      why: 'Picking one quietly drops the readiness finding. The committee would approve an order the European records cannot yet support, and would find out in months 7 to 12.' },
+    { value: 'menu', text: 'Keep both, and let the committee choose between them.',
+      why: 'Two answers are a menu. The committee asked for one action, and a menu hands it the job of finding where the documents disagree.' },
+    { value: 'reconcile', text: 'The two documents still disagree. Settle that disagreement before writing the answer.',
+      why: '' },
+    { value: 'drop', text: 'Move the readiness sentence out of the account. It belongs in an appendix.',
+      why: 'That drops one document’s central concern without saying so. The records still disagree whether or not the account mentions it.' }
+  ];
+
+  var REVISED = 'With the European inspection records reconciled in months 4 to 6, the inspection extension can proceed in months 7 to 12.';
+
+  var SP_OPTIONS = [
+    { value: 'e', text: 'Authorize inspection first, at the Ohio plant and then at the three European plants.' },
+    { value: 'both', text: 'Both earlier action sentences, as options for the committee.' },
+    { value: 'f', text: 'Authorize nonconformance drafting first, and hold the inspection extension until the records are reconciled.' },
+    { value: 'none', text: 'Nothing yet. The documents still disagree.' }
+  ];
+
+  var CRITERION_TEXT = 'Each part of the spine answers one question. A standing fact about the present goes in “true now,” however long it has been true. A new development that makes the present a problem goes in “what changed.” What that change asks of the committee is the question. Any sentence that asks the committee to authorize something is an answer, whichever document it comes from.';
+  var FIRST_MOVE_TEXT = 'Start with the action sentences: find every sentence that asks the committee to authorize something, and put each in the answer slot. Then look at how many are there, and at where each one came from.';
+  var CORRECT_TEXT = 'Right. Every document found a place, and two sentences arrived in the answer slot from two different documents. The spine has not failed. It has found that the opportunity assessment and the readiness report disagree about one line: the assessment requires inspection to reach the European plants in months 7 to 12, and the readiness report says the records there do not yet agree. That is a contradiction to settle, and the answer cannot be written until it is settled.';
+
+  // ---------- helpers ----------
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+
+  function makeChoice(name, value, label, onChange) {
+    var wrap = document.createElement('label');
+    wrap.className = 'choice';
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.className = 'choice-input';
+    input.name = name;
+    input.value = value;
+    wrap.appendChild(input);
+    wrap.appendChild(el('span', 'choice-box', label));
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function checkedValue(name) {
+    var c = document.querySelector('input[name="' + name + '"]:checked');
+    return c ? c.value : null;
+  }
+
+  function lookup(list, value) {
+    for (var i = 0; i < list.length; i++) { if (list[i].value === value) { return list[i]; } }
+    return null;
+  }
+
+  function showFeedback(state, status, paras) {
+    var fb = document.getElementById('feedback');
+    fb.classList.remove('fb-ok', 'fb-near', 'fb-warn');
+    fb.classList.add(state);
+    document.getElementById('fb-status').textContent = status;
+    var d = document.getElementById('fb-detail');
+    d.innerHTML = '';
+    paras.forEach(function (t) { d.appendChild(el('p', 'fb-detail', t)); });
+    fb.hidden = false;
+    fb.focus();
+  }
+
+  // ---------- first pass ----------
+  var itemsEl = document.getElementById('items');
+  var interpFs = document.getElementById('interp-fieldset');
+  var checkBtn = document.getElementById('check-btn');
+  var fb = document.getElementById('feedback');
+
+  function readMarks() { return SENTENCES.map(function (s) { return checkedValue('s-' + s.id); }); }
+  function answersPlaced(marks) { return marks.filter(function (m) { return m === 'answer'; }).length; }
+
+  function refresh() {
+    var marks = readMarks();
+    var two = answersPlaced(marks) >= 2;
+    interpFs.hidden = !two;
+    var complete = marks.indexOf(null) === -1 && (!two || checkedValue('interp') !== null);
+    checkBtn.disabled = !complete;
+    fb.hidden = true;
+  }
+
+  SENTENCES.forEach(function (s) {
+    var fs = el('fieldset', 'item');
+    var legend = el('legend', 'item-text');
+    legend.appendChild(el('span', 'item-source', s.source));
+    legend.appendChild(document.createTextNode(s.text));
+    fs.appendChild(legend);
+    var choices = el('div', 'item-choices');
+    SLOTS.forEach(function (sl) { choices.appendChild(makeChoice('s-' + s.id, sl.value, sl.label, refresh)); });
+    fs.appendChild(choices);
+    itemsEl.appendChild(fs);
+  });
+
+  var interpChoices = document.getElementById('interp-choices');
+  INTERP.forEach(function (o) { interpChoices.appendChild(makeChoice('interp', o.value, o.text, refresh)); });
+
+  checkBtn.addEventListener('click', function () {
+    var marks = readMarks();
+    if (marks.indexOf(null) !== -1) { return; }
+    var errs = [];
+    SENTENCES.forEach(function (s, i) { if (marks[i] !== s.kind) { errs.push({ type: 'place', s: s }); } });
+    var interp = answersPlaced(marks) >= 2 ? checkedValue('interp') : null;
+    if (errs.length === 0 && interp !== 'reconcile') { errs.push({ type: 'interp', value: interp }); }
+
+    if (errs.length === 0) {
+      showFeedback('fb-ok', 'Correct.', [CORRECT_TEXT]);
+    } else if (errs.length === 1) {
+      var e = errs[0];
+      if (e.type === 'place') {
+        showFeedback('fb-near', 'Close.', ['Look again at the ' + e.s.source.toLowerCase() + ' sentence: “' + e.s.text + '”', e.s.why]);
+      } else {
+        showFeedback('fb-near', 'Close.', ['Every sentence is in the right place. Look again at what two answers tell you.', lookup(INTERP, e.value).why]);
+      }
+    } else {
+      showFeedback('fb-warn', 'Not yet.', [CRITERION_TEXT, FIRST_MOVE_TEXT]);
+    }
+    document.getElementById('second-pass').hidden = false;
+  });
+
+  // ---------- second pass ----------
+  var spRevised = document.getElementById('sp-revised');
+  spRevised.appendChild(el('span', 'item-source', 'Readiness report, revised'));
+  spRevised.appendChild(document.createTextNode(REVISED));
+
+  var spPanel = document.getElementById('sp-panel');
+  var spChoices = document.getElementById('sp-choices');
+  SP_OPTIONS.forEach(function (o) {
+    spChoices.appendChild(makeChoice('sp', o.value, o.text, function () {
+      spPanel.innerHTML = '';
+      if (o.value === 'e') {
+        spPanel.appendChild(el('p', null, 'Right. One sentence now fills the answer slot. The readiness report no longer denies what the opportunity assessment requires, so the two documents agree about the European plants and only one action is left standing.'));
+        spPanel.appendChild(el('p', null, 'Notice how inspection got there. It did not win by having the larger payback. The disagreement was settled, and once it was, the slot accepted one answer. The spine reports the state of the reconciliation; it does not do the reconciling.'));
+      } else if (o.value === 'both') {
+        spPanel.appendChild(el('p', null, 'Look again at the revised sentence. The readiness report no longer asks the committee to do anything different. With nothing left to disagree about, two options would only offer the committee a choice that no longer exists.'));
+      } else if (o.value === 'f') {
+        spPanel.appendChild(el('p', null, 'Look again at the revised sentence. The readiness report has withdrawn its request to hold the extension, because the records will be reconciled before it begins. The sentence you chose no longer comes from any document in the package.'));
+      } else {
+        spPanel.appendChild(el('p', null, 'Look again at the revised sentence. The readiness report now says the records will be reconciled before the extension begins, which is what the opportunity assessment needed. The two documents no longer disagree.'));
+      }
+      spPanel.hidden = false;
+    }));
+  });
+
+})();
+</script>
+</body>
+</html>
